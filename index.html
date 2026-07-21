@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nightshift Games</title>
+<style>
+  :root {
+    --bg: #1a1a2e;
+    --surface: #30304d;
+    --accent: #ffd166;
+    --text: #f8f9fa;
+    --dim: #9a9ab0;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.65;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 64px 24px 96px; }
+  header { text-align: center; margin-bottom: 64px; }
+  .moon {
+    width: 96px; height: 96px; margin: 0 auto 28px;
+    border-radius: 50%;
+    background: #f4e9c8;
+    box-shadow: inset -26px -12px 0 0 var(--bg);
+  }
+  h1 { font-size: 2.6rem; margin: 0; letter-spacing: 0.12em; font-weight: 700; }
+  .sub { color: var(--accent); letter-spacing: 0.5em; font-size: 0.9rem; margin-top: 6px; }
+  h2 { font-size: 1.3rem; margin: 48px 0 12px; }
+  .card {
+    background: var(--surface);
+    border-radius: 16px;
+    padding: 28px 28px 24px;
+    margin-top: 32px;
+  }
+  .cube {
+    width: 44px; height: 44px; background: var(--accent);
+    border-radius: 6px; margin-bottom: 16px;
+    position: relative;
+  }
+  .cube::before, .cube::after {
+    content: ""; position: absolute; top: 12px; width: 9px; height: 9px; background: #fff;
+  }
+  .cube::before { left: 8px; }
+  .cube::after { right: 10px; }
+  a { color: var(--accent); }
+  footer { margin-top: 72px; text-align: center; color: var(--dim); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="moon"></div>
+    <h1>NIGHTSHIFT</h1>
+    <div class="sub">GAMES</div>
+  </header>
+
+  <p>Small games, made in small hours.</p>
+
+  <div class="card">
+    <div class="cube"></div>
+    <h2 style="margin-top:0">Gravity Flip</h2>
+    <p>A one-touch arcade runner. Tap to flip gravity, dodge the spikes,
+       collect coins, and see how far you get before the floor — or the
+       ceiling — catches you.</p>
+    <p style="color:var(--dim); margin-bottom:0">Coming soon to Google Play.</p>
+  </div>
+
+  <h2>Contact</h2>
+  <p>Questions, bugs, or feedback: <a href="mailto:dr.mohjallad@gmail.com">dr.mohjallad@gmail.com</a></p>
+
+  <h2>Privacy</h2>
+  <p><a href="privacy.html">Privacy policy</a></p>
+
+  <footer>© 2026 Nightshift Games</footer>
+</div>
+</body>
+</html>

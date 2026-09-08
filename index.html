@@ -48,6 +48,20 @@
   }
   .cube::before { left: 8px; }
   .cube::after { right: 10px; }
+  .bot {
+    width: 44px; height: 44px; background: #4fd1c5;
+    border-radius: 6px; margin-bottom: 16px;
+    position: relative;
+  }
+  .bot::before {
+    content: ""; position: absolute; left: 8px; top: 14px;
+    width: 28px; height: 10px; background: #0a0e14; border-radius: 2px;
+  }
+  .bot::after {
+    content: ""; position: absolute; left: 24px; top: 17px;
+    width: 8px; height: 4px; background: #fff;
+  }
+  .ar { color: var(--dim); font-size: 0.85em; font-weight: 400; }
   a { color: var(--accent); }
   footer { margin-top: 72px; text-align: center; color: var(--dim); font-size: 0.85rem; }
 </style>
@@ -61,6 +75,16 @@
   </header>
 
   <p>Small games, made in small hours.</p>
+
+  <div class="card">
+    <div class="bot"></div>
+    <h2 style="margin-top:0">Robot Escape <span class="ar">الهروب</span></h2>
+    <p>A wall of fire is eating the corridor behind you and it never stops.
+       Run, double-jump, grab batteries before your power runs out, and unlock
+       50 robots along the way.</p>
+    <p><a href="robotescape/">Play in your browser</a> — works offline once
+       loaded, and installs to your home screen.</p>
+  </div>
 
   <div class="card">
     <div class="cube"></div>

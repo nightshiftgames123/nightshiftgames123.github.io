@@ -386,13 +386,6 @@
           </div>
           <label class="check"><input type="checkbox" id="remember-key" onchange="onKeyChanged()" /> Remember key on this device</label>
 
-          <div class="form-group">
-            <label for="ai-model">Model</label>
-            <div class="form-row">
-              <select id="ai-model" onchange="saveModel()"></select>
-              <button class="btn btn-sm" style="min-height:42px; white-space:nowrap;" onclick="loadModels()">↻ Load models</button>
-            </div>
-          </div>
 
           <div class="form-group">
             <label for="ai-prompt">Clinical Notes / Question</label>
@@ -900,9 +893,8 @@
 
     // ───────────────────────── Gemini AI ─────────────────────────
     const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
-    const DEFAULT_MODELS = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-pro'];
+    const GEMINI_MODEL = 'gemini-3-flash-preview';
     const KEY_STORE = 'peds_gemini_key';
-    const MODEL_STORE = 'peds_gemini_model';
 
     function storageGet(k) { try { return localStorage.getItem(k); } catch { return null; } }
     function storageSet(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} }
@@ -911,45 +903,6 @@
 
     function onKeyChanged() {
       storageSet(KEY_STORE, $('remember-key').checked && getApiKey() ? getApiKey() : null);
-      if (getApiKey()) loadModels(true);
-    }
-
-    function setModelOptions(models, selected) {
-      const sel = $('ai-model');
-      sel.innerHTML = models.map((m) => `<option value="${m}">${m}</option>`).join('');
-      sel.value = models.includes(selected) ? selected : models[0];
-    }
-    function saveModel() { storageSet(MODEL_STORE, $('ai-model').value); }
-
-    async function loadModels(quiet) {
-      const key = getApiKey();
-      const box = $('ai-response-box');
-      if (!key) { if (!quiet) box.innerHTML = '<span class="err">Enter your Gemini API key first.</span>'; return; }
-      try {
-        const res = await fetch(`${GEMINI_BASE}/models?pageSize=200`, { headers: { 'x-goog-api-key': key } });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data.error?.message || `HTTP ${res.status}`);
-        const models = (data.models || [])
-          .filter((m) => (m.supportedGenerationMethods || []).includes('generateContent'))
-          .map((m) => m.name.replace(/^models\//, ''))
-          .filter((n) => /^gemini-/.test(n) && !/(embedding|image|tts|audio|live|vision)/.test(n))
-          .sort((x, y) => rankModel(x) - rankModel(y) || y.localeCompare(x, undefined, { numeric: true }));
-        if (!models.length) throw new Error('No text models available for this key.');
-        const prev = $('ai-model').value || storageGet(MODEL_STORE);
-        setModelOptions(models, prev);
-        saveModel();
-        if (!quiet) box.innerHTML = `<span class="muted">✓ Key works. ${models.length} models available — using <strong>${$('ai-model').value}</strong>.</span>`;
-      } catch (err) {
-        box.innerHTML = `<span class="err">⚠️ Could not list models: ${escapeHtml(err.message)}</span>`;
-      }
-    }
-    // Prefer stable "flash" models (free tier friendly) at the top of the list.
-    function rankModel(n) {
-      const stable = !/(preview|exp|latest)/.test(n);
-      if (/flash/.test(n) && !/lite/.test(n)) return stable ? 0 : 1;
-      if (/flash-lite/.test(n)) return stable ? 2 : 3;
-      if (/pro/.test(n)) return stable ? 4 : 5;
-      return 6;
     }
 
     function escapeHtml(s) {
@@ -1014,10 +967,10 @@
       }[mode];
       const prompt = `${task}\n\nPatient:\n${patientSummary()}\n\nClinical notes / question:\n${notes || '(none provided)'}`;
 
-      const model = $('ai-model').value || DEFAULT_MODELS[0];
+      const model = GEMINI_MODEL;
       aiBusy = true;
       document.querySelectorAll('.ai-btn').forEach((b) => (b.disabled = true));
-      box.innerHTML = `<span class="muted">⏳ Asking ${escapeHtml(model)}…</span>`;
+      box.innerHTML = '<span class="muted">⏳ Asking Gemini…</span>';
 
       let text = '';
       let finish = null, blocked = null;
@@ -1063,7 +1016,7 @@
         }
 
         if (blocked) throw new Error(`Gemini blocked this request (${blocked}). Try rephrasing the notes.`);
-        if (!text) throw new Error(finish === 'SAFETY' ? 'Gemini withheld the answer for safety reasons. Try rephrasing.' : `No answer returned${finish ? ' (' + finish + ')' : ''}. Try again or pick another model.`);
+        if (!text) throw new Error(finish === 'SAFETY' ? 'Gemini withheld the answer for safety reasons. Try rephrasing.' : `No answer returned${finish ? ' (' + finish + ')' : ''}. Try again.`);
         if (finish === 'MAX_TOKENS') box.innerHTML += '<p class="muted">… (answer was cut off at the length limit)</p>';
         else if (finish === 'SAFETY') box.innerHTML += '<p class="err">… (answer stopped by Gemini safety filter)</p>';
       } catch (err) {
@@ -1079,8 +1032,8 @@
       const m = message || '';
       if (status === 400 && /API key/i.test(m)) return 'Invalid API key. Copy it again from Google AI Studio.';
       if (status === 403) return 'This key is not allowed to use the Gemini API (403). Check the key in Google AI Studio. ' + m;
-      if (status === 404) return `Model not found (404). Tap "Load models" and choose another. ${m}`;
-      if (status === 429) return 'Free-tier rate limit reached (429). Wait a minute, or switch to a "flash-lite" model.';
+      if (status === 404) return `Model ${GEMINI_MODEL} not found (404). ${m}`;
+      if (status === 429) return 'Free-tier rate limit reached (429). Wait a minute and try again.';
       if (status >= 500) return `Gemini is having problems (${status}). Try again shortly.`;
       return `Gemini error ${status}: ${m}`;
     }
@@ -1107,9 +1060,6 @@
     (function init() {
       const savedKey = storageGet(KEY_STORE);
       if (savedKey) { $('api-key-input').value = savedKey; $('remember-key').checked = true; }
-      setModelOptions(DEFAULT_MODELS, storageGet(MODEL_STORE));
-      const saved = storageGet(MODEL_STORE);
-      if (saved && !DEFAULT_MODELS.includes(saved)) setModelOptions([saved, ...DEFAULT_MODELS], saved);
       calculateAll();
     })();
   </script>

@@ -8,7 +8,16 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="PedsAnesth" />
-  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="manifest" id="manifest-link" href="manifest.webmanifest" />
+  <script>
+    // Public edition (reached via /pedsanesth-app/) shows the support button.
+    // The original /pedsanesth/ link used by the team never does.
+    (function () {
+      var pub = /[?&]public=1\b/.test(location.search);
+      document.documentElement.setAttribute('data-public', pub ? '1' : '0');
+      if (pub) document.getElementById('manifest-link').setAttribute('href', 'manifest-public.webmanifest');
+    })();
+  </script>
   <link rel="apple-touch-icon" href="icon-180.png" />
   <link rel="icon" type="image/png" href="icon-192.png" />
   <title>PedsAnesth Mobile</title>
@@ -133,6 +142,9 @@
     .capped { color: var(--warn); font-size: 10px; display: block; font-weight: 600; }
     .fav-btn { background: none; border: none; cursor: pointer; font-size: 18px; line-height: 1; padding: 2px 4px; margin-left: 4px; color: var(--text-muted); vertical-align: -2px; min-width: 28px; min-height: 28px; }
     .fav-btn.on { color: #f59e0b; }
+    .support-link { display: none; }
+    :root[data-public="1"] .support-link.ready { display: inline-flex; }
+    .support-btn { align-items: center; gap: 6px; background: #fde047; color: #422006; font-weight: 700; border-radius: 999px; padding: 8px 14px; text-decoration: none; font-size: 13px; }
     .icon-btn { min-width: 34px; font-size: 15px; }
     @media (max-width: 420px) { .brand-sub { display: none !important; } }
 
@@ -562,6 +574,7 @@
   </div>
 
   <footer>
+    <p style="margin-bottom: 8px;"><a class="support-link support-btn" href="#" target="_blank" rel="noopener">☕ Like this app? Buy me a coffee</a></p>
     Clinical decision support only. Doses are typical starting values for healthy children and must be checked against the patient's condition, institutional protocols and current references before use. Your entries stay on this device.
   </footer>
 
@@ -643,6 +656,10 @@
         <button class="btn btn-sm" onclick="toggleModal('modal-resources', false)">✕</button>
       </div>
       <div class="modal-body" style="font-size: 12px; line-height: 1.7; color: var(--text-soft);">
+        <div class="support-link" style="margin-bottom: 12px; flex-direction: column; gap: 6px; align-items: flex-start;">
+          <p>This app is free and made by one clinician-developer in spare time. If it helps you, you can support it:</p>
+          <a class="support-btn" style="display:inline-flex;" href="#" target="_blank" rel="noopener" data-support>☕ Buy me a coffee</a>
+        </div>
         <h4 style="color: var(--accent); margin-bottom: 4px;">ASTM D4774 label colors</h4>
         <p><span class="astm-tag astm-induction">Yellow</span> Induction agents</p>
         <p><span class="astm-tag astm-benzo">Orange</span> Benzodiazepines</p>
@@ -1566,6 +1583,15 @@
     }
 
     // ───────────────────────── Init ─────────────────────────
+    // ───────────────────────── Support (public edition only) ─────────────────────────
+    const SUPPORT_URL = ''; // e.g. 'https://buymeacoffee.com/yourname' — button stays hidden while empty
+    if (SUPPORT_URL) {
+      document.querySelectorAll('.support-link').forEach((el) => {
+        el.classList.add('ready');
+        (el.matches('a') ? [el] : el.querySelectorAll('a')).forEach((a) => (a.href = SUPPORT_URL));
+      });
+    }
+
     (function init() {
       buildInfusions();
       renderScalarList();

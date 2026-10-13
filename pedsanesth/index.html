@@ -667,11 +667,11 @@
       { name: 'Remifentanil', group: 'sedation', astm: 'astm-opioid', label: 'Opioid', def: 0.2, lo: 0.05, hi: 0.5, dU: 'mcg', dT: 'min', conc: 20, cU: 'mcg', wt: 'IBW', note: 'No bolus needed; chest-wall rigidity with rapid boluses. Plan longer-acting analgesia before stopping' },
       { name: 'Fentanyl', group: 'sedation', astm: 'astm-opioid', label: 'Opioid', def: 2, lo: 1, hi: 5, dU: 'mcg', dT: 'hr', conc: 10, cU: 'mcg', wt: 'IBW', note: 'Intraop 1–3; ICU sedation 1–4 mcg/kg/hr' },
       { name: 'Dexmedetomidine (Precedex)', group: 'sedation', astm: 'astm-other', label: 'Sedative', def: 0.5, lo: 0.2, hi: 1, dU: 'mcg', dT: 'hr', conc: 4, cU: 'mcg', wt: 'IBW', note: 'Up to 1.5–2 mcg/kg/hr in ICU. Bradycardia/hypotension, especially with the load', load: { lo: 0.5, hi: 1, u: 'mcg', over: 'over 10 min (optional)' } },
-      { name: 'Ketamine', group: 'sedation', astm: 'astm-induction', label: 'Induction', def: 0.3, lo: 0.1, hi: 0.5, dU: 'mg', dT: 'hr', conc: 1, cU: 'mg', wt: 'IBW', note: 'Analgesic 0.1–0.5; sedation 0.5–2 mg/kg/hr' },
-      { name: 'Midazolam', group: 'sedation', astm: 'astm-benzo', label: 'Benzo', def: 0.1, lo: 0.05, hi: 0.2, dU: 'mg', dT: 'hr', conc: 1, cU: 'mg', wt: 'IBW', note: 'Accumulates in prolonged infusions and with renal impairment' },
+      { name: 'Ketamine', group: 'sedation', astm: 'astm-induction', label: 'Induction', def: 5, lo: 2, hi: 8, dU: 'mcg', dT: 'min', conc: 1, cU: 'mg', wt: 'IBW', note: 'Analgesic 2–8 mcg/kg/min; sedation 10–30 mcg/kg/min' },
+      { name: 'Midazolam', group: 'sedation', astm: 'astm-benzo', label: 'Benzo', def: 1.5, lo: 1, hi: 3, dU: 'mcg', dT: 'min', conc: 1, cU: 'mg', wt: 'IBW', note: 'Accumulates in prolonged infusions and with renal impairment' },
       { name: 'Morphine', group: 'sedation', astm: 'astm-opioid', label: 'Opioid', def: 20, lo: 10, hi: 40, dU: 'mcg', dT: 'hr', conc: 1, cU: 'mg', wt: 'IBW', note: 'Neonates 5–10 mcg/kg/hr' },
       { name: 'Hydromorphone', group: 'sedation', astm: 'astm-opioid', label: 'Opioid', def: 4, lo: 3, hi: 5, dU: 'mcg', dT: 'hr', conc: 0.2, cU: 'mg', wt: 'IBW' },
-      { name: 'Lidocaine (analgesic)', group: 'sedation', astm: 'astm-local', label: 'Local', def: 1.5, lo: 1, hi: 2, dU: 'mg', dT: 'hr', conc: 10, cU: 'mg', wt: 'IBW', note: 'Counts toward the local anesthetic maximum; stop if signs of LAST', load: { lo: 1, hi: 1.5, u: 'mg', over: 'over 10 min' } },
+      { name: 'Lidocaine (analgesic)', group: 'sedation', astm: 'astm-local', label: 'Local', def: 25, lo: 15, hi: 33, dU: 'mcg', dT: 'min', conc: 10, cU: 'mg', wt: 'IBW', note: 'Counts toward the local anesthetic maximum; stop if signs of LAST', load: { lo: 1, hi: 1.5, u: 'mg', over: 'over 10 min' } },
 
       { name: 'Rocuronium', group: 'nmb', astm: 'astm-paralytic', label: 'Relaxant', def: 10, lo: 7, hi: 12, dU: 'mcg', dT: 'min', conc: 10, cU: 'mg', wt: 'IBW', note: 'Titrate to train-of-four' },
       { name: 'Cisatracurium', group: 'nmb', astm: 'astm-paralytic', label: 'Relaxant', def: 2, lo: 1, hi: 4, dU: 'mcg', dT: 'min', conc: 2, cU: 'mg', wt: 'IBW', note: 'Organ-independent (Hofmann) elimination; titrate to train-of-four' },
@@ -691,7 +691,7 @@
       { name: 'Alprostadil (PGE₁)', group: 'vaso', astm: 'astm-other', label: 'Prostaglandin', def: 0.05, lo: 0.01, hi: 0.1, dU: 'mcg', dT: 'min', conc: 10, cU: 'mcg', wt: 'TBW', note: 'Keeps the ductus arteriosus open in duct-dependent lesions. Apnea risk: be ready to ventilate' },
 
       { name: 'Insulin (regular)', group: 'other', astm: 'astm-other', label: 'Insulin', def: 0.05, lo: 0.02, hi: 0.1, dU: 'U', dT: 'hr', conc: 1, cU: 'U', wt: 'TBW', note: 'Check glucose and K⁺ hourly; add dextrose as glucose falls' },
-      { name: 'Dextrose 10% (GIR)', group: 'other', astm: 'astm-other', label: 'Glucose', def: 4, lo: 2, hi: 8, dU: 'mg', dT: 'min', conc: 100, cU: 'mg', wt: 'TBW', note: 'Glucose infusion rate (mg/kg/min). Neonates usually need 4–8' }
+      { name: 'Dextrose 10% (GIR)', fixedUnit: true, group: 'other', astm: 'astm-other', label: 'Glucose', def: 4, lo: 2, hi: 8, dU: 'mg', dT: 'min', conc: 100, cU: 'mg', wt: 'TBW', note: 'Glucose infusion rate (mg/kg/min). Neonates usually need 4–8' }
     ];
     const INF_GROUPS = { sedation: 'Anesthesia & Sedation', nmb: 'Neuromuscular Blockers', vaso: 'Vasoactive', other: 'Other' };
     let infFilter = 'all';
@@ -992,16 +992,36 @@
     // Show large microgram amounts in mg for readability.
     const fmtAmt = (v, u) => (u === 'mcg' && v >= 1000 ? `${fmt(v / 1000)} mg` : `${fmt(v)} ${u}`);
 
+    // Current dose unit per row; mass-based drugs can switch between mcg/kg/min, mcg/kg/hr and mg/kg/hr.
+    const infUnit = INFUSIONS.map((f) => ({ u: f.dU, t: f.dT }));
+    const switchable = (f) => !f.fixedUnit && (f.dU === 'mcg' || f.dU === 'mg');
+    const MASS_UNITS = [['mcg', 'min'], ['mcg', 'hr'], ['mg', 'hr']];
+    // Convert a per-kg dose between units (via mcg/kg/min).
+    const convDose = (v, from, to) => (v * UNIT_BASE[from.u] / (from.t === 'hr' ? 60 : 1)) * (to.t === 'hr' ? 60 : 1) / UNIT_BASE[to.u];
+    const roundDose = (v) => parseFloat(v.toPrecision(3));
+
+    function onInfUnitChange(i, value) {
+      const [u, t] = value.split('|');
+      const from = infUnit[i], to = { u, t };
+      const inp = $('inf-d-' + i), v = parseFloat(inp.value);
+      if (Number.isFinite(v)) inp.value = roundDose(convDose(v, from, to));
+      infUnit[i] = to;
+      updateInfusions(lastW);
+    }
+
     function buildInfusions() {
       let html = '', last = null;
       INFUSIONS.forEach((f, i) => {
+        const unitCtl = switchable(f)
+          ? `<select class="mini-select" id="inf-u-${i}" onchange="onInfUnitChange(${i}, this.value)" aria-label="${f.name} dose unit" style="width:100%; margin-bottom:4px;">${MASS_UNITS.map(([u, t]) => `<option value="${u}|${t}"${u === f.dU && t === f.dT ? ' selected' : ''}>${u}/kg/${t}</option>`).join('')}</select>`
+          : `<label for="inf-d-${i}">Dose (${unitLabel(f.dU)}/kg/${f.dT})</label>`;
         if (f.group !== last) { html += `<div class="inf-section" data-group="${f.group}">${INF_GROUPS[f.group]}</div>`; last = f.group; }
         html += `<div class="inf-row" data-group="${f.group}" data-i="${i}">
           <div class="inf-head">
-            <div class="inf-name">${f.name}<small>usual ${fmt(f.lo)}–${fmt(f.hi)} ${unitLabel(f.dU)}/kg/${f.dT}${f.note ? ' · ' + f.note : ''}</small><span class="wt-slot"></span></div>
+            <div class="inf-name">${f.name}<small><span id="inf-usual-${i}"></span>${f.note ? ' · ' + f.note : ''}</small><span class="wt-slot"></span></div>
             <span class="astm-tag ${f.astm}">${f.label}</span>
           </div>
-          <div class="inf-field"><label for="inf-d-${i}">Dose (${unitLabel(f.dU)}/kg/${f.dT})</label>
+          <div class="inf-field">${unitCtl}
             <input type="number" inputmode="decimal" step="any" min="0" id="inf-d-${i}" value="${f.def}" /></div>
           <div class="inf-field"><label for="inf-c-${i}">Syringe (${f.cU}/mL)</label>
             <input type="number" inputmode="decimal" step="any" min="0" id="inf-c-${i}" value="${f.conc}" /></div>
@@ -1023,12 +1043,15 @@
         row.classList.toggle('hidden', infFilter !== 'all' && infFilter !== f.group);
         const doseIn = $('inf-d-' + i), concIn = $('inf-c-' + i);
         const d = parseFloat(doseIn.value), c = parseFloat(concIn.value);
-        doseIn.classList.toggle('out-range', Number.isFinite(d) && (d < f.lo || d > f.hi));
+        const cur = infUnit[i], base = { u: f.dU, t: f.dT };
+        const lo = convDose(f.lo, base, cur), hi = convDose(f.hi, base, cur);
+        $('inf-usual-' + i).textContent = `usual ${fmt(roundDose(lo))}–${fmt(roundDose(hi))} ${unitLabel(cur.u)}/kg/${cur.t}`;
+        doseIn.classList.toggle('out-range', Number.isFinite(d) && (d < lo * 0.999 || d > hi * 1.001));
         const r = $('inf-r-' + i), a = $('inf-a-' + i);
         row.querySelector('.wt-slot').innerHTML = has ? basisTag(W, f.wt) : '';
         if (!has || !(d >= 0) || !(c > 0)) { r.textContent = '—'; a.textContent = ''; if (f.load) $('inf-l-' + i).innerHTML = ''; return; }
         const w = W[f.wt];
-        const perHrBase = d * w * (f.dT === 'min' ? 60 : 1) * UNIT_BASE[f.dU];
+        const perHrBase = d * w * (cur.t === 'min' ? 60 : 1) * UNIT_BASE[cur.u];
         const rate = perHrBase / (c * UNIT_BASE[f.cU]);
         r.textContent = (rate >= 100 ? rate.toFixed(0) : rate >= 10 ? rate.toFixed(1) : rate.toFixed(2)) + ' mL/hr';
         const amt = perHrBase / UNIT_BASE[f.cU];

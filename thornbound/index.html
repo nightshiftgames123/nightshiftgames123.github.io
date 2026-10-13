@@ -91,7 +91,7 @@
   .arrow:hover, .arrow:focus-visible { border-color: var(--gold-dim); outline: none; }
   .charcard { display: flex; gap: 12px; align-items: center; text-align: left; background: var(--panel); border: 2px solid var(--line);
               border-radius: 8px; padding: 8px 12px; min-width: 0; min-height: 84px; }
-  .charcard canvas { width: 56px; height: 72px; image-rendering: pixelated; flex: none; background: #0c0d13; border-radius: 4px; }
+  .charcard canvas { width: 64px; height: 68px; image-rendering: pixelated; flex: none; background: #0c0d13; border-radius: 4px; }
   .charcard .cname { font-size: 18px; font-weight: 700; color: var(--gold); }
   .charcard .cdesc { font-size: 13px; color: var(--dim); line-height: 1.35; }
   .charcard.locked canvas { filter: brightness(0); }
@@ -185,7 +185,7 @@
     <div class="charsel">
       <button class="arrow" id="charPrev" aria-label="Previous character">◄</button>
       <div class="charcard" id="charCard">
-        <canvas id="charPortrait" width="16" height="23"></canvas>
+        <canvas id="charPortrait" width="43" height="46"></canvas>
         <div><div class="cname" id="charName"></div><div class="cdesc" id="charDesc"></div></div>
       </div>
       <button class="arrow" id="charNext" aria-label="Next character">►</button>

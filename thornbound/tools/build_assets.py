@@ -49,6 +49,11 @@ meta['ghost']=sheet(f'{SRC}/ghost-sheet.jpg',{
  'up':(195,370,[0,1,2,3,4]),'upAtk':(195,370,[5]),
  'side':(400,560,[0,1,2,3,4,5]),'sideAtk':(400,560,[6]),
 },'ghost',[0.25,0.5])
+meta['wizard']=sheet(f'{SRC}/wizard-sheet.jpg',{
+ 'down':(5,186,[0,1,2,3,4,5]),'downAtk':(5,186,[6]),
+ 'up':(192,374,[0,1,2,3,4]),'upAtk':(192,374,[5]),
+ 'side':(382,565,[0,1,2,3,4,5]),'sideAtk':(382,565,[6]),
+},'wizard',[0.25])
 # crystal icon
 c=Image.open(f'{SRC}/crystal.jpg').convert('RGB')
 arr=np.asarray(c).astype(np.float32); a=np.clip((arr.max(axis=2)-25)/45,0,1)

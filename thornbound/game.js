@@ -19,6 +19,9 @@ const SPRITES = {
     anims: { down: [0, 1, 2, 3, 4, 5], downAtk: [6], up: [7, 8, 9, 10, 11], upAtk: [12], side: [13, 14, 15, 16, 17], sideAtk: [18, 19] } },
   ghost: { scales: { 0.25: { file: 'ghost@0.25.png', w: 43, h: 44 }, 0.5: { file: 'ghost@0.5.png', w: 86, h: 88 } },
     anims: { down: [0, 1, 2, 3, 4, 5], downAtk: [6], up: [7, 8, 9, 10, 11], upAtk: [12], side: [13, 14, 15, 16, 17, 18], sideAtk: [19] } },
+  // hero: only the walk frames that show the staff, so it doesn't blink in and out
+  wizard: { scales: { 0.25: { file: 'wizard@0.25.png', w: 43, h: 46 } },
+    anims: { down: [1, 3, 5], downAtk: [6], up: [7, 10, 11], upAtk: [12], side: [13, 14, 15, 16, 17, 18], sideAtk: [19] } },
 };
 
 const THEMES = [
@@ -106,17 +109,17 @@ const FEATS = {
 const SKILL_LOCK = { vamp: 'banshee', bounce: 'twins', orbit: 'slayer', rear: 'hoarder', frost: 'level10' };
 
 const CHARS = {
-  wanderer: { name: 'Wanderer', desc: '3 hearts. Balanced shards.', lock: null,
-    hp: 6, dmg: 3.5, fd: 0.42, speed: 118, range: 200, shot: 230, skills: {}, pal: {} },
+  wanderer: { name: 'Wanderer', desc: '3 hearts. Balanced crystal shards.', lock: null,
+    hp: 6, dmg: 3.5, fd: 0.42, speed: 118, range: 200, shot: 230, skills: {}, tint: null },
   thornknight: { name: 'Thornknight', desc: '4 hearts, heavy slow shards, slower feet. Starts with Thorn Mantle.', lock: 'warlord',
     hp: 8, dmg: 4.6, fd: 0.56, speed: 106, range: 175, shot: 215, skills: { mantle: 1 },
-    pal: { H: '#6b7a3c', h: '#45512a', C: '#5a3b2a', c: '#3c261b', e: '#ffb26a', t: '#c0c4c8', g: '#e05040' } },
+    tint: [-105, 0.9, 0.95] },
   seer: { name: 'Seer', desc: '2 hearts, rapid long-range shards. Starts with Seeking Runes.', lock: 'depths',
     hp: 4, dmg: 3.0, fd: 0.32, speed: 124, range: 240, shot: 250, skills: { homing: 1 },
-    pal: { H: '#7a4f9a', h: '#4f3068', C: '#3b2752', c: '#28193a', e: '#ffd6ff', g: '#d48cff' } },
+    tint: [55, 1.1, 1] },
   revenant: { name: 'Revenant', desc: '3 hearts. Starts with Split Shard and an Orbiting Crystal.', lock: 'victory',
     hp: 6, dmg: 3.2, fd: 0.44, speed: 120, range: 200, shot: 230, skills: { split: 1, orbit: 1 },
-    pal: { H: '#cfcac0', h: '#9a958a', C: '#8a8478', c: '#625d54', s: '#1a0a0a', e: '#ff5a5a', t: '#a03030', g: '#ff7a7a' } },
+    tint: [0, 0.12, 1.35] },
 };
 const charUnlocked = (id) => !CHARS[id].lock || SAVE.feats[CHARS[id].lock];
 
@@ -195,36 +198,8 @@ function glowSprite(r, color) {
 const GLOW = {};
 const LIGHT = glowSprite(64, 'rgba(255,255,255,1)');
 
-// ---- player pixel sprites (one palette per character)
-const BASE_PAL = { k: '#0b0d14', H: '#46598a', h: '#2a3557', s: '#06070c', e: '#a8faff', t: '#dcae4e', g: '#62dcff', C: '#2f3d61', c: '#1d2642', w: '#cfbc9e', b: '#5a3e2a' };
-const P_FRONT = ['......kk', '....kkHH', '...kHHHH', '..kHHHhh', '..kHHhkk', '.kHHhkss', '.kHhkess', '.kHhksss', '.kHhhkkk', 'kHHhhhtt',
-  'kHhCCCCg', 'khCCCCCC', 'kwkCcCCC', 'kwkCcCCC', '.kkCcCCC', '.kCCcCCC', '.kCcCCCC', '.kCcCCCC', '.kccCCCc', '..kkkkkk'];
-const P_BACK = ['......kk', '....kkHH', '...kHHHH', '..kHHHHH', '..kHHHHH', '.kHHHHHh', '.kHHHHhh', '.kHHHhhh', '.kHHhhhh', 'kHHhhhhh',
-  'kHhCCCCC', 'khCCCCCC', 'kwkCCCCC', 'kwkCCcCC', '.kkCCcCC', '.kCCCcCC', '.kCCCcCC', '.kCcCcCC', '.kccCcCc', '..kkkkkk'];
-const P_SIDE = ['......kkkk......', '....kkHHHHk.....', '...kHHHHHHHk....', '..kHHHHHHhhHk...', '..kHHHHHhhkkk...', '.kHHHHHhkssssk..',
-  '.kHHHHhhksssek..', '.kHHHHhhkssssk..', '.kHHHhhhhkkkk...', 'kHHHhhhhhttk....', 'kHHhCCCCCCgk....', 'khhCCCCCCCCk....',
-  'khCCCCCCCwwk....', 'kCCCcCCCCkk.....', 'kCCCcCCCCCk.....', '.kCCcCCCCCk.....', '.kCCcCCCCCk.....', '.kCcCCCCCck.....', '.kcCCCCCcck.....', '..kkkkkkkk......'];
-const mirror = (rows) => rows.map((r) => r + r.split('').reverse().join(''));
-function paintMap(x, rows, pal) {
-  rows.forEach((row, y) => { for (let i = 0; i < row.length; i++) { const ch = row[i]; if (ch === '.') continue; x.fillStyle = pal[ch]; x.fillRect(i, y, 1, 1); } });
-}
-const CHAR_FRAMES = {};
-function buildPlayer(pal) {
-  const maps = { down: mirror(P_FRONT), up: mirror(P_BACK), side: P_SIDE }, out = { down: [], up: [], side: [] };
-  for (const dir of ['down', 'up', 'side']) {
-    for (let f = 0; f < 3; f++) { // 0 idle, 1/2 stride
-      const c = mk(16, 23), x = c.getContext('2d');
-      const feet = dir === 'side' ? [[3, f === 1 ? -1 : f === 2 ? 1 : 0], [7, f === 1 ? 1 : f === 2 ? -1 : 0]] : [[4, 0], [9, 0]];
-      feet.forEach(([fx, dx], i) => {
-        const lift = dir !== 'side' && f && (f === 1) === (i === 0) ? -1 : 0;
-        x.fillStyle = pal.b; x.fillRect(fx + dx, 20 + lift, 3, 2); x.fillStyle = pal.k; x.fillRect(fx + dx, 22 + lift, 3, 1);
-      });
-      paintMap(x, maps[dir], pal);
-      out[dir].push(c);
-    }
-  }
-  return out;
-}
+// ---- hero sprite sheets, one recoloured wizard per character
+const CHAR_SHEETS = {};
 // hearts for the HUD (and, scaled up, the Thornheart itself)
 const HEART = ['.kk...kk.', 'kRRk.kRRk', 'kWRRkRRRk', 'kRRRRRRRk', '.kRRRRRk.', '..kRRRk..', '...kRk...', '....k....'];
 const HEARTS = {};
@@ -355,12 +330,12 @@ function makePlayer(charId) {
     dmg: c.dmg + upRank('might') * 0.3, fireDelay: c.fd * (1 - upRank('haste') * 0.04), shotSpeed: c.shot, range: c.range, speed: c.speed,
     luck: upRank('fortune'), revive: upRank('secondwind'),
     skills: { ...c.skills }, level: 1, xp: 0, crystals: 0, inv: 0, fireCd: 0, face: 'down', flip: false, anim: 0, kills: 0, vampKills: 0,
-    orbA: 0, orbHits: new Map(), stepT: 0 };
+    orbA: 0, orbHits: new Map(), stepT: 0, castT: 0 };
 }
 const xpNeed = (lv) => 10 + (lv - 1) * 8;
 
 function newRun(charId) {
-  G = { floor: 1, asc: SAVE.asc, player: makePlayer(charId), frames: CHAR_FRAMES[charId], tears: [], ebul: [], enemies: [], parts: [], texts: [], hazards: [],
+  G = { floor: 1, asc: SAVE.asc, player: makePlayer(charId), sheet: CHAR_SHEETS[charId], tears: [], ebul: [], enemies: [], parts: [], texts: [], hazards: [],
     shake: 0, freeze: 0, trans: null, fade: null, banner: null, toasts: [], pendingLv: 0, lvDelay: 0, time: 0, flow: null, flowKey: '',
     bosses: [], dying: 0, slowmo: 0, kills: 0, bossesKilled: 0, newFeats: [], victoryT: 0, ended: false };
   for (let i = 0; i < upRank('legacy'); i++) { const opts = availableUpgrades('skill'); if (opts.length) applyUpgrade(pick(opts)); }
@@ -980,6 +955,7 @@ function playerShoot(ax, ay) {
   const base = Math.atan2(ay, ax), n = 1 + (p.skills.split || 0), spread = 0.17;
   for (let i = 0; i < n; i++) { const a = base + (i - (n - 1) / 2) * spread; fireTear(p.x + Math.cos(a) * 5, p.y - 8 + Math.sin(a) * 4, Math.cos(a), Math.sin(a)); }
   if (p.skills.rear) fireTear(p.x, p.y - 8, -Math.cos(base), -Math.sin(base));
+  p.castT = 0.16;
   SFX.play('shoot');
 }
 function slashFx(x, y, ang, color, size = 14) { G.parts.push({ x, y, vx: 0, vy: 0, t: 0.16, max: 0.16, color, size, arc: ang, grav: 0 }); }
@@ -1105,6 +1081,7 @@ function update(dt) {
 function updatePlayer(dt) {
   const p = G.player, room = G.room;
   if (p.inv > 0) p.inv -= dt;
+  if (p.castT > 0) p.castT -= dt;
   const accel = 14;
   p.vx = lerp(p.vx, input.mx * p.speed, Math.min(1, accel * dt)); p.vy = lerp(p.vy, input.my * p.speed, Math.min(1, accel * dt));
   p.x += p.vx * dt; p.y += p.vy * dt;
@@ -1493,19 +1470,23 @@ function drawBullet(b) {
     ctx.fillStyle = '#fff'; ctx.fillRect(b.x - 1, b.y - 2, 2, 2);
   }
 }
+function heroFrame(p) {
+  const A = G.sheet.anims;
+  if (p.castT > 0) { const atk = A[p.face + 'Atk']; return atk[0]; }
+  const walk = A[p.face];
+  return hyp(p.vx, p.vy) > 12 ? walk[Math.floor(p.anim) % walk.length] : walk[0];
+}
 function drawPlayer() {
-  const p = G.player;
+  const p = G.player, S = G.sheet;
   if (p.hp <= 0 && !G.dying) return;
   if (p.inv > 0 && Math.floor(p.inv * 14) % 2 === 0 && !G.dying) return;
-  const stride = hyp(p.vx, p.vy) > 12 ? 1 + (Math.floor(p.anim) % 2) : 0;
-  const img = G.frames[p.face][stride];
-  const bob = stride ? (Math.floor(p.anim) % 2 ? -1 : 0) : Math.round(Math.sin(G.time * 2.5) * 0.5);
-  const x = Math.round(p.x * 2) / 2 - 8, y = Math.round(p.y * 2) / 2 + 5 - 23 + bob;
+  const frame = heroFrame(p), w = S.w, h = S.h;
+  const x = Math.round(p.x * 2) / 2 - w / 2, y = Math.round(p.y * 2) / 2 + p.r * 0.6 - h;
   ctx.save();
   if (G.dying) ctx.globalAlpha = clamp(G.dying / 1.4, 0, 1);
-  if (p.flip) { ctx.translate(x + 16, y); ctx.scale(-1, 1); ctx.drawImage(img, 0, 0); } else ctx.drawImage(img, x, y);
+  if (p.flip) { ctx.translate(x + w, y); ctx.scale(-1, 1); } else ctx.translate(x, y);
+  ctx.drawImage(S.img, frame * w, 0, w, h, 0, 0, w, h);
   ctx.restore();
-  if (p.face !== 'up') { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.5; ctx.drawImage(GLOW.cyan, p.x - 7 + (p.face === 'side' ? (p.flip ? -4 : 4) : 0), y + 1, 14, 12); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; }
 }
 function drawEnemy(e) {
   const S = e.sheet; if (!S) return;
@@ -1695,7 +1676,7 @@ function renderTitle() {
   $('charCard').classList.toggle('locked', !ok);
   $('charName').textContent = ok ? c.name : `${c.name} (locked)`;
   $('charDesc').textContent = ok ? c.desc : `${FEATS[c.lock].desc} to unlock.`;
-  const pc = $('charPortrait'), x = pc.getContext('2d'); x.clearRect(0, 0, 16, 23); x.drawImage(CHAR_FRAMES[SAVE.char].down[0], 0, 0);
+  const S = CHAR_SHEETS[SAVE.char], f = S.anims.down[0], pc = $('charPortrait'), x = pc.getContext('2d'); x.clearRect(0, 0, pc.width, pc.height); x.drawImage(S.img, f * S.w, 0, S.w, S.h, 0, 0, S.w, S.h);
   $('btnStart').disabled = !ok;
   $('ascRow').hidden = SAVE.ascMax < 1;
   $('ascVal').textContent = SAVE.asc;
@@ -1764,7 +1745,7 @@ function renderLevelUp() {
   const pc = $('lvPortrait'), px = pc.getContext('2d'); px.imageSmoothingEnabled = false; px.clearRect(0, 0, 44, 44);
   px.fillStyle = '#121019'; px.fillRect(0, 0, 44, 44);
   const g = px.createRadialGradient(22, 24, 2, 22, 24, 22); g.addColorStop(0, 'rgba(79,195,255,0.35)'); g.addColorStop(1, 'rgba(0,0,0,0)'); px.fillStyle = g; px.fillRect(0, 0, 44, 44);
-  px.drawImage(G.frames.down[0], 6, 5, 32, 46);
+  const S = G.sheet, f = S.anims.down[0]; px.drawImage(S.img, f * S.w, 0, S.w, S.h, 2, 0, 40, 43);
 }
 function lvKey(k) {
   if (!LV) return;
@@ -1822,7 +1803,7 @@ async function boot() {
   await Promise.all([
     loadImg('goblin', 'assets/goblin@0.25.png'), loadImg('goblinBig', 'assets/goblin@0.5.png'),
     loadImg('ghost', 'assets/ghost@0.25.png'), loadImg('ghostBig', 'assets/ghost@0.5.png'),
-    loadImg('c16', 'assets/crystal16.png'), loadImg('c32', 'assets/crystal32.png'), loadImg('floor', 'assets/floor.jpg'),
+    loadImg('wizard', 'assets/wizard@0.25.png'), loadImg('c16', 'assets/crystal16.png'), loadImg('c32', 'assets/crystal32.png'), loadImg('floor', 'assets/floor.jpg'),
   ]);
   try { await document.fonts.load('700 12px "Pixelify Sans"'); } catch (e) {}
   SHEETS.goblin = makeSheet('goblin', 0.25, IMG.goblin);
@@ -1833,7 +1814,7 @@ async function boot() {
   SHEETS.ghostB = makeSheet('ghost', 0.5, variant(IMG.ghostBig, 140, 1.4, 1));
   GLOW.cyan = glowSprite(16, 'rgba(90,200,255,0.9)'); GLOW.teal = glowSprite(16, 'rgba(110,240,210,0.8)'); GLOW.violet = glowSprite(16, 'rgba(200,110,255,0.85)');
   GLOW.green = glowSprite(16, 'rgba(140,220,90,0.7)'); GLOW.red = glowSprite(16, 'rgba(255,80,90,0.8)'); GLOW.gold = glowSprite(16, 'rgba(255,200,100,0.8)');
-  for (const id in CHARS) CHAR_FRAMES[id] = buildPlayer({ ...BASE_PAL, ...CHARS[id].pal });
+  for (const id in CHARS) { const t = CHARS[id].tint; CHAR_SHEETS[id] = makeSheet('wizard', 0.25, t ? variant(IMG.wizard, ...t) : IMG.wizard); }
   buildHearts();
   demoRoom(); showTitle();
   requestAnimationFrame((t) => { last = t; requestAnimationFrame(frame); });

@@ -13,7 +13,7 @@
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Alegreya+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 <title>Thornbound</title>
 <style>
   :root {
@@ -29,7 +29,8 @@
     --dim: #8d8a99;
     --bad: #ff8a7a;
     --ok: #8fdc7a;
-    --font: "Pixelify Sans", ui-monospace, monospace;
+    --font: "Alegreya Sans", "Segoe UI", system-ui, sans-serif;
+    --display: "Cinzel", Georgia, serif;
     color-scheme: dark;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -43,7 +44,7 @@
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   }
   #stage.portrait-touch { align-items: flex-start; padding-top: calc(env(safe-area-inset-top) + 8px); }
-  #game { display: block; image-rendering: pixelated; image-rendering: crisp-edges; background: #000;
+  #game { display: block; background: #000;
           box-shadow: 0 0 0 2px #191c24, 0 12px 40px rgba(0,0,0,.6); }
 
   /* Touch sticks */
@@ -64,22 +65,22 @@
              touch-action: pan-y; }
   .overlay.hidden { display: none; }
   .card { text-align: center; max-width: 420px; width: 100%; margin: auto; display: flex; flex-direction: column; align-items: center; gap: 10px; }
-  .card h1 { font-size: clamp(40px, 11vw, 60px); margin: 0; letter-spacing: .06em; color: var(--gold); line-height: 1;
+  .card h1 { font-family: var(--display); font-size: clamp(34px, 10vw, 54px); margin: 0; letter-spacing: .04em; color: var(--gold); line-height: 1;
              text-shadow: 0 3px 0 #5a3a12, 0 0 24px rgba(232,182,90,.35); }
-  .card h2 { font-size: 30px; margin: 0; color: var(--gold); text-wrap: balance; }
+  .card h2 { font-family: var(--display); font-size: 28px; margin: 0; color: var(--gold); text-wrap: balance; }
   .card .tag { color: var(--rune); letter-spacing: .3em; font-size: 13px; margin: 0 0 6px; }
   .card p { color: var(--dim); line-height: 1.5; margin: 0; }
-  .btn { font-family: var(--font); font-size: 20px; font-weight: 700; color: #f6dfae; cursor: pointer;
+  .btn { font-family: var(--display); font-size: 19px; font-weight: 700; color: #f6dfae; cursor: pointer;
          background: linear-gradient(#3a2f2a, #221a17); border: 2px solid var(--gold-dim); border-radius: 6px;
          padding: 12px 34px; box-shadow: 0 0 0 2px #120d0b, 0 0 18px rgba(232,182,90,.2); }
   .btn:hover, .btn:focus-visible { border-color: var(--gold); outline: none; box-shadow: 0 0 0 2px #120d0b, 0 0 22px rgba(232,182,90,.45); }
   .btn:disabled { opacity: .45; cursor: default; box-shadow: none; }
   .btn.small { font-size: 15px; padding: 8px 16px; }
-  .btn img { width: 14px; height: 14px; vertical-align: -2px; image-rendering: pixelated; }
+  .btn img { width: 15px; height: 15px; vertical-align: -2px; }
   .btnrow { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
   .controls { font-size: 14px; color: var(--dim); line-height: 1.7; }
   .controls b { color: var(--text); font-weight: 600; }
-  .title-crystal { width: 80px; height: 80px; image-rendering: pixelated; animation: bob 2.4s ease-in-out infinite;
+  .title-crystal { width: 88px; height: 88px; animation: bob 2.4s ease-in-out infinite;
                    filter: drop-shadow(0 0 18px rgba(79,195,255,.6)); }
   @keyframes bob { 50% { transform: translateY(-8px); } }
   @media (prefers-reduced-motion: reduce) { .title-crystal { animation: none; } }
@@ -91,8 +92,8 @@
   .arrow:hover, .arrow:focus-visible { border-color: var(--gold-dim); outline: none; }
   .charcard { display: flex; gap: 12px; align-items: center; text-align: left; background: var(--panel); border: 2px solid var(--line);
               border-radius: 8px; padding: 8px 12px; min-width: 0; min-height: 84px; }
-  .charcard canvas { width: 64px; height: 68px; image-rendering: pixelated; flex: none; background: #0c0d13; border-radius: 4px; }
-  .charcard .cname { font-size: 18px; font-weight: 700; color: var(--gold); }
+  .charcard canvas { width: 72px; height: 72px; flex: none; background: #0c0d13; border-radius: 4px; }
+  .charcard .cname { font-family: var(--display); font-size: 18px; font-weight: 700; color: var(--gold); }
   .charcard .cdesc { font-size: 13px; color: var(--dim); line-height: 1.35; }
   .charcard.locked canvas { filter: brightness(0); }
   .charcard.locked .cname { color: var(--dim); }
@@ -104,7 +105,7 @@
 
   /* Shrine / feats / summaries */
   .bank { font-size: 18px; color: var(--text); display: flex; align-items: center; gap: 6px; }
-  .bank img { width: 20px; height: 20px; image-rendering: pixelated; }
+  .bank img { width: 22px; height: 22px; }
   .list { width: 100%; display: flex; flex-direction: column; gap: 8px; text-align: left; }
   .item { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; background: var(--panel);
           border: 2px solid var(--line); border-radius: 8px; padding: 10px 12px; }
@@ -118,7 +119,7 @@
   .buy { font-family: var(--font); font-size: 15px; font-weight: 700; color: #bff2ff; background: #142030; border: 2px solid #2b5a7a;
          border-radius: 6px; padding: 6px 10px; cursor: pointer; display: flex; align-items: center; gap: 5px; white-space: nowrap;
          font-variant-numeric: tabular-nums; }
-  .buy img { width: 13px; height: 13px; image-rendering: pixelated; }
+  .buy img { width: 14px; height: 14px; }
   .buy:disabled { color: var(--dim); border-color: var(--line); background: var(--panel); cursor: default; }
   .buy.max { color: var(--gold); border-color: #4a3d22; background: var(--panel); }
   .badge { font-size: 18px; width: 30px; text-align: center; }
@@ -136,37 +137,37 @@
   #levelup { padding: 8px; align-items: center; }
   .lvl { position: relative; height: min(96vh, 960px); aspect-ratio: 768 / 1376; container-type: inline-size; flex: none; max-width: 100%; }
   @media (max-height: 560px) { .lvl { height: auto; width: min(92vw, 380px); margin: auto; } #levelup { align-items: flex-start; } }
-  .lvl > img { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
+  .lvl > img { width: 100%; height: 100%; display: block; }
   .lvl .slot { position: absolute; }
-  .lv-num { left: 30%; width: 40%; top: 13.7%; text-align: center; font-size: 4.2cqw; color: var(--rune);
-            letter-spacing: .2em; text-shadow: 0 0 6px rgba(79,195,255,.6); }
-  .lv-portrait { left: 21%; top: 24.6%; width: 22%; height: 14.8%; image-rendering: pixelated; }
-  .lv-stats { left: 47.6%; top: 24.8%; width: 31%; height: 14.6%; color: var(--ink); font-size: 3.4cqw;
+  .lv-num { left: 30%; width: 40%; top: 17.4%; text-align: center; font-family: var(--display); font-size: 3.6cqw; color: var(--rune);
+            letter-spacing: .18em; text-shadow: 0 0 6px rgba(79,195,255,.6); }
+  .lv-portrait { left: 23.4%; top: 22.2%; width: 22%; height: 17%; }
+  .lv-stats { left: 54.2%; top: 25%; width: 22.4%; height: 14.6%; color: var(--ink); font-size: 3.3cqw;
               display: grid; grid-template-columns: 1fr auto; align-content: center; column-gap: 2cqw; row-gap: .1cqw; }
-  .lv-stats span:nth-child(odd) { font-weight: 600; opacity: .8; }
+  .lv-stats span:nth-child(odd) { font-weight: 500; opacity: .8; }
   .lv-stats span:nth-child(even) { text-align: right; font-weight: 700; }
   .lv-stats .up { color: #2f7a2a; }
-  .lv-choices { left: 20.6%; top: 46.4%; width: 59%; height: 11.2%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.6cqw; }
+  .lv-choices { left: 24.4%; top: 45.8%; width: 51.2%; height: 7.4%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.4cqw; }
   .choice { font-family: var(--font); background: #1a1720; border: .5cqw solid #3d3a48; border-radius: 1cqw; color: var(--text);
             display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .4cqw; padding: .8cqw;
             cursor: pointer; text-align: center; line-height: 1.05; }
   .choice .ic { font-size: 6cqw; line-height: 1; color: var(--rune); text-shadow: 0 0 8px rgba(79,195,255,.6); }
-  .choice .nm { font-size: 2.7cqw; font-weight: 600; }
+  .choice .nm { font-size: 2.7cqw; font-weight: 700; }
   .choice .lv { font-size: 2.3cqw; color: var(--dim); }
   .choice.sel { border-color: var(--gold); background: #2a2116; box-shadow: 0 0 2.4cqw rgba(232,182,90,.45) inset; }
   .choice.sel .ic { color: var(--gold); text-shadow: 0 0 8px rgba(232,182,90,.7); }
-  .lv-preview { left: 21%; top: 63.6%; width: 58%; height: 7.6%; color: var(--ink); font-size: 3.1cqw; display: flex;
+  .lv-preview { left: 23.8%; top: 58.8%; width: 52.4%; height: 9.6%; color: var(--ink); font-size: 3cqw; display: flex;
                 flex-direction: column; justify-content: center; align-items: center; text-align: center; line-height: 1.25; }
-  .lv-preview b { font-size: 3.6cqw; }
+  .lv-preview b { font-family: var(--display); font-size: 3.4cqw; }
   .lv-preview .diff { color: #2f6e28; font-weight: 700; }
-  .lv-xp { left: 38.5%; top: 76.7%; width: 9.5%; height: 3.4%; font-size: 3.2cqw; display: flex; align-items: center;
-           justify-content: center; color: var(--rune); }
-  .lv-reroll { left: 58.8%; top: 76.7%; width: 11.2%; height: 3.4%; font-family: var(--font); font-size: 3cqw;
+  .lv-xp { left: 35.6%; top: 73.9%; width: 12.6%; height: 2.2%; font-size: 2.9cqw; display: flex; align-items: center;
+           justify-content: center; color: var(--rune); font-weight: 700; }
+  .lv-reroll { left: 61.5%; top: 73.9%; width: 11.5%; height: 2.2%; font-family: var(--font); font-size: 3cqw; font-weight: 700;
                background: none; border: 0; color: var(--text); cursor: pointer; display: flex; align-items: center;
                justify-content: center; padding: 0; }
   .lv-reroll:disabled { color: #6c6878; cursor: default; }
-  .lv-reroll-label { left: 51%; top: 80.6%; width: 22%; text-align: center; font-size: 2.2cqw; color: var(--dim); }
-  .lv-confirm { left: 29.6%; top: 82.4%; width: 40.6%; height: 8.2%; background: none; border: 0; cursor: pointer; border-radius: 2cqw; }
+  .lv-reroll-label { left: 50%; top: 76.4%; width: 26%; text-align: center; font-size: 2.2cqw; color: var(--dim); }
+  .lv-confirm { left: 30.8%; top: 79.4%; width: 39.6%; height: 7%; background: none; border: 0; cursor: pointer; border-radius: 3cqw; }
   .lv-confirm:hover, .lv-confirm:focus-visible { box-shadow: 0 0 3cqw rgba(255,190,90,.5); outline: none; }
 </style>
 </head>
@@ -179,13 +180,13 @@
 
 <div class="overlay" id="title">
   <div class="card">
-    <img class="title-crystal" src="assets/crystal96.png" alt="">
+    <img class="title-crystal" src="assets/crystal160.webp" alt="">
     <h1>THORNBOUND</h1>
     <div class="tag">A ROGUELITE CRAWL</div>
     <div class="charsel">
       <button class="arrow" id="charPrev" aria-label="Previous character">◄</button>
       <div class="charcard" id="charCard">
-        <canvas id="charPortrait" width="43" height="46"></canvas>
+        <canvas id="charPortrait" width="144" height="144"></canvas>
         <div><div class="cname" id="charName"></div><div class="cdesc" id="charDesc"></div></div>
       </div>
       <button class="arrow" id="charNext" aria-label="Next character">►</button>
@@ -195,7 +196,7 @@
     </div>
     <button class="btn" id="btnStart">BEGIN</button>
     <div class="btnrow">
-      <button class="btn small" id="btnShrine">SHRINE · <img src="assets/crystal16.png" alt=""> <span id="bankTitle">0</span></button>
+      <button class="btn small" id="btnShrine">SHRINE · <img src="assets/crystal32.webp" alt=""> <span id="bankTitle">0</span></button>
       <button class="btn small" id="btnFeats">FEATS <span id="featCount"></span></button>
     </div>
     <p id="bestLine"></p>
@@ -210,7 +211,7 @@
   <div class="card">
     <h2>THE SHRINE</h2>
     <p>Crystals you carry out of a run are kept here. Spend them on lasting power.</p>
-    <div class="bank"><img src="assets/crystal32.png" alt=""><b id="bankShrine">0</b></div>
+    <div class="bank"><img src="assets/crystal64.webp" alt=""><b id="bankShrine">0</b></div>
     <div class="list" id="shrineList"></div>
     <button class="btn small" id="btnShrineBack">BACK</button>
   </div>
@@ -255,9 +256,9 @@
 
 <div class="overlay hidden" id="levelup">
   <div class="lvl">
-    <img src="assets/levelup.jpg" alt="">
+    <img src="assets/levelup.webp" alt="">
     <div class="slot lv-num" id="lvNum"></div>
-    <canvas class="slot lv-portrait" id="lvPortrait" width="44" height="44"></canvas>
+    <canvas class="slot lv-portrait" id="lvPortrait" width="172" height="236"></canvas>
     <div class="slot lv-stats" id="lvStats"></div>
     <div class="slot lv-choices" id="lvChoices"></div>
     <div class="slot lv-preview" id="lvPreview"></div>

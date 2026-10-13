@@ -131,6 +131,26 @@
     td.name small { display: block; font-weight: 400; color: var(--text-muted); font-size: 10px; margin-top: 2px; line-height: 1.35; }
     tr.section td { background: var(--section); color: var(--text-muted); font-size: 10px; text-transform: uppercase; letter-spacing: .05em; font-family: inherit; font-weight: 700; padding: 6px 10px; }
     .capped { color: var(--warn); font-size: 10px; display: block; font-weight: 600; }
+    .wt-basis { display: inline-block; margin-top: 3px; font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 4px; background: var(--info-bg); color: var(--info-text); border: 1px solid var(--info-border); font-family: inherit; }
+    .mini-select { width: auto; min-height: 30px; padding: 4px 8px; font-size: 12px; text-transform: none; letter-spacing: 0; }
+
+    /* Infusions */
+    .inf-section { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); font-weight: 700; padding: 8px 12px; background: var(--section); }
+    .inf-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--inset); align-items: end; }
+    .inf-head { grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+    .inf-name { font-weight: 600; color: var(--text-strong); }
+    .inf-name small { display: block; font-weight: 400; color: var(--text-muted); font-size: 10px; margin-top: 2px; line-height: 1.4; }
+    .inf-field label { display: block; font-size: 10px; color: var(--text-muted); margin-bottom: 2px; }
+    .inf-field .unit-wrap { display: flex; align-items: center; gap: 4px; }
+    .inf-field input { min-height: 36px; padding: 6px 8px; font-size: 15px; }
+    .inf-field .u { font-size: 10px; color: var(--text-muted); white-space: nowrap; }
+    .inf-rate { text-align: right; }
+    .inf-rate .r { font-family: ui-monospace, Menlo, monospace; font-weight: 800; color: var(--ok); font-size: 16px; display: block; white-space: nowrap; }
+    .inf-rate .a { font-size: 10px; color: var(--text-muted); font-family: ui-monospace, Menlo, monospace; }
+    .inf-extra { grid-column: 1 / -1; font-size: 11px; color: var(--text-soft); line-height: 1.45; }
+    .inf-extra .v { font-size: 11px; }
+    .out-range { color: var(--warn) !important; font-weight: 700; }
+    .astm-hypotensive { background: repeating-linear-gradient(135deg, var(--astm-pressor) 0 5px, #fff 5px 10px); color: var(--astm-pressor-text); }
     /* Phones: each drug becomes a compact card so dose & volume are always visible */
     @media (max-width: 640px) {
       table { min-width: 0; }
@@ -242,8 +262,19 @@
         <div class="grid-2 form-group">
           <div>
             <label for="height-val">Height (cm)</label>
-            <input type="number" id="height-val" inputmode="decimal" min="0" placeholder="optional" oninput="calculateAll()" />
+            <input type="number" id="height-val" inputmode="decimal" min="0" placeholder="for IBW / BMI" oninput="calculateAll()" />
           </div>
+          <div>
+            <label for="sex-val">Sex</label>
+            <select id="sex-val" onchange="calculateAll()">
+              <option value="" selected>—</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid-2 form-group">
           <div>
             <label for="npo-val">NPO (hrs)</label>
             <input type="number" id="npo-val" inputmode="decimal" min="0" placeholder="optional" oninput="calculateAll()" />
@@ -261,6 +292,38 @@
             <span class="metric-sub" id="metric-ebv-sub"></span>
           </div>
         </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Dosing Weight
+          <select id="scalar-mode" class="mini-select" onchange="calculateAll()" aria-label="Obesity weight scalars">
+            <option value="auto" selected>Obesity scalars: Auto</option>
+            <option value="on">Obesity scalars: On</option>
+            <option value="off">Obesity scalars: Off</option>
+          </select>
+        </div>
+        <div class="grid-2">
+          <div class="metric-badge">
+            <span class="metric-label">Total (actual) — TBW</span>
+            <span class="metric-val" id="wt-tbw">—</span>
+          </div>
+          <div class="metric-badge">
+            <span class="metric-label">Ideal — IBW</span>
+            <span class="metric-val" id="wt-ibw">—</span>
+            <span class="metric-sub" id="wt-ibw-sub"></span>
+          </div>
+          <div class="metric-badge">
+            <span class="metric-label">Adjusted — ABW</span>
+            <span class="metric-val" id="wt-abw">—</span>
+            <span class="metric-sub">IBW + 0.4 × (TBW − IBW)</span>
+          </div>
+          <div class="metric-badge">
+            <span class="metric-label">BMI</span>
+            <span class="metric-val" id="wt-bmi">—</span>
+            <span class="metric-sub" id="wt-bmi-sub"></span>
+          </div>
+        </div>
+        <div id="obesity-status" class="alert alert-info"></div>
       </div>
 
       <div class="card">
@@ -304,6 +367,7 @@
     <div>
       <div class="nav-tabs" role="tablist">
         <button class="tab-btn active" onclick="switchTab('tab-drugs', this)">💉 Drug Dosing</button>
+        <button class="tab-btn" onclick="switchTab('tab-infusions', this)">⏱ Infusions</button>
         <button class="tab-btn" onclick="switchTab('tab-fluids', this)">💧 Fluids &amp; Blood</button>
         <button class="tab-btn" onclick="switchTab('tab-ai', this)">🤖 AI Advisor</button>
       </div>
@@ -316,7 +380,7 @@
           <span class="pill" data-cat="paralytics">🟥 Relaxants &amp; Reversal</span>
           <span class="pill" data-cat="analgesics">🟦 Opioids &amp; Analgesia</span>
           <span class="pill" data-cat="adjuncts">🟩 Adjuncts</span>
-          <span class="pill" data-cat="pressors">🟪 Vasoactive</span>
+          <span class="pill" data-cat="pressors">🟪 Vasoactive bolus</span>
           <span class="pill" data-cat="local">⬜ Local (max)</span>
         </div>
 
@@ -339,6 +403,32 @@
           </div>
         </div>
         <p class="metric-sub">Volumes are calculated for the concentration shown under each drug. Check that it matches the vial or syringe you are using.</p>
+      </div>
+
+      <!-- TAB: INFUSIONS -->
+      <div id="tab-infusions" class="tab-pane">
+        <div class="pill-group" id="inf-pills">
+          <span class="pill active" data-group="all">All</span>
+          <span class="pill" data-group="sedation">Anesthesia &amp; Sedation</span>
+          <span class="pill" data-group="nmb">Relaxants</span>
+          <span class="pill" data-group="vaso">Vasoactive</span>
+          <span class="pill" data-group="other">Other</span>
+        </div>
+        <div id="inf-empty" class="alert alert-info">Enter the patient's weight to calculate infusion rates.</div>
+        <div class="card" style="padding:0; overflow:hidden;">
+          <div id="inf-list"></div>
+        </div>
+        <div class="card" id="ino-card">
+          <div class="card-title">Inhaled Nitric Oxide (iNO)</div>
+          <ul style="padding-left:16px; font-size:12px; line-height:1.6; color: var(--text-soft);">
+            <li><strong>Dose in ppm, not by weight:</strong> start <span class="v">20 ppm</span> (usual 5–20 ppm). Higher doses add little benefit and raise toxicity.</li>
+            <li><strong>Uses:</strong> pulmonary hypertensive crisis, PPHN, RV failure after cardiac surgery, hypoxemic respiratory failure.</li>
+            <li><strong>Wean</strong> stepwise to 5 ppm, then 1 ppm, before stopping. Abrupt withdrawal can cause <strong>rebound pulmonary hypertension</strong>. Have a backup delivery system for transport.</li>
+            <li><strong>Monitor</strong> methemoglobin (keep &lt;5%) and NO₂ on the delivery device.</li>
+            <li><strong>Caution:</strong> neonates dependent on right-to-left ductal shunting (e.g. HLHS) and LV dysfunction (may cause pulmonary edema).</li>
+          </ul>
+        </div>
+        <p class="metric-sub">Edit the dose or the syringe concentration to match your pump; the rate updates instantly. Standard concentrations vary by institution, so check every label.</p>
       </div>
 
       <!-- TAB 2: FLUIDS -->
@@ -497,6 +587,11 @@
         <p>• Oral ETT depth: ≥2 y = age/2 + 12; &lt;2 y ≈ 3 × ETT ID; neonate ≈ weight(kg) + 6</p>
         <p>• EBV: neonate 85, infant 80, child 75, adolescent 70 mL/kg</p>
         <p>• BSA (Mosteller) = √(height cm × weight kg / 3600)</p>
+        <p>• IBW, ages 1–18: height &lt;152.4 cm → height² × 1.65 / 1000; ≥152.4 cm → Devine (male 50 / female 45.5 kg + 2.3 kg per inch over 5 ft). Never exceeds TBW.</p>
+        <p>• ABW = IBW + 0.4 × (TBW − IBW)</p>
+        <p>• Obesity: BMI ≥ 95th percentile for age and sex (CDC 2000, ages 2–20), BMI ≥ 30 for adults. Not assessed under 2 years.</p>
+        <h4 style="color: var(--accent); margin: 12px 0 4px;">Weight used when obesity scalars are on</h4>
+        <div id="scalar-list"></div>
         <p>• Maintenance (Holliday-Segar 4-2-1)</p>
         <p>• MH Hotline (MHAUS, US/Canada): <a href="tel:18006449737" style="color: var(--accent);">1-800-644-9737</a>; outside US: +1-209-417-3722</p>
       </div>
@@ -511,54 +606,98 @@
     // conc: concentration in unit/mL. kind 'max' = maximum allowable dose (local anesthetics).
     const DRUG_DB = [
       // Induction / sedation
-      { name: 'Propofol', cat: 'induction', astm: 'astm-induction', label: 'Induction', dose: 3, range: '2.5–3.5', unit: 'mg', conc: 10, concText: '10 mg/mL', note: 'Infants need doses at the top of the range' },
-      { name: 'Ketamine IV', cat: 'induction', astm: 'astm-induction', label: 'Induction', dose: 2, range: '1–2', unit: 'mg', conc: 10, concText: '10 mg/mL (diluted)' },
-      { name: 'Ketamine IM', cat: 'induction', astm: 'astm-induction', label: 'Induction', dose: 4, range: '4–5', unit: 'mg', conc: 50, concText: '50 mg/mL', note: 'Without IV access' },
-      { name: 'Etomidate', cat: 'induction', astm: 'astm-induction', label: 'Induction', dose: 0.3, range: '0.2–0.3', unit: 'mg', conc: 2, concText: '2 mg/mL' },
-      { name: 'Midazolam IV', cat: 'induction', astm: 'astm-benzo', label: 'Benzo', dose: 0.05, range: '0.05–0.1', unit: 'mg', max: 2, conc: 1, concText: '1 mg/mL' },
-      { name: 'Midazolam PO', cat: 'induction', astm: 'astm-benzo', label: 'Benzo', dose: 0.5, range: '0.25–0.75', unit: 'mg', max: 20, conc: 2, concText: '2 mg/mL syrup', note: 'Premed 15–30 min before' },
-      { name: 'Dexmedetomidine IN', cat: 'induction', astm: 'astm-other', label: 'Sedative', dose: 2, range: '1–2', unit: 'mcg', max: 100, conc: 100, concText: '100 mcg/mL (undiluted)', note: 'Intranasal premed, onset 30–45 min' },
+      { name: 'Propofol', wt: 'IBW', cat: 'induction', astm: 'astm-induction', label: 'Induction', dose: 3, range: '2.5–3.5', unit: 'mg', conc: 10, concText: '10 mg/mL', note: 'Infants need doses at the top of the range' },
+      { name: 'Ketamine IV', wt: 'IBW', cat: 'induction', astm: 'astm-induction', label: 'Induction', dose: 2, range: '1–2', unit: 'mg', conc: 10, concText: '10 mg/mL (diluted)' },
+      { name: 'Ketamine IM', wt: 'IBW', cat: 'induction', astm: 'astm-induction', label: 'Induction', dose: 4, range: '4–5', unit: 'mg', conc: 50, concText: '50 mg/mL', note: 'Without IV access' },
+      { name: 'Etomidate', wt: 'IBW', cat: 'induction', astm: 'astm-induction', label: 'Induction', dose: 0.3, range: '0.2–0.3', unit: 'mg', conc: 2, concText: '2 mg/mL' },
+      { name: 'Midazolam IV', wt: 'IBW', cat: 'induction', astm: 'astm-benzo', label: 'Benzo', dose: 0.05, range: '0.05–0.1', unit: 'mg', max: 2, conc: 1, concText: '1 mg/mL' },
+      { name: 'Midazolam PO', wt: 'IBW', cat: 'induction', astm: 'astm-benzo', label: 'Benzo', dose: 0.5, range: '0.25–0.75', unit: 'mg', max: 20, conc: 2, concText: '2 mg/mL syrup', note: 'Premed 15–30 min before' },
+      { name: 'Dexmedetomidine IN', wt: 'IBW', cat: 'induction', astm: 'astm-other', label: 'Sedative', dose: 2, range: '1–2', unit: 'mcg', max: 100, conc: 100, concText: '100 mcg/mL (undiluted)', note: 'Intranasal premed, onset 30–45 min' },
 
       // Relaxants & reversal
-      { name: 'Rocuronium', cat: 'paralytics', astm: 'astm-paralytic', label: 'Relaxant', dose: 0.6, range: '0.6 (RSI 1.2)', unit: 'mg', conc: 10, concText: '10 mg/mL' },
-      { name: 'Rocuronium RSI', cat: 'paralytics', astm: 'astm-paralytic', label: 'Relaxant', dose: 1.2, range: '1–1.2', unit: 'mg', conc: 10, concText: '10 mg/mL' },
-      { name: 'Succinylcholine IV', cat: 'paralytics', astm: 'astm-paralytic', label: 'Relaxant', doseFn: (w, a) => (a != null && a < 1 ? 2 : 1.5), range: 'infant 2 / child 1–2', unit: 'mg', max: 150, conc: 20, concText: '20 mg/mL', note: 'Give atropine first in children; risk of hyperkalemic arrest in undiagnosed myopathy' },
-      { name: 'Succinylcholine IM', cat: 'paralytics', astm: 'astm-paralytic', label: 'Relaxant', dose: 4, range: '4', unit: 'mg', max: 150, conc: 20, concText: '20 mg/mL' },
-      { name: 'Vecuronium', cat: 'paralytics', astm: 'astm-paralytic', label: 'Relaxant', dose: 0.1, range: '0.1', unit: 'mg', conc: 1, concText: '1 mg/mL' },
-      { name: 'Cisatracurium', cat: 'paralytics', astm: 'astm-paralytic', label: 'Relaxant', dose: 0.15, range: '0.1–0.2', unit: 'mg', conc: 2, concText: '2 mg/mL' },
-      { name: 'Sugammadex (moderate)', cat: 'paralytics', astm: 'astm-reversal', label: 'Reversal', dose: 2, range: '2 (TOF ≥2)', unit: 'mg', conc: 100, concText: '100 mg/mL' },
-      { name: 'Sugammadex (deep)', cat: 'paralytics', astm: 'astm-reversal', label: 'Reversal', dose: 4, range: '4 (PTC 1–2)', unit: 'mg', conc: 100, concText: '100 mg/mL', note: 'Immediate reversal after RSI dose roc: 16 mg/kg' },
-      { name: 'Neostigmine', cat: 'paralytics', astm: 'astm-reversal', label: 'Reversal', dose: 0.05, range: '0.03–0.07', unit: 'mg', max: 5, conc: 1, concText: '1 mg/mL', note: 'Always with glycopyrrolate or atropine' },
-      { name: 'Naloxone (titrate)', cat: 'paralytics', astm: 'astm-opioid-antag', label: 'Opioid antag', dose: 1, range: '1–2, repeat', unit: 'mcg', conc: 40, concText: '40 mcg/mL (0.4 mg in 10 mL)', note: 'Full reversal/arrest: 0.1 mg/kg (max 2 mg)' },
-      { name: 'Flumazenil', cat: 'paralytics', astm: 'astm-other', label: 'Benzo antag', dose: 0.01, range: '0.01', unit: 'mg', max: 0.2, conc: 0.1, concText: '0.1 mg/mL' },
+      { name: 'Rocuronium', wt: 'IBW', cat: 'paralytics', astm: 'astm-paralytic', label: 'Relaxant', dose: 0.6, range: '0.6 (RSI 1.2)', unit: 'mg', conc: 10, concText: '10 mg/mL' },
+      { name: 'Rocuronium RSI', wt: 'IBW', cat: 'paralytics', astm: 'astm-paralytic', label: 'Relaxant', dose: 1.2, range: '1–1.2', unit: 'mg', conc: 10, concText: '10 mg/mL' },
+      { name: 'Succinylcholine IV', wt: 'TBW', cat: 'paralytics', astm: 'astm-paralytic', label: 'Relaxant', doseFn: (w, a) => (a != null && a < 1 ? 2 : 1.5), range: 'infant 2 / child 1–2', unit: 'mg', max: 150, conc: 20, concText: '20 mg/mL', note: 'Give atropine first in children; risk of hyperkalemic arrest in undiagnosed myopathy' },
+      { name: 'Succinylcholine IM', wt: 'TBW', cat: 'paralytics', astm: 'astm-paralytic', label: 'Relaxant', dose: 4, range: '4', unit: 'mg', max: 150, conc: 20, concText: '20 mg/mL' },
+      { name: 'Vecuronium', wt: 'IBW', cat: 'paralytics', astm: 'astm-paralytic', label: 'Relaxant', dose: 0.1, range: '0.1', unit: 'mg', conc: 1, concText: '1 mg/mL' },
+      { name: 'Cisatracurium', wt: 'IBW', cat: 'paralytics', astm: 'astm-paralytic', label: 'Relaxant', dose: 0.15, range: '0.1–0.2', unit: 'mg', conc: 2, concText: '2 mg/mL' },
+      { name: 'Sugammadex (moderate)', wt: 'TBW', cat: 'paralytics', astm: 'astm-reversal', label: 'Reversal', dose: 2, range: '2 (TOF ≥2)', unit: 'mg', conc: 100, concText: '100 mg/mL' },
+      { name: 'Sugammadex (deep)', wt: 'TBW', cat: 'paralytics', astm: 'astm-reversal', label: 'Reversal', dose: 4, range: '4 (PTC 1–2)', unit: 'mg', conc: 100, concText: '100 mg/mL', note: 'Immediate reversal after RSI dose roc: 16 mg/kg' },
+      { name: 'Neostigmine', wt: 'TBW', cat: 'paralytics', astm: 'astm-reversal', label: 'Reversal', dose: 0.05, range: '0.03–0.07', unit: 'mg', max: 5, conc: 1, concText: '1 mg/mL', note: 'Always with glycopyrrolate or atropine' },
+      { name: 'Naloxone (titrate)', wt: 'TBW', cat: 'paralytics', astm: 'astm-opioid-antag', label: 'Opioid antag', dose: 1, range: '1–2, repeat', unit: 'mcg', conc: 40, concText: '40 mcg/mL (0.4 mg in 10 mL)', note: 'Full reversal/arrest: 0.1 mg/kg (max 2 mg)' },
+      { name: 'Flumazenil', wt: 'TBW', cat: 'paralytics', astm: 'astm-other', label: 'Benzo antag', dose: 0.01, range: '0.01', unit: 'mg', max: 0.2, conc: 0.1, concText: '0.1 mg/mL' },
 
       // Opioids & analgesia
-      { name: 'Fentanyl', cat: 'analgesics', astm: 'astm-opioid', label: 'Opioid', dose: 1, range: '0.5–2', unit: 'mcg', conc: 10, concText: '10 mcg/mL (diluted)', note: 'Undiluted 50 mcg/mL = ¹⁄₅ of the volume shown' },
-      { name: 'Morphine IV', cat: 'analgesics', astm: 'astm-opioid', label: 'Opioid', dose: 0.05, range: '0.05–0.1', unit: 'mg', conc: 1, concText: '1 mg/mL' },
-      { name: 'Hydromorphone IV', cat: 'analgesics', astm: 'astm-opioid', label: 'Opioid', dose: 0.01, range: '0.005–0.015', unit: 'mg', conc: 0.2, concText: '0.2 mg/mL (diluted)' },
-      { name: 'Acetaminophen IV', cat: 'analgesics', astm: 'astm-other', label: 'Analgesic', doseFn: (w, a) => (a != null && a < 1 / 12 ? 10 : 15), range: '15 (neonate 10)', unit: 'mg', max: 1000, conc: 10, concText: '10 mg/mL', note: 'Max 75 mg/kg/day (≤4 g)' },
-      { name: 'Ketorolac IV', cat: 'analgesics', astm: 'astm-other', label: 'NSAID', dose: 0.5, range: '0.5', unit: 'mg', max: 30, conc: 15, concText: '15 mg/mL', note: '≥6 months; avoid with bleeding risk or renal impairment' },
+      { name: 'Fentanyl', wt: 'IBW', cat: 'analgesics', astm: 'astm-opioid', label: 'Opioid', dose: 1, range: '0.5–2', unit: 'mcg', conc: 10, concText: '10 mcg/mL (diluted)', note: 'Undiluted 50 mcg/mL = ¹⁄₅ of the volume shown' },
+      { name: 'Morphine IV', wt: 'IBW', cat: 'analgesics', astm: 'astm-opioid', label: 'Opioid', dose: 0.05, range: '0.05–0.1', unit: 'mg', conc: 1, concText: '1 mg/mL' },
+      { name: 'Hydromorphone IV', wt: 'IBW', cat: 'analgesics', astm: 'astm-opioid', label: 'Opioid', dose: 0.01, range: '0.005–0.015', unit: 'mg', conc: 0.2, concText: '0.2 mg/mL (diluted)' },
+      { name: 'Acetaminophen IV', wt: 'IBW', cat: 'analgesics', astm: 'astm-other', label: 'Analgesic', doseFn: (w, a) => (a != null && a < 1 / 12 ? 10 : 15), range: '15 (neonate 10)', unit: 'mg', max: 1000, conc: 10, concText: '10 mg/mL', note: 'Max 75 mg/kg/day (≤4 g)' },
+      { name: 'Ketorolac IV', wt: 'IBW', cat: 'analgesics', astm: 'astm-other', label: 'NSAID', dose: 0.5, range: '0.5', unit: 'mg', max: 30, conc: 15, concText: '15 mg/mL', note: '≥6 months; avoid with bleeding risk or renal impairment' },
 
       // Adjuncts
-      { name: 'Atropine', cat: 'adjuncts', astm: 'astm-anticholinergic', label: 'Antichol', dose: 0.02, range: '0.01–0.02', unit: 'mg', max: 0.5, conc: 0.4, concText: '0.4 mg/mL' },
-      { name: 'Glycopyrrolate', cat: 'adjuncts', astm: 'astm-anticholinergic', label: 'Antichol', dose: 0.01, range: '0.01', unit: 'mg', max: 0.4, conc: 0.2, concText: '0.2 mg/mL', note: 'With neostigmine: 0.2 mg per 1 mg neostigmine' },
-      { name: 'Ondansetron', cat: 'adjuncts', astm: 'astm-antiemetic', label: 'Antiemetic', dose: 0.1, range: '0.1', unit: 'mg', max: 4, conc: 2, concText: '2 mg/mL' },
-      { name: 'Dexamethasone', cat: 'adjuncts', astm: 'astm-other', label: 'Steroid', dose: 0.15, range: '0.0625–0.15 (airway 0.5)', unit: 'mg', max: 8, conc: 4, concText: '4 mg/mL' },
-      { name: 'Diphenhydramine', cat: 'adjuncts', astm: 'astm-other', label: 'Antihist', dose: 1, range: '0.5–1', unit: 'mg', max: 50, conc: 50, concText: '50 mg/mL' },
+      { name: 'Atropine', wt: 'TBW', cat: 'adjuncts', astm: 'astm-anticholinergic', label: 'Antichol', dose: 0.02, range: '0.01–0.02', unit: 'mg', max: 0.5, conc: 0.4, concText: '0.4 mg/mL' },
+      { name: 'Glycopyrrolate', wt: 'TBW', cat: 'adjuncts', astm: 'astm-anticholinergic', label: 'Antichol', dose: 0.01, range: '0.01', unit: 'mg', max: 0.4, conc: 0.2, concText: '0.2 mg/mL', note: 'With neostigmine: 0.2 mg per 1 mg neostigmine' },
+      { name: 'Ondansetron', wt: 'TBW', cat: 'adjuncts', astm: 'astm-antiemetic', label: 'Antiemetic', dose: 0.1, range: '0.1', unit: 'mg', max: 4, conc: 2, concText: '2 mg/mL' },
+      { name: 'Dexamethasone', wt: 'IBW', cat: 'adjuncts', astm: 'astm-other', label: 'Steroid', dose: 0.15, range: '0.0625–0.15 (airway 0.5)', unit: 'mg', max: 8, conc: 4, concText: '4 mg/mL' },
+      { name: 'Diphenhydramine', wt: 'TBW', cat: 'adjuncts', astm: 'astm-other', label: 'Antihist', dose: 1, range: '0.5–1', unit: 'mg', max: 50, conc: 50, concText: '50 mg/mL' },
 
       // Vasoactive
-      { name: 'Ephedrine', cat: 'pressors', astm: 'astm-pressor', label: 'Pressor', dose: 0.1, range: '0.1–0.2', unit: 'mg', max: 10, conc: 5, concText: '5 mg/mL (diluted)' },
-      { name: 'Phenylephrine', cat: 'pressors', astm: 'astm-pressor', label: 'Pressor', dose: 1, range: '0.5–2', unit: 'mcg', max: 100, conc: 100, concText: '100 mcg/mL (diluted)' },
-      { name: 'Epinephrine (push-dose)', cat: 'pressors', astm: 'astm-pressor', label: 'Pressor', dose: 1, range: '0.5–1', unit: 'mcg', conc: 10, concText: '10 mcg/mL (1:100,000)', note: 'Hypotension or anaphylaxis — titrate. NOT the arrest dose' },
+      { name: 'Ephedrine', wt: 'TBW', cat: 'pressors', astm: 'astm-pressor', label: 'Pressor', dose: 0.1, range: '0.1–0.2', unit: 'mg', max: 10, conc: 5, concText: '5 mg/mL (diluted)' },
+      { name: 'Phenylephrine', wt: 'TBW', cat: 'pressors', astm: 'astm-pressor', label: 'Pressor', dose: 1, range: '0.5–2', unit: 'mcg', max: 100, conc: 100, concText: '100 mcg/mL (diluted)' },
+      { name: 'Epinephrine (push-dose)', wt: 'TBW', cat: 'pressors', astm: 'astm-pressor', label: 'Pressor', dose: 1, range: '0.5–1', unit: 'mcg', conc: 10, concText: '10 mcg/mL (1:100,000)', note: 'Hypotension or anaphylaxis — titrate. NOT the arrest dose' },
+      { name: 'Calcium chloride 10%', wt: 'TBW', cat: 'pressors', astm: 'astm-other', label: 'Electrolyte', dose: 10, range: '10–20', unit: 'mg', max: 1000, conc: 100, concText: '100 mg/mL', note: 'Hypocalcemia / transfusion / inotropy; central line preferred, slow push' },
+      { name: 'Esmolol', wt: 'IBW', cat: 'pressors', astm: 'astm-hypotensive', label: 'Hypotensive', dose: 0.5, range: '0.1–0.5', unit: 'mg', conc: 10, concText: '10 mg/mL', note: 'Bolus over 1 min; infusion in Infusions tab' },
+      { name: 'Labetalol', wt: 'IBW', cat: 'pressors', astm: 'astm-hypotensive', label: 'Hypotensive', dose: 0.2, range: '0.2–0.5', unit: 'mg', max: 20, conc: 5, concText: '5 mg/mL' },
+      { name: 'Hydralazine', wt: 'IBW', cat: 'pressors', astm: 'astm-hypotensive', label: 'Hypotensive', dose: 0.1, range: '0.1–0.2', unit: 'mg', max: 20, conc: 20, concText: '20 mg/mL' },
 
       // Local anesthetics — maximum doses
-      { name: 'Bupivacaine 0.25%', cat: 'local', astm: 'astm-local', label: 'Local', kind: 'max', doseFn: (w, a) => (a != null && a < 0.5 ? 2 : 2.5), range: '2.5 (<6 mo: 2)', unit: 'mg', max: 175, conc: 2.5, concText: '2.5 mg/mL' },
-      { name: 'Ropivacaine 0.2%', cat: 'local', astm: 'astm-local', label: 'Local', kind: 'max', doseFn: (w, a) => (a != null && a < 0.5 ? 2.5 : 3), range: '3 (<6 mo: 2.5)', unit: 'mg', max: 225, conc: 2, concText: '2 mg/mL' },
-      { name: 'Lidocaine 1% plain', cat: 'local', astm: 'astm-local', label: 'Local', kind: 'max', dose: 4.5, range: '4.5', unit: 'mg', max: 300, conc: 10, concText: '10 mg/mL' },
-      { name: 'Lidocaine 1% + epi', cat: 'local', astm: 'astm-local', label: 'Local', kind: 'max', dose: 7, range: '7', unit: 'mg', max: 500, conc: 10, concText: '10 mg/mL' }
+      { name: 'Bupivacaine 0.25%', wt: 'IBW', cat: 'local', astm: 'astm-local', label: 'Local', kind: 'max', doseFn: (w, a) => (a != null && a < 0.5 ? 2 : 2.5), range: '2.5 (<6 mo: 2)', unit: 'mg', max: 175, conc: 2.5, concText: '2.5 mg/mL' },
+      { name: 'Ropivacaine 0.2%', wt: 'IBW', cat: 'local', astm: 'astm-local', label: 'Local', kind: 'max', doseFn: (w, a) => (a != null && a < 0.5 ? 2.5 : 3), range: '3 (<6 mo: 2.5)', unit: 'mg', max: 225, conc: 2, concText: '2 mg/mL' },
+      { name: 'Lidocaine 1% plain', wt: 'IBW', cat: 'local', astm: 'astm-local', label: 'Local', kind: 'max', dose: 4.5, range: '4.5', unit: 'mg', max: 300, conc: 10, concText: '10 mg/mL' },
+      { name: 'Lidocaine 1% + epi', wt: 'IBW', cat: 'local', astm: 'astm-local', label: 'Local', kind: 'max', dose: 7, range: '7', unit: 'mg', max: 500, conc: 10, concText: '10 mg/mL' }
     ];
 
     const CAT_TITLES = { induction: 'Induction & Sedation', paralytics: 'Relaxants & Reversal', analgesics: 'Opioids & Analgesia', adjuncts: 'Adjuncts', pressors: 'Vasoactive (bolus)', local: 'Local Anesthetics — MAXIMUM total dose' };
+
+    // ───────────────────────── Continuous infusions ─────────────────────────
+    // def: default dose; lo/hi: usual range; dU/dT: dose unit (mcg|mg|U|mU) per kg per (min|hr);
+    // conc/cU: default syringe concentration; wt: weight scalar when obesity scalars are on.
+    const INFUSIONS = [
+      { name: 'Propofol', group: 'sedation', astm: 'astm-induction', label: 'Induction', def: 150, lo: 50, hi: 300, dU: 'mcg', dT: 'min', conc: 10, cU: 'mg', wt: 'TBW', note: 'TIVA 150–300; sedation 50–150. Children need higher rates than adults' },
+      { name: 'Remifentanil', group: 'sedation', astm: 'astm-opioid', label: 'Opioid', def: 0.2, lo: 0.05, hi: 0.5, dU: 'mcg', dT: 'min', conc: 20, cU: 'mcg', wt: 'IBW', note: 'No bolus needed; chest-wall rigidity with rapid boluses. Plan longer-acting analgesia before stopping' },
+      { name: 'Fentanyl', group: 'sedation', astm: 'astm-opioid', label: 'Opioid', def: 2, lo: 1, hi: 5, dU: 'mcg', dT: 'hr', conc: 10, cU: 'mcg', wt: 'IBW', note: 'Intraop 1–3; ICU sedation 1–4 mcg/kg/hr' },
+      { name: 'Dexmedetomidine (Precedex)', group: 'sedation', astm: 'astm-other', label: 'Sedative', def: 0.5, lo: 0.2, hi: 1, dU: 'mcg', dT: 'hr', conc: 4, cU: 'mcg', wt: 'IBW', note: 'Up to 1.5–2 mcg/kg/hr in ICU. Bradycardia/hypotension, especially with the load', load: { lo: 0.5, hi: 1, u: 'mcg', over: 'over 10 min (optional)' } },
+      { name: 'Ketamine', group: 'sedation', astm: 'astm-induction', label: 'Induction', def: 0.3, lo: 0.1, hi: 0.5, dU: 'mg', dT: 'hr', conc: 1, cU: 'mg', wt: 'IBW', note: 'Analgesic 0.1–0.5; sedation 0.5–2 mg/kg/hr' },
+      { name: 'Midazolam', group: 'sedation', astm: 'astm-benzo', label: 'Benzo', def: 0.1, lo: 0.05, hi: 0.2, dU: 'mg', dT: 'hr', conc: 1, cU: 'mg', wt: 'IBW', note: 'Accumulates in prolonged infusions and with renal impairment' },
+      { name: 'Morphine', group: 'sedation', astm: 'astm-opioid', label: 'Opioid', def: 20, lo: 10, hi: 40, dU: 'mcg', dT: 'hr', conc: 1, cU: 'mg', wt: 'IBW', note: 'Neonates 5–10 mcg/kg/hr' },
+      { name: 'Hydromorphone', group: 'sedation', astm: 'astm-opioid', label: 'Opioid', def: 4, lo: 3, hi: 5, dU: 'mcg', dT: 'hr', conc: 0.2, cU: 'mg', wt: 'IBW' },
+      { name: 'Lidocaine (analgesic)', group: 'sedation', astm: 'astm-local', label: 'Local', def: 1.5, lo: 1, hi: 2, dU: 'mg', dT: 'hr', conc: 10, cU: 'mg', wt: 'IBW', note: 'Counts toward the local anesthetic maximum; stop if signs of LAST', load: { lo: 1, hi: 1.5, u: 'mg', over: 'over 10 min' } },
+
+      { name: 'Rocuronium', group: 'nmb', astm: 'astm-paralytic', label: 'Relaxant', def: 10, lo: 7, hi: 12, dU: 'mcg', dT: 'min', conc: 10, cU: 'mg', wt: 'IBW', note: 'Titrate to train-of-four' },
+      { name: 'Cisatracurium', group: 'nmb', astm: 'astm-paralytic', label: 'Relaxant', def: 2, lo: 1, hi: 4, dU: 'mcg', dT: 'min', conc: 2, cU: 'mg', wt: 'IBW', note: 'Organ-independent (Hofmann) elimination; titrate to train-of-four' },
+      { name: 'Vecuronium', group: 'nmb', astm: 'astm-paralytic', label: 'Relaxant', def: 1, lo: 0.8, hi: 1.7, dU: 'mcg', dT: 'min', conc: 1, cU: 'mg', wt: 'IBW', note: 'Accumulates in renal/hepatic impairment' },
+
+      { name: 'Epinephrine', group: 'vaso', astm: 'astm-pressor', label: 'Pressor', def: 0.05, lo: 0.01, hi: 1, dU: 'mcg', dT: 'min', conc: 16, cU: 'mcg', wt: 'ABW', note: 'Usual 0.02–0.3. Inotropy at low doses, vasoconstriction at higher doses' },
+      { name: 'Norepinephrine', group: 'vaso', astm: 'astm-pressor', label: 'Pressor', def: 0.05, lo: 0.01, hi: 2, dU: 'mcg', dT: 'min', conc: 16, cU: 'mcg', wt: 'ABW', note: 'Usual 0.05–0.5. Warm/vasodilatory shock; central line preferred' },
+      { name: 'Dopamine', group: 'vaso', astm: 'astm-pressor', label: 'Pressor', def: 5, lo: 2, hi: 20, dU: 'mcg', dT: 'min', conc: 1600, cU: 'mcg', wt: 'ABW', note: '5–10 inotropic; >10 vasoconstrictive. Extravasation: phentolamine' },
+      { name: 'Dobutamine', group: 'vaso', astm: 'astm-pressor', label: 'Inotrope', def: 5, lo: 2, hi: 20, dU: 'mcg', dT: 'min', conc: 2000, cU: 'mcg', wt: 'ABW', note: 'Inotrope/vasodilator; may cause tachycardia, hypotension' },
+      { name: 'Milrinone', group: 'vaso', astm: 'astm-pressor', label: 'Inodilator', def: 0.5, lo: 0.25, hi: 0.75, dU: 'mcg', dT: 'min', conc: 200, cU: 'mcg', wt: 'ABW', note: 'Reduce dose in renal impairment. Load often omitted or given slowly to avoid hypotension', load: { lo: 50, hi: 75, u: 'mcg', over: 'over 30–60 min (optional)' } },
+      { name: 'Vasopressin', group: 'vaso', astm: 'astm-pressor', label: 'Pressor', def: 0.5, lo: 0.3, hi: 2, dU: 'mU', dT: 'min', conc: 0.2, cU: 'U', wt: 'ABW', note: 'milliunits/kg/min (0.0003–0.002 U/kg/min). Catecholamine-refractory vasodilatory shock. Adult max 0.04 U/min' },
+      { name: 'Phenylephrine', group: 'vaso', astm: 'astm-pressor', label: 'Pressor', def: 0.2, lo: 0.1, hi: 0.5, dU: 'mcg', dT: 'min', conc: 40, cU: 'mcg', wt: 'ABW', note: 'Pure α-agonist; reflex bradycardia. Useful in tetralogy spells' },
+      { name: 'Isoproterenol', group: 'vaso', astm: 'astm-pressor', label: 'Chronotrope', def: 0.05, lo: 0.05, hi: 2, dU: 'mcg', dT: 'min', conc: 16, cU: 'mcg', wt: 'ABW', note: 'Bradycardia/heart block, pulmonary vasodilation; causes tachyarrhythmias' },
+      { name: 'Nitroglycerin', group: 'vaso', astm: 'astm-hypotensive', label: 'Vasodilator', def: 1, lo: 0.5, hi: 5, dU: 'mcg', dT: 'min', conc: 200, cU: 'mcg', wt: 'ABW', note: 'Max 10 mcg/kg/min. Use non-PVC tubing' },
+      { name: 'Nitroprusside', group: 'vaso', astm: 'astm-hypotensive', label: 'Vasodilator', def: 0.5, lo: 0.3, hi: 4, dU: 'mcg', dT: 'min', conc: 200, cU: 'mcg', wt: 'ABW', note: 'Protect from light. Cyanide/thiocyanate toxicity with high doses or prolonged use; max 10 mcg/kg/min for ≤10 min' },
+      { name: 'Esmolol', group: 'vaso', astm: 'astm-hypotensive', label: 'β-blocker', def: 100, lo: 50, hi: 500, dU: 'mcg', dT: 'min', conc: 10, cU: 'mg', wt: 'IBW', note: 'Short-acting β1 blocker', load: { lo: 100, hi: 500, u: 'mcg', over: 'over 1 min' } },
+      { name: 'Alprostadil (PGE₁)', group: 'vaso', astm: 'astm-other', label: 'Prostaglandin', def: 0.05, lo: 0.01, hi: 0.1, dU: 'mcg', dT: 'min', conc: 10, cU: 'mcg', wt: 'TBW', note: 'Keeps the ductus arteriosus open in duct-dependent lesions. Apnea risk: be ready to ventilate' },
+
+      { name: 'Insulin (regular)', group: 'other', astm: 'astm-other', label: 'Insulin', def: 0.05, lo: 0.02, hi: 0.1, dU: 'U', dT: 'hr', conc: 1, cU: 'U', wt: 'TBW', note: 'Check glucose and K⁺ hourly; add dextrose as glucose falls' },
+      { name: 'Dextrose 10% (GIR)', group: 'other', astm: 'astm-other', label: 'Glucose', def: 4, lo: 2, hi: 8, dU: 'mg', dT: 'min', conc: 100, cU: 'mg', wt: 'TBW', note: 'Glucose infusion rate (mg/kg/min). Neonates usually need 4–8' }
+    ];
+    const INF_GROUPS = { sedation: 'Anesthesia & Sedation', nmb: 'Neuromuscular Blockers', vaso: 'Vasoactive', other: 'Other' };
+    let infFilter = 'all';
+
+    // CDC 2000 BMI-for-age, ages 2–20 y (monthly): 50th and 95th percentiles by sex.
+    const BMI_CDC = {"ages":[2,2.042,2.125,2.208,2.292,2.375,2.458,2.542,2.625,2.708,2.792,2.875,2.958,3.042,3.125,3.208,3.292,3.375,3.458,3.542,3.625,3.708,3.792,3.875,3.958,4.042,4.125,4.208,4.292,4.375,4.458,4.542,4.625,4.708,4.792,4.875,4.958,5.042,5.125,5.208,5.292,5.375,5.458,5.542,5.625,5.708,5.792,5.875,5.958,6.042,6.125,6.208,6.292,6.375,6.458,6.542,6.625,6.708,6.792,6.875,6.958,7.042,7.125,7.208,7.292,7.375,7.458,7.542,7.625,7.708,7.792,7.875,7.958,8.042,8.125,8.208,8.292,8.375,8.458,8.542,8.625,8.708,8.792,8.875,8.958,9.042,9.125,9.208,9.292,9.375,9.458,9.542,9.625,9.708,9.792,9.875,9.958,10.042,10.125,10.208,10.292,10.375,10.458,10.542,10.625,10.708,10.792,10.875,10.958,11.042,11.125,11.208,11.292,11.375,11.458,11.542,11.625,11.708,11.792,11.875,11.958,12.042,12.125,12.208,12.292,12.375,12.458,12.542,12.625,12.708,12.792,12.875,12.958,13.042,13.125,13.208,13.292,13.375,13.458,13.542,13.625,13.708,13.792,13.875,13.958,14.042,14.125,14.208,14.292,14.375,14.458,14.542,14.625,14.708,14.792,14.875,14.958,15.042,15.125,15.208,15.292,15.375,15.458,15.542,15.625,15.708,15.792,15.875,15.958,16.042,16.125,16.208,16.292,16.375,16.458,16.542,16.625,16.708,16.792,16.875,16.958,17.042,17.125,17.208,17.292,17.375,17.458,17.542,17.625,17.708,17.792,17.875,17.958,18.042,18.125,18.208,18.292,18.375,18.458,18.542,18.625,18.708,18.792,18.875,18.958,19.042,19.125,19.208,19.292,19.375,19.458,19.542,19.625,19.708,19.792,19.875,19.958,20,20.042],"m50":[16.58,16.55,16.49,16.44,16.39,16.34,16.3,16.25,16.2,16.16,16.12,16.08,16.04,16.0,15.96,15.93,15.89,15.86,15.83,15.79,15.76,15.73,15.71,15.68,15.65,15.63,15.6,15.58,15.56,15.54,15.52,15.5,15.49,15.47,15.46,15.44,15.43,15.42,15.41,15.4,15.39,15.39,15.38,15.38,15.38,15.38,15.38,15.38,15.38,15.38,15.39,15.39,15.4,15.41,15.42,15.43,15.44,15.45,15.47,15.48,15.5,15.51,15.53,15.55,15.57,15.59,15.61,15.63,15.65,15.68,15.7,15.73,15.76,15.78,15.81,15.84,15.87,15.9,15.93,15.96,15.99,16.03,16.06,16.1,16.13,16.17,16.2,16.24,16.28,16.32,16.36,16.4,16.44,16.48,16.52,16.56,16.6,16.65,16.69,16.73,16.78,16.82,16.87,16.92,16.96,17.01,17.06,17.1,17.15,17.2,17.25,17.3,17.35,17.4,17.45,17.5,17.55,17.6,17.66,17.71,17.76,17.81,17.87,17.92,17.98,18.03,18.08,18.14,18.19,18.25,18.3,18.36,18.42,18.47,18.53,18.58,18.64,18.7,18.75,18.81,18.87,18.93,18.98,19.04,19.1,19.16,19.22,19.27,19.33,19.39,19.45,19.51,19.57,19.62,19.68,19.74,19.8,19.86,19.92,19.97,20.03,20.09,20.15,20.21,20.27,20.33,20.38,20.44,20.5,20.56,20.62,20.67,20.73,20.79,20.85,20.9,20.96,21.02,21.07,21.13,21.19,21.24,21.3,21.35,21.41,21.46,21.52,21.57,21.63,21.68,21.74,21.79,21.84,21.9,21.95,22.0,22.05,22.1,22.15,22.21,22.26,22.31,22.35,22.4,22.45,22.5,22.55,22.6,22.64,22.69,22.73,22.78,22.82,22.87,22.91,22.96,23.0,23.02,23.04],"m95":[19.34,19.28,19.16,19.06,18.95,18.85,18.76,18.67,18.59,18.51,18.43,18.36,18.3,18.24,18.18,18.13,18.08,18.04,18.0,17.97,17.93,17.91,17.88,17.86,17.85,17.84,17.83,17.82,17.82,17.82,17.83,17.83,17.84,17.86,17.87,17.89,17.91,17.94,17.97,18.0,18.03,18.06,18.1,18.14,18.18,18.22,18.27,18.31,18.36,18.41,18.47,18.52,18.58,18.64,18.7,18.76,18.82,18.88,18.95,19.01,19.08,19.15,19.22,19.29,19.37,19.44,19.52,19.59,19.67,19.75,19.83,19.91,19.99,20.07,20.15,20.23,20.32,20.4,20.48,20.57,20.65,20.74,20.83,20.91,21.0,21.09,21.18,21.26,21.35,21.44,21.53,21.62,21.71,21.8,21.89,21.98,22.06,22.15,22.24,22.33,22.42,22.51,22.6,22.69,22.78,22.86,22.95,23.04,23.13,23.21,23.3,23.39,23.47,23.56,23.64,23.73,23.81,23.9,23.98,24.06,24.15,24.23,24.31,24.39,24.47,24.55,24.63,24.71,24.79,24.87,24.95,25.03,25.1,25.18,25.25,25.33,25.4,25.48,25.55,25.62,25.69,25.77,25.84,25.91,25.98,26.05,26.12,26.18,26.25,26.32,26.38,26.45,26.52,26.58,26.65,26.71,26.77,26.84,26.9,26.96,27.02,27.09,27.15,27.21,27.27,27.33,27.39,27.45,27.51,27.56,27.62,27.68,27.74,27.8,27.85,27.91,27.97,28.03,28.08,28.14,28.2,28.26,28.31,28.37,28.43,28.49,28.55,28.6,28.66,28.72,28.78,28.84,28.9,28.96,29.02,29.08,29.14,29.2,29.27,29.33,29.39,29.46,29.52,29.59,29.66,29.73,29.8,29.87,29.94,30.01,30.08,30.16,30.23,30.31,30.39,30.47,30.55,30.59,30.63],"f50":[16.42,16.39,16.32,16.25,16.19,16.12,16.06,16.01,15.95,15.9,15.84,15.79,15.75,15.7,15.66,15.61,15.57,15.54,15.5,15.46,15.43,15.4,15.37,15.35,15.32,15.3,15.28,15.26,15.24,15.22,15.21,15.2,15.18,15.18,15.17,15.16,15.16,15.15,15.15,15.15,15.15,15.15,15.16,15.16,15.17,15.17,15.18,15.19,15.2,15.22,15.23,15.25,15.26,15.28,15.3,15.32,15.34,15.36,15.38,15.4,15.43,15.45,15.48,15.51,15.54,15.56,15.59,15.63,15.66,15.69,15.72,15.76,15.79,15.83,15.86,15.9,15.94,15.98,16.02,16.06,16.1,16.14,16.18,16.22,16.26,16.31,16.35,16.39,16.44,16.48,16.53,16.58,16.62,16.67,16.72,16.77,16.81,16.86,16.91,16.96,17.01,17.06,17.11,17.16,17.21,17.26,17.31,17.37,17.42,17.47,17.52,17.57,17.63,17.68,17.73,17.78,17.84,17.89,17.94,18.0,18.05,18.1,18.15,18.21,18.26,18.31,18.37,18.42,18.47,18.53,18.58,18.63,18.68,18.74,18.79,18.84,18.89,18.94,19.0,19.05,19.1,19.15,19.2,19.25,19.3,19.35,19.4,19.45,19.5,19.55,19.6,19.65,19.7,19.74,19.79,19.84,19.88,19.93,19.98,20.02,20.07,20.11,20.16,20.2,20.24,20.29,20.33,20.37,20.41,20.45,20.49,20.53,20.57,20.61,20.65,20.69,20.73,20.76,20.8,20.84,20.87,20.91,20.94,20.97,21.01,21.04,21.07,21.1,21.13,21.16,21.19,21.22,21.25,21.28,21.3,21.33,21.35,21.38,21.4,21.43,21.45,21.47,21.49,21.51,21.53,21.55,21.57,21.59,21.6,21.62,21.64,21.65,21.66,21.68,21.69,21.7,21.71,21.72,21.72],"f95":[19.11,19.06,18.97,18.88,18.8,18.72,18.64,18.58,18.51,18.45,18.4,18.35,18.3,18.25,18.22,18.18,18.15,18.12,18.1,18.08,18.06,18.05,18.04,18.03,18.03,18.03,18.03,18.04,18.05,18.06,18.07,18.09,18.11,18.14,18.16,18.19,18.22,18.26,18.29,18.33,18.37,18.42,18.46,18.51,18.56,18.61,18.66,18.72,18.78,18.84,18.9,18.96,19.03,19.09,19.16,19.23,19.3,19.37,19.45,19.52,19.6,19.68,19.76,19.84,19.92,20.0,20.08,20.17,20.25,20.34,20.43,20.52,20.61,20.7,20.79,20.88,20.97,21.06,21.15,21.25,21.34,21.44,21.53,21.63,21.72,21.82,21.91,22.01,22.11,22.2,22.3,22.4,22.5,22.59,22.69,22.79,22.89,22.98,23.08,23.18,23.27,23.37,23.47,23.57,23.66,23.76,23.85,23.95,24.05,24.14,24.24,24.33,24.43,24.52,24.61,24.71,24.8,24.89,24.98,25.07,25.17,25.26,25.35,25.43,25.52,25.61,25.7,25.79,25.87,25.96,26.05,26.13,26.22,26.3,26.38,26.46,26.55,26.63,26.71,26.79,26.87,26.95,27.03,27.1,27.18,27.26,27.33,27.41,27.48,27.55,27.63,27.7,27.77,27.84,27.91,27.99,28.05,28.12,28.19,28.26,28.33,28.39,28.46,28.53,28.59,28.66,28.72,28.78,28.85,28.91,28.97,29.03,29.1,29.16,29.22,29.28,29.34,29.4,29.46,29.52,29.57,29.63,29.69,29.75,29.81,29.87,29.92,29.98,30.04,30.1,30.15,30.21,30.27,30.33,30.38,30.44,30.5,30.56,30.61,30.67,30.73,30.79,30.85,30.91,30.97,31.03,31.09,31.15,31.21,31.27,31.34,31.4,31.47,31.53,31.6,31.66,31.73,31.76,31.8]};
 
     let activeFilter = 'all';
     const $ = (id) => document.getElementById(id);
@@ -600,7 +739,7 @@
       let weight = num('weight-val');
       const weightValid = weight != null && weight >= 0.3 && weight <= 200;
       if (!weightValid) weight = null;
-      return { ageYears, weight, height: num('height-val'), npo: num('npo-val'), hct0: num('hct-start'), hctT: num('hct-target') };
+      return { ageYears, weight, sex: $('sex-val').value || null, height: num('height-val'), npo: num('npo-val'), hct0: num('hct-start'), hctT: num('hct-target') };
     }
 
     function estimateWeight(ageYears) {
@@ -613,6 +752,76 @@
     }
 
     const floorHalf = (x) => Math.floor(x * 2) / 2;
+
+    // Linear interpolation in the CDC table; null outside 2–20 y.
+    function bmiRef(sex, ageY) {
+      const ages = BMI_CDC.ages;
+      if (!sex || ageY == null || ageY < 2 || ageY > ages[ages.length - 1]) return null;
+      const p50 = BMI_CDC[sex === 'male' ? 'm50' : 'f50'], p95 = BMI_CDC[sex === 'male' ? 'm95' : 'f95'];
+      let i = 0;
+      while (i < ages.length - 2 && ages[i + 1] < ageY) i++;
+      const t = Math.min(Math.max((ageY - ages[i]) / (ages[i + 1] - ages[i]), 0), 1);
+      return { p50: p50[i] + t * (p50[i + 1] - p50[i]), p95: p95[i] + t * (p95[i + 1] - p95[i]) };
+    }
+
+    // Returns the three dosing weights plus the obesity assessment.
+    function computeWeights(p) {
+      const tbw = p.weight, h = p.height, a = p.ageYears;
+      const out = { TBW: tbw, IBW: tbw, ABW: tbw, ibwRaw: null, ibwNote: '', bmi: null, ref: null, obese: null, reason: '', active: false };
+      if (tbw == null) return out;
+
+      if (h && h >= 45 && h <= 220) {
+        out.bmi = tbw / Math.pow(h / 100, 2);
+        if (a != null && a >= 1) {
+          if (h < 152.4) { out.ibwRaw = (h * h * 1.65) / 1000; out.ibwNote = 'height² × 1.65 / 1000'; }
+          else if (p.sex) { out.ibwRaw = (p.sex === 'male' ? 50 : 45.5) + 2.3 * (h / 2.54 - 60); out.ibwNote = 'Devine (' + p.sex + ')'; }
+          else out.ibwNote = 'select sex (≥152 cm)';
+        } else out.ibwNote = a == null ? 'enter age' : 'not defined <1 y';
+      } else out.ibwNote = 'enter height';
+
+      if (out.bmi != null && a != null) {
+        if (a >= 20) { out.obese = out.bmi >= 30; out.reason = 'BMI ≥ 30'; }
+        else if (a >= 2) {
+          out.ref = bmiRef(p.sex, a);
+          if (out.ref) { out.obese = out.bmi >= out.ref.p95; out.reason = 'BMI ≥ 95th percentile'; }
+        }
+      }
+
+      const mode = $('scalar-mode').value;
+      out.active = out.ibwRaw != null && (mode === 'on' || (mode === 'auto' && out.obese === true));
+      if (out.active) {
+        out.IBW = Math.min(out.ibwRaw, tbw);
+        out.ABW = Math.min(out.IBW + 0.4 * (tbw - out.IBW), tbw);
+      }
+      return out;
+    }
+
+    function renderWeights(p, W) {
+      const show = (id, v) => ($(id).textContent = v != null ? fmt(v) + ' kg' : '—');
+      show('wt-tbw', W.TBW);
+      show('wt-ibw', W.ibwRaw);
+      $('wt-ibw-sub').textContent = W.ibwNote;
+      show('wt-abw', W.ibwRaw != null && W.TBW != null ? Math.min(Math.min(W.ibwRaw, W.TBW) + 0.4 * (W.TBW - Math.min(W.ibwRaw, W.TBW)), W.TBW) : null);
+      $('wt-bmi').textContent = W.bmi != null ? W.bmi.toFixed(1) : '—';
+      $('wt-bmi-sub').textContent = W.ref ? `P95 for age: ${W.ref.p95.toFixed(1)}` : (p.ageYears != null && p.ageYears >= 2 && p.ageYears < 20 && !p.sex && W.bmi != null ? 'select sex for percentile' : '');
+
+      const box = $('obesity-status');
+      const mode = $('scalar-mode').value;
+      let msg, warn = false;
+      if (W.TBW == null) msg = 'Enter weight, height, age and sex to check for obesity.';
+      else if (W.active) {
+        warn = true;
+        msg = `<strong>Obesity scalars ON</strong>${W.obese ? ` (${W.reason})` : ' (manual)'}. Each drug is dosed on IBW, ABW or TBW as labeled. Resuscitation drugs use actual weight, capped at the adult dose.`;
+      } else if (W.obese && W.ibwRaw == null) { warn = true; msg = `Obese (${W.reason}) but IBW is unavailable (${W.ibwNote}). All doses use actual weight.`; }
+      else if (mode === 'on' && W.ibwRaw == null) { warn = true; msg = `Scalars requested but IBW is unavailable (${W.ibwNote}). All doses use actual weight.`; }
+      else if (W.obese === false) msg = `Not obese${W.ref ? ` (BMI ${W.bmi.toFixed(1)} &lt; P95 ${W.ref.p95.toFixed(1)})` : ''}. All doses use actual weight.`;
+      else if (p.ageYears != null && p.ageYears < 2) msg = 'Under 2 years: BMI percentile does not apply. Doses use actual weight. Set scalars to "On" to override.';
+      else msg = 'Add height and sex to check for obesity. Doses use actual weight.';
+      box.innerHTML = msg;
+      box.className = 'alert ' + (warn ? 'alert-warn' : 'alert-info');
+    }
+
+    const basisTag = (W, key) => (W.active && key !== 'TBW' ? `<span class="wt-basis">${key} ${fmt(W[key])} kg</span>` : (W.active ? `<span class="wt-basis">TBW ${fmt(W.TBW)} kg</span>` : ''));
 
     // ───────────────────────── Main calculation ─────────────────────────
     function calculateAll() {
@@ -644,10 +853,13 @@
       $('metric-ebv').textContent = ebv != null ? Math.round(ebv) + ' mL' : '—';
       $('metric-ebv-sub').textContent = w != null ? `${ebvPerKg} mL/kg${a == null ? ' (age unknown)' : ''}` : '';
 
+      const W = computeWeights(p);
+      renderWeights(p, W);
       renderAirway(a, w);
       renderFluids(p, ebv);
-      renderDrugTable(w, a);
-      renderCrisis(w, a);
+      renderDrugTable(W, a);
+      updateInfusions(W);
+      renderCrisis(W, a);
     }
 
     function renderAirway(a, w) {
@@ -740,7 +952,8 @@
       $('blood-plt').textContent = `${Math.round(w * 5)}–${Math.round(w * 10)} mL`;
     }
 
-    function renderDrugTable(w, a) {
+    function renderDrugTable(W, a) {
+      const w = W.TBW;
       const tbody = $('drug-tbody');
       $('drug-empty').classList.toggle('hidden', w != null);
       const rows = [];
@@ -753,9 +966,10 @@
           lastCat = d.cat;
         }
         const perKg = d.doseFn ? d.doseFn(w, a) : d.dose;
+        const dw = W[d.wt || 'TBW'];
         let doseCell = '—', volCell = '—';
         if (w != null) {
-          const r = dose(perKg, w, d.max);
+          const r = dose(perKg, dw, d.max);
           const prefix = d.kind === 'max' ? 'max ' : '';
           doseCell = `${prefix}${fmt(r.value)} ${d.unit}` + (r.capped ? `<span class="capped">capped at max ${fmt(d.max)} ${d.unit}</span>` : '');
           volCell = `${prefix}${fmtVol(r.value / d.conc)} mL`;
@@ -764,7 +978,7 @@
         rows.push(`<tr>
           <td class="name">${d.name}<small>${sub}</small></td>
           <td><span class="astm-tag ${d.astm}">${d.label}</span></td>
-          <td style="color: var(--text-muted);">${fmt(perKg)} ${d.unit}/kg<small style="display:block;font-size:10px;">range ${d.range}${d.max != null ? ' · max ' + fmt(d.max) + ' ' + d.unit : ''}</small></td>
+          <td style="color: var(--text-muted);">${fmt(perKg)} ${d.unit}/kg<small style="display:block;font-size:10px;">range ${d.range}${d.max != null ? ' · max ' + fmt(d.max) + ' ' + d.unit : ''}</small>${w != null ? basisTag(W, d.wt || 'TBW') : ''}</td>
           <td style="color: var(--accent); font-weight: bold;">${doseCell}</td>
           <td style="text-align: right; color: var(--ok); font-weight: bold;">${volCell}</td>
         </tr>`);
@@ -772,9 +986,82 @@
       tbody.innerHTML = rows.join('');
     }
 
+    // ───────────────────────── Infusions ─────────────────────────
+    const UNIT_BASE = { mcg: 1, mg: 1000, U: 1, mU: 0.001 };
+    const unitLabel = (u) => (u === 'mU' ? 'milliunits' : u);
+    // Show large microgram amounts in mg for readability.
+    const fmtAmt = (v, u) => (u === 'mcg' && v >= 1000 ? `${fmt(v / 1000)} mg` : `${fmt(v)} ${u}`);
+
+    function buildInfusions() {
+      let html = '', last = null;
+      INFUSIONS.forEach((f, i) => {
+        if (f.group !== last) { html += `<div class="inf-section" data-group="${f.group}">${INF_GROUPS[f.group]}</div>`; last = f.group; }
+        html += `<div class="inf-row" data-group="${f.group}" data-i="${i}">
+          <div class="inf-head">
+            <div class="inf-name">${f.name}<small>usual ${fmt(f.lo)}–${fmt(f.hi)} ${unitLabel(f.dU)}/kg/${f.dT}${f.note ? ' · ' + f.note : ''}</small><span class="wt-slot"></span></div>
+            <span class="astm-tag ${f.astm}">${f.label}</span>
+          </div>
+          <div class="inf-field"><label for="inf-d-${i}">Dose (${unitLabel(f.dU)}/kg/${f.dT})</label>
+            <input type="number" inputmode="decimal" step="any" min="0" id="inf-d-${i}" value="${f.def}" /></div>
+          <div class="inf-field"><label for="inf-c-${i}">Syringe (${f.cU}/mL)</label>
+            <input type="number" inputmode="decimal" step="any" min="0" id="inf-c-${i}" value="${f.conc}" /></div>
+          <div class="inf-rate"><span class="r" id="inf-r-${i}">—</span><span class="a" id="inf-a-${i}"></span></div>
+          ${f.load ? `<div class="inf-extra" id="inf-l-${i}"></div>` : ''}
+        </div>`;
+      });
+      $('inf-list').innerHTML = html;
+      $('inf-list').addEventListener('input', () => updateInfusions(lastW));
+    }
+
+    let lastW = null;
+    function updateInfusions(W) {
+      lastW = W;
+      const has = W && W.TBW != null;
+      $('inf-empty').classList.toggle('hidden', !!has);
+      INFUSIONS.forEach((f, i) => {
+        const row = document.querySelector(`.inf-row[data-i="${i}"]`);
+        row.classList.toggle('hidden', infFilter !== 'all' && infFilter !== f.group);
+        const doseIn = $('inf-d-' + i), concIn = $('inf-c-' + i);
+        const d = parseFloat(doseIn.value), c = parseFloat(concIn.value);
+        doseIn.classList.toggle('out-range', Number.isFinite(d) && (d < f.lo || d > f.hi));
+        const r = $('inf-r-' + i), a = $('inf-a-' + i);
+        row.querySelector('.wt-slot').innerHTML = has ? basisTag(W, f.wt) : '';
+        if (!has || !(d >= 0) || !(c > 0)) { r.textContent = '—'; a.textContent = ''; if (f.load) $('inf-l-' + i).innerHTML = ''; return; }
+        const w = W[f.wt];
+        const perHrBase = d * w * (f.dT === 'min' ? 60 : 1) * UNIT_BASE[f.dU];
+        const rate = perHrBase / (c * UNIT_BASE[f.cU]);
+        r.textContent = (rate >= 100 ? rate.toFixed(0) : rate >= 10 ? rate.toFixed(1) : rate.toFixed(2)) + ' mL/hr';
+        const amt = perHrBase / UNIT_BASE[f.cU];
+        a.textContent = `${fmtAmt(amt, f.cU)}/hr`;
+        if (f.load) {
+          const lo = f.load.lo * w, hi = f.load.hi * w;
+          const v = (x) => fmtVol((x * UNIT_BASE[f.load.u]) / (c * UNIT_BASE[f.cU]));
+          $('inf-l-' + i).innerHTML = `<strong>Load</strong> ${fmt(f.load.lo)}–${fmt(f.load.hi)} ${f.load.u}/kg = <span class="v">${f.load.u === 'mcg' && hi >= 1000 ? fmt(lo / 1000) + '–' + fmt(hi / 1000) + ' mg' : fmt(lo) + '–' + fmt(hi) + ' ' + f.load.u}</span> (${v(lo)}–${v(hi)} mL) ${f.load.over}`;
+        }
+      });
+      document.querySelectorAll('.inf-section').forEach((s) => s.classList.toggle('hidden', infFilter !== 'all' && infFilter !== s.dataset.group));
+    }
+
+    $('inf-pills').addEventListener('click', (e) => {
+      const pill = e.target.closest('.pill');
+      if (!pill) return;
+      infFilter = pill.dataset.group;
+      document.querySelectorAll('#inf-pills .pill').forEach((el) => el.classList.toggle('active', el === pill));
+      updateInfusions(lastW);
+    });
+
+    function renderScalarList() {
+      const rows = [...DRUG_DB.map((d) => [d.name + ' (bolus)', d.wt || 'TBW']), ...INFUSIONS.map((f) => [f.name + ' (infusion)', f.wt])];
+      const by = { IBW: [], ABW: [], TBW: [] };
+      rows.forEach(([n, k]) => by[k].push(n));
+      $('scalar-list').innerHTML = Object.entries(by).map(([k, list]) => `<p><strong>${k}:</strong> ${list.join(', ')}</p>`).join('') +
+        '<p class="muted">Crisis drugs (epinephrine, amiodarone, adenosine, succinylcholine, dantrolene, calcium, defibrillation) use actual weight capped at adult doses. Lipid emulsion uses IBW. Based on common pediatric obesity dosing guidance; confirm against departmental policy.</p>';
+    }
+
     // ───────────────────────── Crisis modal ─────────────────────────
-    function renderCrisis(w, a) {
-      $('modal-wt-disp').textContent = w != null ? fmt(w) : '?';
+    function renderCrisis(W, a) {
+      const w = W.TBW;
+      $('modal-wt-disp').textContent = w != null ? fmt(w) + (W.active ? ` · IBW ${fmt(W.IBW)}` : '') : '?';
       $('crisis-empty').classList.toggle('hidden', w != null);
       const grid = $('crisis-grid');
       if (w == null) { grid.innerHTML = ''; return; }
@@ -841,10 +1128,10 @@
           <h4>LAST (Local Anesthetic Toxicity)</h4>
           <ul>
             <li>Stop local, call for help, airway/seizure control (benzo)</li>
-            <li><strong>20% Lipid bolus</strong> 1.5 mL/kg over 2–3 min: <span class="v">${fmt(1.5 * w)} mL</span></li>
-            <li><strong>Infusion</strong> 0.25 mL/kg/min: <span class="v">${fmt(0.25 * w)} mL/min</span> (${Math.round(15 * w)} mL/hr)</li>
+            <li><strong>20% Lipid bolus</strong> 1.5 mL/kg over 2–3 min: <span class="v">${fmt(1.5 * W.IBW)} mL</span>${W.active ? ' <span class="muted">(IBW)</span>' : ''}</li>
+            <li><strong>Infusion</strong> 0.25 mL/kg/min: <span class="v">${fmt(0.25 * W.IBW)} mL/min</span> (${Math.round(15 * W.IBW)} mL/hr)</li>
             <li>Repeat bolus ×2 and double rate (0.5 mL/kg/min) if unstable</li>
-            <li>Max ~12 mL/kg: <span class="v">${Math.round(12 * w)} mL</span> · epi ≤1 mcg/kg doses; avoid propofol, vasopressin, Ca-channel/β-blockers</li>
+            <li>Max ~12 mL/kg: <span class="v">${Math.round(12 * W.IBW)} mL</span> · epi ≤1 mcg/kg doses; avoid propofol, vasopressin, Ca-channel/β-blockers</li>
           </ul>
         </div>
 
@@ -902,6 +1189,8 @@
     function resetPatient() {
       ['age-val', 'weight-val', 'height-val', 'npo-val', 'hct-start', 'crisis-weight'].forEach((id) => ($(id).value = ''));
       $('age-unit').value = 'years';
+      $('sex-val').value = '';
+      $('scalar-mode').value = 'auto';
       $('hct-target').value = '25';
       calculateAll();
       $('age-val').focus();
@@ -918,7 +1207,7 @@
       const pill = e.target.closest('.pill');
       if (!pill) return;
       activeFilter = pill.dataset.cat;
-      document.querySelectorAll('.pill').forEach((el) => el.classList.toggle('active', el === pill));
+      document.querySelectorAll('#pill-group .pill').forEach((el) => el.classList.toggle('active', el === pill));
       calculateAll();
     });
 
@@ -978,7 +1267,13 @@
       if (p.npo != null) parts.push(`NPO: ${p.npo} h`);
       const grab = (id) => $(id).textContent;
       if (p.ageYears != null) parts.push(`Calculator airway: cuffed ETT ${grab('airway-ett-cuffed')}, depth ${grab('airway-depth')}, LMA ${grab('airway-lma')}`);
-      if (p.weight != null) parts.push(`Maintenance fluids ${grab('fluid-hourly')}, EBV ${grab('metric-ebv')}`);
+      if (p.sex) parts.push(`Sex: ${p.sex}`);
+      if (p.weight != null) {
+        const W = computeWeights(p);
+        if (W.bmi != null) parts.push(`BMI ${W.bmi.toFixed(1)}${W.ref ? ` (95th percentile for age ${W.ref.p95.toFixed(1)})` : ''}${W.obese ? ' — OBESE' : ''}`);
+        if (W.ibwRaw != null) parts.push(`IBW ${fmt(Math.min(W.ibwRaw, W.TBW))} kg; obesity weight scalars ${W.active ? 'ON' : 'off'}`);
+        parts.push(`Maintenance fluids ${grab('fluid-hourly')}, EBV ${grab('metric-ebv')}`);
+      }
       return parts.join('\n');
     }
 
@@ -1111,6 +1406,8 @@
 
     // ───────────────────────── Init ─────────────────────────
     (function init() {
+      buildInfusions();
+      renderScalarList();
       const savedKey = storageGet(KEY_STORE);
       if (savedKey) { $('api-key-input').value = savedKey; $('remember-key').checked = true; }
       calculateAll();

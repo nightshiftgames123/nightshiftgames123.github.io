@@ -131,6 +131,8 @@
     td.name small { display: block; font-weight: 400; color: var(--text-muted); font-size: 10px; margin-top: 2px; line-height: 1.35; }
     tr.section td { background: var(--section); color: var(--text-muted); font-size: 10px; text-transform: uppercase; letter-spacing: .05em; font-family: inherit; font-weight: 700; padding: 6px 10px; }
     .capped { color: var(--warn); font-size: 10px; display: block; font-weight: 600; }
+    .fav-btn { background: none; border: none; cursor: pointer; font-size: 18px; line-height: 1; padding: 2px 4px; margin-left: 4px; color: var(--text-muted); vertical-align: -2px; min-width: 28px; min-height: 28px; }
+    .fav-btn.on { color: #f59e0b; }
     .wt-basis { display: inline-block; margin-top: 3px; font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 4px; background: var(--info-bg); color: var(--info-text); border: 1px solid var(--info-border); font-family: inherit; }
     .mini-select { width: auto; min-height: 30px; padding: 4px 8px; font-size: 12px; text-transform: none; letter-spacing: 0; }
 
@@ -376,6 +378,7 @@
       <div id="tab-drugs" class="tab-pane active">
         <div class="pill-group" id="pill-group">
           <span class="pill active" data-cat="all">All</span>
+          <span class="pill" data-cat="fav">★ Favorites</span>
           <span class="pill" data-cat="induction">🟨 Induction/Sedation</span>
           <span class="pill" data-cat="paralytics">🟥 Relaxants &amp; Reversal</span>
           <span class="pill" data-cat="analgesics">🟦 Opioids &amp; Analgesia</span>
@@ -409,12 +412,14 @@
       <div id="tab-infusions" class="tab-pane">
         <div class="pill-group" id="inf-pills">
           <span class="pill active" data-group="all">All</span>
+          <span class="pill" data-group="fav">★ Favorites</span>
           <span class="pill" data-group="sedation">Anesthesia &amp; Sedation</span>
           <span class="pill" data-group="nmb">Relaxants</span>
           <span class="pill" data-group="vaso">Vasoactive</span>
           <span class="pill" data-group="other">Other</span>
         </div>
         <div id="inf-empty" class="alert alert-info">Enter the patient's weight to calculate infusion rates.</div>
+        <div id="inf-fav-empty" class="alert alert-info hidden">No favorite infusions yet. Tap ☆ next to an infusion to add it.</div>
         <div class="card" style="padding:0; overflow:hidden;">
           <div id="inf-list"></div>
         </div>
@@ -957,11 +962,17 @@
       const tbody = $('drug-tbody');
       $('drug-empty').classList.toggle('hidden', w != null);
       const rows = [];
-      const list = activeFilter === 'all' ? DRUG_DB : DRUG_DB.filter((d) => d.cat === activeFilter);
+      const list = activeFilter === 'all' ? DRUG_DB
+        : activeFilter === 'fav' ? DRUG_DB.filter((d) => isFav('d:' + d.name))
+        : DRUG_DB.filter((d) => d.cat === activeFilter);
+      if (activeFilter === 'fav' && !list.length) {
+        tbody.innerHTML = '<tr class="section"><td colspan="5" style="text-transform:none;letter-spacing:0;font-weight:500;padding:14px 10px;">No favorites yet. Tap ☆ next to a drug to add it.</td></tr>';
+        return;
+      }
       let lastCat = null;
 
       for (const d of list) {
-        if (activeFilter === 'all' && d.cat !== lastCat) {
+        if ((activeFilter === 'all' || activeFilter === 'fav') && d.cat !== lastCat) {
           rows.push(`<tr class="section"><td colspan="5">${CAT_TITLES[d.cat]}</td></tr>`);
           lastCat = d.cat;
         }
@@ -976,7 +987,7 @@
         }
         const sub = [d.concText, d.note].filter(Boolean).join(' · ');
         rows.push(`<tr>
-          <td class="name">${d.name}<small>${sub}</small></td>
+          <td class="name">${d.name}${favBtn('d:' + d.name)}<small>${sub}</small></td>
           <td><span class="astm-tag ${d.astm}">${d.label}</span></td>
           <td style="color: var(--text-muted);">${fmt(perKg)} ${d.unit}/kg<small style="display:block;font-size:10px;">range ${d.range}${d.max != null ? ' · max ' + fmt(d.max) + ' ' + d.unit : ''}</small>${w != null ? basisTag(W, d.wt || 'TBW') : ''}</td>
           <td style="color: var(--accent); font-weight: bold;">${doseCell}</td>
@@ -985,6 +996,22 @@
       }
       tbody.innerHTML = rows.join('');
     }
+
+    // ───────────────────────── Favorites (saved on this device) ─────────────────────────
+    const FAV_KEY = 'peds_favorites';
+    let favorites;
+    try { favorites = new Set(JSON.parse(localStorage.getItem(FAV_KEY) || '[]')); } catch { favorites = new Set(); }
+    const isFav = (id) => favorites.has(id);
+    const favBtn = (id) => `<button type="button" class="fav-btn${isFav(id) ? ' on' : ''}" data-fav="${escapeHtml(id)}" aria-label="Toggle favorite" title="Favorite">${isFav(id) ? '★' : '☆'}</button>`;
+    function toggleFav(id) {
+      favorites.has(id) ? favorites.delete(id) : favorites.add(id);
+      storageSet(FAV_KEY, JSON.stringify([...favorites]));
+      calculateAll();
+    }
+    document.addEventListener('click', (e) => {
+      const b = e.target.closest('.fav-btn');
+      if (b) { e.preventDefault(); toggleFav(b.dataset.fav); }
+    });
 
     // ───────────────────────── Infusions ─────────────────────────
     const UNIT_BASE = { mcg: 1, mg: 1000, U: 1, mU: 0.001 };
@@ -1018,7 +1045,7 @@
         if (f.group !== last) { html += `<div class="inf-section" data-group="${f.group}">${INF_GROUPS[f.group]}</div>`; last = f.group; }
         html += `<div class="inf-row" data-group="${f.group}" data-i="${i}">
           <div class="inf-head">
-            <div class="inf-name">${f.name}<small><span id="inf-usual-${i}"></span>${f.note ? ' · ' + f.note : ''}</small><span class="wt-slot"></span></div>
+            <div class="inf-name">${f.name}${favBtn('i:' + f.name)}<small><span id="inf-usual-${i}"></span>${f.note ? ' · ' + f.note : ''}</small><span class="wt-slot"></span></div>
             <span class="astm-tag ${f.astm}">${f.label}</span>
           </div>
           <div class="inf-field">${unitCtl}
@@ -1040,7 +1067,10 @@
       $('inf-empty').classList.toggle('hidden', !!has);
       INFUSIONS.forEach((f, i) => {
         const row = document.querySelector(`.inf-row[data-i="${i}"]`);
-        row.classList.toggle('hidden', infFilter !== 'all' && infFilter !== f.group);
+        const fav = isFav('i:' + f.name);
+        row.querySelector('.fav-btn').classList.toggle('on', fav);
+        row.querySelector('.fav-btn').textContent = fav ? '★' : '☆';
+        row.classList.toggle('hidden', infFilter === 'fav' ? !fav : infFilter !== 'all' && infFilter !== f.group);
         const doseIn = $('inf-d-' + i), concIn = $('inf-c-' + i);
         const d = parseFloat(doseIn.value), c = parseFloat(concIn.value);
         const cur = infUnit[i], base = { u: f.dU, t: f.dT };
@@ -1062,7 +1092,12 @@
           $('inf-l-' + i).innerHTML = `<strong>Load</strong> ${fmt(f.load.lo)}–${fmt(f.load.hi)} ${f.load.u}/kg = <span class="v">${f.load.u === 'mcg' && hi >= 1000 ? fmt(lo / 1000) + '–' + fmt(hi / 1000) + ' mg' : fmt(lo) + '–' + fmt(hi) + ' ' + f.load.u}</span> (${v(lo)}–${v(hi)} mL) ${f.load.over}`;
         }
       });
-      document.querySelectorAll('.inf-section').forEach((s) => s.classList.toggle('hidden', infFilter !== 'all' && infFilter !== s.dataset.group));
+      // Hide a section header when none of its rows are visible.
+      document.querySelectorAll('.inf-section').forEach((s) => {
+        const visible = [...document.querySelectorAll(`.inf-row[data-group="${s.dataset.group}"]`)].some((r) => !r.classList.contains('hidden'));
+        s.classList.toggle('hidden', !visible);
+      });
+      $('inf-fav-empty').classList.toggle('hidden', !(infFilter === 'fav' && !INFUSIONS.some((f) => isFav('i:' + f.name))));
     }
 
     $('inf-pills').addEventListener('click', (e) => {

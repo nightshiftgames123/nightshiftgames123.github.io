@@ -133,6 +133,7 @@
     .capped { color: var(--warn); font-size: 10px; display: block; font-weight: 600; }
     .fav-btn { background: none; border: none; cursor: pointer; font-size: 18px; line-height: 1; padding: 2px 4px; margin-left: 4px; color: var(--text-muted); vertical-align: -2px; min-width: 28px; min-height: 28px; }
     .fav-btn.on { color: #f59e0b; }
+    .src { display: block; margin-top: 2px; font-size: 9px; color: var(--text-muted); font-style: italic; }
     .wt-basis { display: inline-block; margin-top: 3px; font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 4px; background: var(--info-bg); color: var(--info-text); border: 1px solid var(--info-border); font-family: inherit; }
     .mini-select { width: auto; min-height: 30px; padding: 4px 8px; font-size: 12px; text-transform: none; letter-spacing: 0; }
 
@@ -595,6 +596,16 @@
         <p>• IBW, ages 1–18: height &lt;152.4 cm → height² × 1.65 / 1000; ≥152.4 cm → Devine (male 50 / female 45.5 kg + 2.3 kg per inch over 5 ft). Never exceeds TBW.</p>
         <p>• ABW = IBW + 0.4 × (TBW − IBW)</p>
         <p>• Obesity: BMI ≥ 95th percentile for age and sex (CDC 2000, ages 2–20), BMI ≥ 30 for adults. Not assessed under 2 years.</p>
+        <h4 style="color: var(--accent); margin: 12px 0 4px;">Dose sources (US)</h4>
+        <p>Every drug row shows its source (📖). Checked October 2026 against:</p>
+        <p>• <strong>FDA prescribing information:</strong> Diprivan, Ultiva, Precedex (pediatric procedural sedation), Amidate, midazolam, Anectine, rocuronium, vecuronium, cisatracurium, Bridion, Bloxiverz, glycopyrrolate, Zofran, Ofirmev, ketorolac, Prostin VR, Ryanodex/Dantrium</p>
+        <p>• <strong>AHA PALS 2020</strong> (cardiac arrest, bradycardia and tachycardia algorithms, vasoactive drugs)</p>
+        <p>• <strong>Society for Pediatric Anesthesia</strong> Critical Events Checklists (anaphylaxis)</p>
+        <p>• <strong>MHAUS</strong> (malignant hyperthermia) · <strong>ASRA 2020</strong> LAST checklist</p>
+        <p>• <strong>AAP</strong> (anaphylaxis 2017, naloxone, hypertension 2017) · <strong>American Epilepsy Society 2016</strong> (status epilepticus)</p>
+        <p>• <strong>Fourth Consensus Guidelines for PONV</strong> (Gan et al., Anesth Analg 2020)</p>
+        <p>• US children's-hospital pathways (Johns Hopkins All Children's, CHOP, Nationwide Children's) where no label exists</p>
+        <p class="muted">"Common practice" marks doses widely used but not taken from a label or national guideline. Have your pharmacy confirm these first.</p>
         <h4 style="color: var(--accent); margin: 12px 0 4px;">Weight used when obesity scalars are on</h4>
         <div id="scalar-list"></div>
         <p>• Maintenance (Holliday-Segar 4-2-1)</p>
@@ -614,20 +625,20 @@
       { name: 'Propofol', wt: 'IBW', cat: 'induction', astm: 'astm-induction', label: 'Induction', dose: 3, range: '2.5–3.5', unit: 'mg', conc: 10, concText: '10 mg/mL', note: 'Infants need doses at the top of the range' },
       { name: 'Ketamine IV', wt: 'IBW', cat: 'induction', astm: 'astm-induction', label: 'Induction', dose: 2, range: '1–2', unit: 'mg', conc: 10, concText: '10 mg/mL (diluted)' },
       { name: 'Ketamine IM', wt: 'IBW', cat: 'induction', astm: 'astm-induction', label: 'Induction', dose: 4, range: '4–5', unit: 'mg', conc: 50, concText: '50 mg/mL', note: 'Without IV access' },
-      { name: 'Etomidate', wt: 'IBW', cat: 'induction', astm: 'astm-induction', label: 'Induction', dose: 0.3, range: '0.2–0.3', unit: 'mg', conc: 2, concText: '2 mg/mL' },
-      { name: 'Midazolam IV', wt: 'IBW', cat: 'induction', astm: 'astm-benzo', label: 'Benzo', dose: 0.05, range: '0.05–0.1', unit: 'mg', max: 2, conc: 1, concText: '1 mg/mL' },
-      { name: 'Midazolam PO', wt: 'IBW', cat: 'induction', astm: 'astm-benzo', label: 'Benzo', dose: 0.5, range: '0.25–0.75', unit: 'mg', max: 20, conc: 2, concText: '2 mg/mL syrup', note: 'Premed 15–30 min before' },
+      { name: 'Etomidate', wt: 'IBW', cat: 'induction', astm: 'astm-induction', label: 'Induction', dose: 0.3, range: '0.2–0.6', unit: 'mg', conc: 2, concText: '2 mg/mL', note: 'Labeled for >10 y; younger children off-label (0.2–0.3)' },
+      { name: 'Midazolam IV', wt: 'IBW', cat: 'induction', astm: 'astm-benzo', label: 'Benzo', dose: 0.05, range: '0.05–0.1', unit: 'mg', max: 2, conc: 1, concText: '1 mg/mL', note: 'Titrate; label total max 6 mg (6 mo–5 y), 10 mg (6–12 y)' },
+      { name: 'Midazolam PO', wt: 'IBW', cat: 'induction', astm: 'astm-benzo', label: 'Benzo', dose: 0.5, range: '0.25–1', unit: 'mg', max: 20, conc: 2, concText: '2 mg/mL syrup', note: 'Premed 15–30 min before' },
       { name: 'Dexmedetomidine IN', wt: 'IBW', cat: 'induction', astm: 'astm-other', label: 'Sedative', dose: 2, range: '1–2', unit: 'mcg', max: 100, conc: 100, concText: '100 mcg/mL (undiluted)', note: 'Intranasal premed, onset 30–45 min' },
 
       // Relaxants & reversal
       { name: 'Rocuronium', wt: 'IBW', cat: 'paralytics', astm: 'astm-paralytic', label: 'Relaxant', dose: 0.6, range: '0.6 (RSI 1.2)', unit: 'mg', conc: 10, concText: '10 mg/mL' },
-      { name: 'Rocuronium RSI', wt: 'IBW', cat: 'paralytics', astm: 'astm-paralytic', label: 'Relaxant', dose: 1.2, range: '1–1.2', unit: 'mg', conc: 10, concText: '10 mg/mL' },
-      { name: 'Succinylcholine IV', wt: 'TBW', cat: 'paralytics', astm: 'astm-paralytic', label: 'Relaxant', doseFn: (w, a) => (a != null && a < 1 ? 2 : 1.5), range: 'infant 2 / child 1–2', unit: 'mg', max: 150, conc: 20, concText: '20 mg/mL', note: 'Give atropine first in children; risk of hyperkalemic arrest in undiagnosed myopathy' },
-      { name: 'Succinylcholine IM', wt: 'TBW', cat: 'paralytics', astm: 'astm-paralytic', label: 'Relaxant', dose: 4, range: '4', unit: 'mg', max: 150, conc: 20, concText: '20 mg/mL' },
+      { name: 'Rocuronium RSI', wt: 'IBW', cat: 'paralytics', astm: 'astm-paralytic', label: 'Relaxant', dose: 1.2, range: '0.6–1.2', unit: 'mg', conc: 10, concText: '10 mg/mL', note: 'RSI not recommended in children per FDA label; off-label use common' },
+      { name: 'Succinylcholine IV', wt: 'TBW', cat: 'paralytics', astm: 'astm-paralytic', label: 'Relaxant', doseFn: (w, a) => (a == null || a < 5 ? 2 : 1), range: 'infants/small children 2; older 1', unit: 'mg', max: 150, conc: 20, concText: '20 mg/mL', note: 'Give atropine first in children; risk of hyperkalemic arrest in undiagnosed myopathy' },
+      { name: 'Succinylcholine IM', wt: 'TBW', cat: 'paralytics', astm: 'astm-paralytic', label: 'Relaxant', dose: 4, range: '3–4', unit: 'mg', max: 150, conc: 20, concText: '20 mg/mL' },
       { name: 'Vecuronium', wt: 'IBW', cat: 'paralytics', astm: 'astm-paralytic', label: 'Relaxant', dose: 0.1, range: '0.1', unit: 'mg', conc: 1, concText: '1 mg/mL' },
       { name: 'Cisatracurium', wt: 'IBW', cat: 'paralytics', astm: 'astm-paralytic', label: 'Relaxant', dose: 0.15, range: '0.1–0.2', unit: 'mg', conc: 2, concText: '2 mg/mL' },
       { name: 'Sugammadex (moderate)', wt: 'TBW', cat: 'paralytics', astm: 'astm-reversal', label: 'Reversal', dose: 2, range: '2 (TOF ≥2)', unit: 'mg', conc: 100, concText: '100 mg/mL' },
-      { name: 'Sugammadex (deep)', wt: 'TBW', cat: 'paralytics', astm: 'astm-reversal', label: 'Reversal', dose: 4, range: '4 (PTC 1–2)', unit: 'mg', conc: 100, concText: '100 mg/mL', note: 'Immediate reversal after RSI dose roc: 16 mg/kg' },
+      { name: 'Sugammadex (deep)', wt: 'TBW', cat: 'paralytics', astm: 'astm-reversal', label: 'Reversal', dose: 4, range: '4 (PTC 1–2)', unit: 'mg', conc: 100, concText: '100 mg/mL', note: 'Labeled ≥2 y. 16 mg/kg immediate reversal not studied in children' },
       { name: 'Neostigmine', wt: 'TBW', cat: 'paralytics', astm: 'astm-reversal', label: 'Reversal', dose: 0.05, range: '0.03–0.07', unit: 'mg', max: 5, conc: 1, concText: '1 mg/mL', note: 'Always with glycopyrrolate or atropine' },
       { name: 'Naloxone (titrate)', wt: 'TBW', cat: 'paralytics', astm: 'astm-opioid-antag', label: 'Opioid antag', dose: 1, range: '1–2, repeat', unit: 'mcg', conc: 40, concText: '40 mcg/mL (0.4 mg in 10 mL)', note: 'Full reversal/arrest: 0.1 mg/kg (max 2 mg)' },
       { name: 'Flumazenil', wt: 'TBW', cat: 'paralytics', astm: 'astm-other', label: 'Benzo antag', dose: 0.01, range: '0.01', unit: 'mg', max: 0.2, conc: 0.1, concText: '0.1 mg/mL' },
@@ -636,23 +647,24 @@
       { name: 'Fentanyl', wt: 'IBW', cat: 'analgesics', astm: 'astm-opioid', label: 'Opioid', dose: 1, range: '0.5–2', unit: 'mcg', conc: 10, concText: '10 mcg/mL (diluted)', note: 'Undiluted 50 mcg/mL = ¹⁄₅ of the volume shown' },
       { name: 'Morphine IV', wt: 'IBW', cat: 'analgesics', astm: 'astm-opioid', label: 'Opioid', dose: 0.05, range: '0.05–0.1', unit: 'mg', conc: 1, concText: '1 mg/mL' },
       { name: 'Hydromorphone IV', wt: 'IBW', cat: 'analgesics', astm: 'astm-opioid', label: 'Opioid', dose: 0.01, range: '0.005–0.015', unit: 'mg', conc: 0.2, concText: '0.2 mg/mL (diluted)' },
-      { name: 'Acetaminophen IV', wt: 'IBW', cat: 'analgesics', astm: 'astm-other', label: 'Analgesic', doseFn: (w, a) => (a != null && a < 1 / 12 ? 10 : 15), range: '15 (neonate 10)', unit: 'mg', max: 1000, conc: 10, concText: '10 mg/mL', note: 'Max 75 mg/kg/day (≤4 g)' },
-      { name: 'Ketorolac IV', wt: 'IBW', cat: 'analgesics', astm: 'astm-other', label: 'NSAID', dose: 0.5, range: '0.5', unit: 'mg', max: 30, conc: 15, concText: '15 mg/mL', note: '≥6 months; avoid with bleeding risk or renal impairment' },
+      { name: 'Acetaminophen IV', wt: 'IBW', cat: 'analgesics', astm: 'astm-other', label: 'Analgesic', doseFn: (w, a) => (a != null && a < 29 / 365.25 ? 12.5 : 15), range: '15 (neonate 12.5)', unit: 'mg', max: 1000, conc: 10, concText: '10 mg/mL', note: 'q6h. Daily max: neonate 50, <2 y 60, ≥2 y 75 mg/kg (≤4 g)' },
+      { name: 'Ketorolac IV', wt: 'IBW', cat: 'analgesics', astm: 'astm-other', label: 'NSAID', dose: 0.5, range: '0.5', unit: 'mg', max: 15, conc: 15, concText: '15 mg/mL', note: 'IV single dose labeled 2–16 y (younger off-label); avoid with bleeding risk or renal impairment' },
 
       // Adjuncts
       { name: 'Atropine', wt: 'TBW', cat: 'adjuncts', astm: 'astm-anticholinergic', label: 'Antichol', dose: 0.02, range: '0.01–0.02', unit: 'mg', max: 0.5, conc: 0.4, concText: '0.4 mg/mL' },
-      { name: 'Glycopyrrolate', wt: 'TBW', cat: 'adjuncts', astm: 'astm-anticholinergic', label: 'Antichol', dose: 0.01, range: '0.01', unit: 'mg', max: 0.4, conc: 0.2, concText: '0.2 mg/mL', note: 'With neostigmine: 0.2 mg per 1 mg neostigmine' },
+      { name: 'Glycopyrrolate', wt: 'TBW', cat: 'adjuncts', astm: 'astm-anticholinergic', label: 'Antichol', dose: 0.004, range: '0.004 (infants up to 0.009)', unit: 'mg', max: 0.1, conc: 0.2, concText: '0.2 mg/mL', note: 'Antisialagogue / intraop bradycardia' },
+      { name: 'Glycopyrrolate (with neostigmine)', wt: 'TBW', cat: 'adjuncts', astm: 'astm-anticholinergic', label: 'Antichol', dose: 0.01, range: '0.2 mg per 1 mg neostigmine', unit: 'mg', max: 1, conc: 0.2, concText: '0.2 mg/mL', note: 'Matches neostigmine 0.05 mg/kg; may mix in the same syringe' },
       { name: 'Ondansetron', wt: 'TBW', cat: 'adjuncts', astm: 'astm-antiemetic', label: 'Antiemetic', dose: 0.1, range: '0.1', unit: 'mg', max: 4, conc: 2, concText: '2 mg/mL' },
-      { name: 'Dexamethasone', wt: 'IBW', cat: 'adjuncts', astm: 'astm-other', label: 'Steroid', dose: 0.15, range: '0.0625–0.15 (airway 0.5)', unit: 'mg', max: 8, conc: 4, concText: '4 mg/mL' },
+      { name: 'Dexamethasone', wt: 'IBW', cat: 'adjuncts', astm: 'astm-other', label: 'Steroid', dose: 0.15, range: '0.15 PONV (airway 0.5)', unit: 'mg', max: 5, conc: 4, concText: '4 mg/mL' },
       { name: 'Diphenhydramine', wt: 'TBW', cat: 'adjuncts', astm: 'astm-other', label: 'Antihist', dose: 1, range: '0.5–1', unit: 'mg', max: 50, conc: 50, concText: '50 mg/mL' },
 
       // Vasoactive
       { name: 'Ephedrine', wt: 'TBW', cat: 'pressors', astm: 'astm-pressor', label: 'Pressor', dose: 0.1, range: '0.1–0.2', unit: 'mg', max: 10, conc: 5, concText: '5 mg/mL (diluted)' },
       { name: 'Phenylephrine', wt: 'TBW', cat: 'pressors', astm: 'astm-pressor', label: 'Pressor', dose: 1, range: '0.5–2', unit: 'mcg', max: 100, conc: 100, concText: '100 mcg/mL (diluted)' },
       { name: 'Epinephrine (push-dose)', wt: 'TBW', cat: 'pressors', astm: 'astm-pressor', label: 'Pressor', dose: 1, range: '0.5–1', unit: 'mcg', conc: 10, concText: '10 mcg/mL (1:100,000)', note: 'Hypotension or anaphylaxis — titrate. NOT the arrest dose' },
-      { name: 'Calcium chloride 10%', wt: 'TBW', cat: 'pressors', astm: 'astm-other', label: 'Electrolyte', dose: 10, range: '10–20', unit: 'mg', max: 1000, conc: 100, concText: '100 mg/mL', note: 'Hypocalcemia / transfusion / inotropy; central line preferred, slow push' },
+      { name: 'Calcium chloride 10%', wt: 'TBW', cat: 'pressors', astm: 'astm-other', label: 'Electrolyte', dose: 20, range: '20', unit: 'mg', max: 1000, conc: 100, concText: '100 mg/mL', note: 'Hypocalcemia / transfusion / inotropy; central line preferred, slow push' },
       { name: 'Esmolol', wt: 'IBW', cat: 'pressors', astm: 'astm-hypotensive', label: 'Hypotensive', dose: 0.5, range: '0.1–0.5', unit: 'mg', conc: 10, concText: '10 mg/mL', note: 'Bolus over 1 min; infusion in Infusions tab' },
-      { name: 'Labetalol', wt: 'IBW', cat: 'pressors', astm: 'astm-hypotensive', label: 'Hypotensive', dose: 0.2, range: '0.2–0.5', unit: 'mg', max: 20, conc: 5, concText: '5 mg/mL' },
+      { name: 'Labetalol', wt: 'IBW', cat: 'pressors', astm: 'astm-hypotensive', label: 'Hypotensive', dose: 0.2, range: '0.2–1', unit: 'mg', max: 40, conc: 5, concText: '5 mg/mL', note: 'Repeat q10 min as needed' },
       { name: 'Hydralazine', wt: 'IBW', cat: 'pressors', astm: 'astm-hypotensive', label: 'Hypotensive', dose: 0.1, range: '0.1–0.2', unit: 'mg', max: 20, conc: 20, concText: '20 mg/mL' },
 
       // Local anesthetics — maximum doses
@@ -662,42 +674,49 @@
       { name: 'Lidocaine 1% + epi', wt: 'IBW', cat: 'local', astm: 'astm-local', label: 'Local', kind: 'max', dose: 7, range: '7', unit: 'mg', max: 500, conc: 10, concText: '10 mg/mL' }
     ];
 
+    // Where each dose comes from (shown on every row; full list in Info).
+    const SRC_BOLUS = {"Propofol": "FDA label (Diprivan)", "Ketamine IV": "Common practice (ACEP sedation)", "Ketamine IM": "Common practice (ACEP sedation)", "Etomidate": "FDA label (Amidate)", "Midazolam IV": "FDA label", "Midazolam PO": "FDA label (oral syrup)", "Dexmedetomidine IN": "Off-label; common practice", "Rocuronium": "FDA label", "Rocuronium RSI": "FDA label (adult RSI); off-label in children", "Succinylcholine IV": "FDA label (Anectine)", "Succinylcholine IM": "FDA label (Anectine)", "Vecuronium": "FDA label", "Cisatracurium": "FDA label", "Sugammadex (moderate)": "FDA label (Bridion, ≥2 y)", "Sugammadex (deep)": "FDA label (Bridion, ≥2 y)", "Neostigmine": "FDA label (Bloxiverz)", "Naloxone (titrate)": "AAP", "Flumazenil": "FDA label", "Fentanyl": "Common practice", "Morphine IV": "Common practice", "Hydromorphone IV": "Common practice", "Acetaminophen IV": "FDA label (Ofirmev)", "Ketorolac IV": "FDA label", "Atropine": "AHA PALS 2020", "Glycopyrrolate": "FDA label", "Glycopyrrolate (with neostigmine)": "FDA label", "Ondansetron": "FDA label (Zofran)", "Dexamethasone": "4th PONV Consensus (Gan 2020)", "Diphenhydramine": "Common practice", "Ephedrine": "Common practice", "Phenylephrine": "Common practice", "Epinephrine (push-dose)": "Common practice", "Calcium chloride 10%": "AHA PALS 2020", "Esmolol": "Common practice", "Labetalol": "Pediatric HTN emergency table (AAP 2017)", "Hydralazine": "Pediatric HTN emergency table (AAP 2017)", "Bupivacaine 0.25%": "Commonly cited maximum", "Ropivacaine 0.2%": "Commonly cited maximum", "Lidocaine 1% plain": "Commonly cited maximum", "Lidocaine 1% + epi": "Commonly cited maximum"};
+    DRUG_DB.forEach((d) => (d.src = SRC_BOLUS[d.name] || 'Common practice'));
+
     const CAT_TITLES = { induction: 'Induction & Sedation', paralytics: 'Relaxants & Reversal', analgesics: 'Opioids & Analgesia', adjuncts: 'Adjuncts', pressors: 'Vasoactive (bolus)', local: 'Local Anesthetics — MAXIMUM total dose' };
 
     // ───────────────────────── Continuous infusions ─────────────────────────
     // def: default dose; lo/hi: usual range; dU/dT: dose unit (mcg|mg|U|mU) per kg per (min|hr);
     // conc/cU: default syringe concentration; wt: weight scalar when obesity scalars are on.
     const INFUSIONS = [
-      { name: 'Propofol', group: 'sedation', astm: 'astm-induction', label: 'Induction', def: 150, lo: 50, hi: 300, dU: 'mcg', dT: 'min', conc: 10, cU: 'mg', wt: 'TBW', note: 'TIVA 150–300; sedation 50–150. Children need higher rates than adults' },
-      { name: 'Remifentanil', group: 'sedation', astm: 'astm-opioid', label: 'Opioid', def: 0.2, lo: 0.05, hi: 0.5, dU: 'mcg', dT: 'min', conc: 20, cU: 'mcg', wt: 'IBW', note: 'No bolus needed; chest-wall rigidity with rapid boluses. Plan longer-acting analgesia before stopping' },
+      { name: 'Propofol', group: 'sedation', astm: 'astm-induction', label: 'Induction', def: 200, lo: 125, hi: 300, dU: 'mcg', dT: 'min', conc: 10, cU: 'mg', wt: 'TBW', note: 'Maintenance ≥2 months: start 200–300, then 125–300. Pediatric sedation (lower rates) is off-label' },
+      { name: 'Remifentanil', group: 'sedation', astm: 'astm-opioid', label: 'Opioid', def: 0.25, lo: 0.05, hi: 1.3, dU: 'mcg', dT: 'min', conc: 20, cU: 'mcg', wt: 'IBW', note: '1–12 y with volatile: 0.25; birth–2 mo with N₂O: 0.4. No bolus needed; chest-wall rigidity with rapid boluses. Plan longer-acting analgesia before stopping' },
       { name: 'Fentanyl', group: 'sedation', astm: 'astm-opioid', label: 'Opioid', def: 2, lo: 1, hi: 5, dU: 'mcg', dT: 'hr', conc: 10, cU: 'mcg', wt: 'IBW', note: 'Intraop 1–3; ICU sedation 1–4 mcg/kg/hr' },
-      { name: 'Dexmedetomidine (Precedex)', group: 'sedation', astm: 'astm-other', label: 'Sedative', def: 0.5, lo: 0.2, hi: 1, dU: 'mcg', dT: 'hr', conc: 4, cU: 'mcg', wt: 'IBW', note: 'Up to 1.5–2 mcg/kg/hr in ICU. Bradycardia/hypotension, especially with the load', load: { lo: 0.5, hi: 1, u: 'mcg', over: 'over 10 min (optional)' } },
+      { name: 'Dexmedetomidine (Precedex)', group: 'sedation', astm: 'astm-other', label: 'Sedative', def: 0.5, lo: 0.2, hi: 1.5, dU: 'mcg', dT: 'hr', conc: 4, cU: 'mcg', wt: 'IBW', note: 'Procedural sedation (1 mo–<18 y): 0.5–1.5. Intraop adjunct often 0.2–0.7. Not for >24 h. Bradycardia/hypotension', load: { lo: 0.5, hi: 2, u: 'mcg', over: 'over 10 min. Labeled load: 1.5 (<2 y) or 2 mcg/kg (≥2 y); intraop often 0.5–1' } },
       { name: 'Ketamine', group: 'sedation', astm: 'astm-induction', label: 'Induction', def: 5, lo: 2, hi: 8, dU: 'mcg', dT: 'min', conc: 1, cU: 'mg', wt: 'IBW', note: 'Analgesic 2–8 mcg/kg/min; sedation 10–30 mcg/kg/min' },
-      { name: 'Midazolam', group: 'sedation', astm: 'astm-benzo', label: 'Benzo', def: 1.5, lo: 1, hi: 3, dU: 'mcg', dT: 'min', conc: 1, cU: 'mg', wt: 'IBW', note: 'Accumulates in prolonged infusions and with renal impairment' },
+      { name: 'Midazolam', group: 'sedation', astm: 'astm-benzo', label: 'Benzo', def: 1.5, lo: 0.8, hi: 3.3, dU: 'mcg', dT: 'min', conc: 1, cU: 'mg', wt: 'IBW', note: 'Accumulates in prolonged infusions and with renal impairment' },
       { name: 'Morphine', group: 'sedation', astm: 'astm-opioid', label: 'Opioid', def: 20, lo: 10, hi: 40, dU: 'mcg', dT: 'hr', conc: 1, cU: 'mg', wt: 'IBW', note: 'Neonates 5–10 mcg/kg/hr' },
       { name: 'Hydromorphone', group: 'sedation', astm: 'astm-opioid', label: 'Opioid', def: 4, lo: 3, hi: 5, dU: 'mcg', dT: 'hr', conc: 0.2, cU: 'mg', wt: 'IBW' },
       { name: 'Lidocaine (analgesic)', group: 'sedation', astm: 'astm-local', label: 'Local', def: 25, lo: 15, hi: 33, dU: 'mcg', dT: 'min', conc: 10, cU: 'mg', wt: 'IBW', note: 'Counts toward the local anesthetic maximum; stop if signs of LAST', load: { lo: 1, hi: 1.5, u: 'mg', over: 'over 10 min' } },
 
-      { name: 'Rocuronium', group: 'nmb', astm: 'astm-paralytic', label: 'Relaxant', def: 10, lo: 7, hi: 12, dU: 'mcg', dT: 'min', conc: 10, cU: 'mg', wt: 'IBW', note: 'Titrate to train-of-four' },
+      { name: 'Rocuronium', group: 'nmb', astm: 'astm-paralytic', label: 'Relaxant', def: 10, lo: 7, hi: 12, dU: 'mcg', dT: 'min', conc: 10, cU: 'mg', wt: 'IBW', note: 'Start after early recovery from intubating dose: 7–10 (sevoflurane/isoflurane), 12 (halothane). Titrate to train-of-four' },
       { name: 'Cisatracurium', group: 'nmb', astm: 'astm-paralytic', label: 'Relaxant', def: 2, lo: 1, hi: 4, dU: 'mcg', dT: 'min', conc: 2, cU: 'mg', wt: 'IBW', note: 'Organ-independent (Hofmann) elimination; titrate to train-of-four' },
-      { name: 'Vecuronium', group: 'nmb', astm: 'astm-paralytic', label: 'Relaxant', def: 1, lo: 0.8, hi: 1.7, dU: 'mcg', dT: 'min', conc: 1, cU: 'mg', wt: 'IBW', note: 'Accumulates in renal/hepatic impairment' },
+      { name: 'Vecuronium', group: 'nmb', astm: 'astm-paralytic', label: 'Relaxant', def: 1, lo: 0.8, hi: 1.2, dU: 'mcg', dT: 'min', conc: 1, cU: 'mg', wt: 'IBW', note: 'Accumulates in renal/hepatic impairment' },
 
       { name: 'Epinephrine', group: 'vaso', astm: 'astm-pressor', label: 'Pressor', def: 0.05, lo: 0.01, hi: 1, dU: 'mcg', dT: 'min', conc: 16, cU: 'mcg', wt: 'ABW', note: 'Usual 0.02–0.3. Inotropy at low doses, vasoconstriction at higher doses' },
-      { name: 'Norepinephrine', group: 'vaso', astm: 'astm-pressor', label: 'Pressor', def: 0.05, lo: 0.01, hi: 2, dU: 'mcg', dT: 'min', conc: 16, cU: 'mcg', wt: 'ABW', note: 'Usual 0.05–0.5. Warm/vasodilatory shock; central line preferred' },
+      { name: 'Norepinephrine', group: 'vaso', astm: 'astm-pressor', label: 'Pressor', def: 0.05, lo: 0.05, hi: 2, dU: 'mcg', dT: 'min', conc: 16, cU: 'mcg', wt: 'ABW', note: 'Usual 0.05–0.5. Warm/vasodilatory shock; central line preferred' },
       { name: 'Dopamine', group: 'vaso', astm: 'astm-pressor', label: 'Pressor', def: 5, lo: 2, hi: 20, dU: 'mcg', dT: 'min', conc: 1600, cU: 'mcg', wt: 'ABW', note: '5–10 inotropic; >10 vasoconstrictive. Extravasation: phentolamine' },
       { name: 'Dobutamine', group: 'vaso', astm: 'astm-pressor', label: 'Inotrope', def: 5, lo: 2, hi: 20, dU: 'mcg', dT: 'min', conc: 2000, cU: 'mcg', wt: 'ABW', note: 'Inotrope/vasodilator; may cause tachycardia, hypotension' },
-      { name: 'Milrinone', group: 'vaso', astm: 'astm-pressor', label: 'Inodilator', def: 0.5, lo: 0.25, hi: 0.75, dU: 'mcg', dT: 'min', conc: 200, cU: 'mcg', wt: 'ABW', note: 'Reduce dose in renal impairment. Load often omitted or given slowly to avoid hypotension', load: { lo: 50, hi: 75, u: 'mcg', over: 'over 30–60 min (optional)' } },
-      { name: 'Vasopressin', group: 'vaso', astm: 'astm-pressor', label: 'Pressor', def: 0.5, lo: 0.3, hi: 2, dU: 'mU', dT: 'min', conc: 0.2, cU: 'U', wt: 'ABW', note: 'milliunits/kg/min (0.0003–0.002 U/kg/min). Catecholamine-refractory vasodilatory shock. Adult max 0.04 U/min' },
+      { name: 'Milrinone', group: 'vaso', astm: 'astm-pressor', label: 'Inodilator', def: 0.5, lo: 0.25, hi: 0.75, dU: 'mcg', dT: 'min', conc: 200, cU: 'mcg', wt: 'ABW', note: 'Reduce dose in renal impairment. Load often omitted or given slowly to avoid hypotension', load: { lo: 50, hi: 50, u: 'mcg', over: 'over 10–60 min (optional)' } },
+      { name: 'Vasopressin', group: 'vaso', astm: 'astm-pressor', label: 'Pressor', def: 0.5, lo: 0.3, hi: 2, dU: 'mU', dT: 'min', conc: 0.2, cU: 'U', wt: 'ABW', note: 'milliunits/kg/min (0.0003–0.002 U/kg/min). Off-label in children (not FDA-established); catecholamine-refractory vasodilatory shock. Adult max 0.04 U/min' },
       { name: 'Phenylephrine', group: 'vaso', astm: 'astm-pressor', label: 'Pressor', def: 0.2, lo: 0.1, hi: 0.5, dU: 'mcg', dT: 'min', conc: 40, cU: 'mcg', wt: 'ABW', note: 'Pure α-agonist; reflex bradycardia. Useful in tetralogy spells' },
       { name: 'Isoproterenol', group: 'vaso', astm: 'astm-pressor', label: 'Chronotrope', def: 0.05, lo: 0.05, hi: 2, dU: 'mcg', dT: 'min', conc: 16, cU: 'mcg', wt: 'ABW', note: 'Bradycardia/heart block, pulmonary vasodilation; causes tachyarrhythmias' },
-      { name: 'Nitroglycerin', group: 'vaso', astm: 'astm-hypotensive', label: 'Vasodilator', def: 1, lo: 0.5, hi: 5, dU: 'mcg', dT: 'min', conc: 200, cU: 'mcg', wt: 'ABW', note: 'Max 10 mcg/kg/min. Use non-PVC tubing' },
-      { name: 'Nitroprusside', group: 'vaso', astm: 'astm-hypotensive', label: 'Vasodilator', def: 0.5, lo: 0.3, hi: 4, dU: 'mcg', dT: 'min', conc: 200, cU: 'mcg', wt: 'ABW', note: 'Protect from light. Cyanide/thiocyanate toxicity with high doses or prolonged use; max 10 mcg/kg/min for ≤10 min' },
-      { name: 'Esmolol', group: 'vaso', astm: 'astm-hypotensive', label: 'β-blocker', def: 100, lo: 50, hi: 500, dU: 'mcg', dT: 'min', conc: 10, cU: 'mg', wt: 'IBW', note: 'Short-acting β1 blocker', load: { lo: 100, hi: 500, u: 'mcg', over: 'over 1 min' } },
-      { name: 'Alprostadil (PGE₁)', group: 'vaso', astm: 'astm-other', label: 'Prostaglandin', def: 0.05, lo: 0.01, hi: 0.1, dU: 'mcg', dT: 'min', conc: 10, cU: 'mcg', wt: 'TBW', note: 'Keeps the ductus arteriosus open in duct-dependent lesions. Apnea risk: be ready to ventilate' },
+      { name: 'Nitroglycerin', group: 'vaso', astm: 'astm-hypotensive', label: 'Vasodilator', def: 0.5, lo: 0.25, hi: 5, dU: 'mcg', dT: 'min', conc: 200, cU: 'mcg', wt: 'ABW', note: 'Max 10 mcg/kg/min. Use non-PVC tubing' },
+      { name: 'Nitroprusside', group: 'vaso', astm: 'astm-hypotensive', label: 'Vasodilator', def: 0.5, lo: 0.3, hi: 4, dU: 'mcg', dT: 'min', conc: 200, cU: 'mcg', wt: 'ABW', note: 'Start 0.3, typical ~1. Protect from light. Cyanide/thiocyanate toxicity with high doses or prolonged use' },
+      { name: 'Esmolol', group: 'vaso', astm: 'astm-hypotensive', label: 'β-blocker', def: 100, lo: 50, hi: 300, dU: 'mcg', dT: 'min', conc: 10, cU: 'mg', wt: 'IBW', note: 'Short-acting β1 blocker; titrate q5 min (some protocols up to 500)', load: { lo: 100, hi: 500, u: 'mcg', over: 'over 1 min' } },
+      { name: 'Alprostadil (PGE₁)', group: 'vaso', astm: 'astm-other', label: 'Prostaglandin', def: 0.05, lo: 0.01, hi: 0.1, dU: 'mcg', dT: 'min', conc: 10, cU: 'mcg', wt: 'TBW', note: 'Start 0.05–0.1, then reduce to the lowest effective dose. Apnea in 10–12% (most in <2 kg, first hour): be ready to ventilate' },
 
       { name: 'Insulin (regular)', group: 'other', astm: 'astm-other', label: 'Insulin', def: 0.05, lo: 0.02, hi: 0.1, dU: 'U', dT: 'hr', conc: 1, cU: 'U', wt: 'TBW', note: 'Check glucose and K⁺ hourly; add dextrose as glucose falls' },
       { name: 'Dextrose 10% (GIR)', fixedUnit: true, group: 'other', astm: 'astm-other', label: 'Glucose', def: 4, lo: 2, hi: 8, dU: 'mg', dT: 'min', conc: 100, cU: 'mg', wt: 'TBW', note: 'Glucose infusion rate (mg/kg/min). Neonates usually need 4–8' }
     ];
+    const SRC_INF = {"Propofol": "FDA label (Diprivan)", "Remifentanil": "FDA label (Ultiva)", "Fentanyl": "PICU practice", "Dexmedetomidine (Precedex)": "FDA label (pediatric procedural sedation)", "Ketamine": "CHOP CICU pathway", "Midazolam": "PICU practice", "Morphine": "Common practice", "Hydromorphone": "CHOP CICU pathway", "Lidocaine (analgesic)": "Common practice", "Rocuronium": "FDA label", "Cisatracurium": "FDA label", "Vecuronium": "FDA label", "Epinephrine": "AHA PALS / Johns Hopkins All Children’s", "Norepinephrine": "AHA PALS / Johns Hopkins All Children’s", "Dopamine": "AHA PALS", "Dobutamine": "AHA PALS", "Milrinone": "AHA PALS", "Vasopressin": "Published case series (off-label)", "Phenylephrine": "Common practice", "Isoproterenol": "Pediatric ICU infusion guideline", "Nitroglycerin": "Pediatric ICU infusion guideline", "Nitroprusside": "Pediatric dose-response study", "Esmolol": "Pediatric titration protocols", "Alprostadil (PGE₁)": "FDA label (Prostin VR)", "Insulin (regular)": "Pediatric DKA practice", "Dextrose 10% (GIR)": "Neonatal practice"};
+    INFUSIONS.forEach((f) => (f.src = SRC_INF[f.name] || 'Common practice'));
+
     const INF_GROUPS = { sedation: 'Anesthesia & Sedation', nmb: 'Neuromuscular Blockers', vaso: 'Vasoactive', other: 'Other' };
     let infFilter = 'all';
 
@@ -985,7 +1004,7 @@
           doseCell = `${prefix}${fmt(r.value)} ${d.unit}` + (r.capped ? `<span class="capped">capped at max ${fmt(d.max)} ${d.unit}</span>` : '');
           volCell = `${prefix}${fmtVol(r.value / d.conc)} mL`;
         }
-        const sub = [d.concText, d.note].filter(Boolean).join(' · ');
+        const sub = [d.concText, d.note].filter(Boolean).join(' · ') + `<span class="src">📖 ${d.src}</span>`;
         rows.push(`<tr>
           <td class="name">${d.name}${favBtn('d:' + d.name)}<small>${sub}</small></td>
           <td><span class="astm-tag ${d.astm}">${d.label}</span></td>
@@ -1045,7 +1064,7 @@
         if (f.group !== last) { html += `<div class="inf-section" data-group="${f.group}">${INF_GROUPS[f.group]}</div>`; last = f.group; }
         html += `<div class="inf-row" data-group="${f.group}" data-i="${i}">
           <div class="inf-head">
-            <div class="inf-name">${f.name}${favBtn('i:' + f.name)}<small><span id="inf-usual-${i}"></span>${f.note ? ' · ' + f.note : ''}</small><span class="wt-slot"></span></div>
+            <div class="inf-name">${f.name}${favBtn('i:' + f.name)}<small><span id="inf-usual-${i}"></span>${f.note ? ' · ' + f.note : ''}<span class="src">📖 ${f.src}</span></small><span class="wt-slot"></span></div>
             <span class="astm-tag ${f.astm}">${f.label}</span>
           </div>
           <div class="inf-field">${unitCtl}
@@ -1089,7 +1108,9 @@
         if (f.load) {
           const lo = f.load.lo * w, hi = f.load.hi * w;
           const v = (x) => fmtVol((x * UNIT_BASE[f.load.u]) / (c * UNIT_BASE[f.cU]));
-          $('inf-l-' + i).innerHTML = `<strong>Load</strong> ${fmt(f.load.lo)}–${fmt(f.load.hi)} ${f.load.u}/kg = <span class="v">${f.load.u === 'mcg' && hi >= 1000 ? fmt(lo / 1000) + '–' + fmt(hi / 1000) + ' mg' : fmt(lo) + '–' + fmt(hi) + ' ' + f.load.u}</span> (${v(lo)}–${v(hi)} mL) ${f.load.over}`;
+          const span = (x, y, sep = '–') => (x === y ? `${x}` : `${x}${sep}${y}`);
+          const big = f.load.u === 'mcg' && hi >= 1000;
+          $('inf-l-' + i).innerHTML = `<strong>Load</strong> ${span(fmt(f.load.lo), fmt(f.load.hi))} ${f.load.u}/kg = <span class="v">${big ? span(fmt(lo / 1000), fmt(hi / 1000)) + ' mg' : span(fmt(lo), fmt(hi)) + ' ' + f.load.u}</span> (${span(v(lo), v(hi))} mL) ${f.load.over}`;
         }
       });
       // Hide a section header when none of its rows are visible.
@@ -1134,6 +1155,7 @@
       const range = (lo, hi, unit = 'mg', max) => `<span class="v">${fmt(dose(lo, w, max).value)}–${fmt(dose(hi, w, max).value)} ${unit}</span>`;
       const J = (perKg, cap = 200) => `<span class="v">${Math.round(Math.min(perKg * w, cap))} J</span>`;
 
+      const imEpiMax = a != null && a >= 12 ? 0.5 : 0.3; // AAP: 0.3 mg prepubertal, 0.5 mg adolescents
       const dantroleneMg = 2.5 * w;
       const dantriumVials = Math.ceil(dantroleneMg / 20);
       const ryanodexVials = Math.ceil(dantroleneMg / 250);
@@ -1151,7 +1173,7 @@
         </div>
 
         <div class="crisis-box">
-          <h4>PALS Cardiac Arrest</h4>
+          <h4>PALS Cardiac Arrest <span class="muted" style="font-weight:400;text-transform:none;">· AHA 2020</span></h4>
           <ul>
             <li><strong>Epinephrine</strong> 0.01 mg/kg: ${d(0.01, 1)} = ${vol(0.01, 1, 0.1)} of 0.1 mg/mL (1:10,000), q3–5 min</li>
             <li><strong>Defib</strong> 1st ${J(2)} → 2nd ${J(4)} → max ${J(10)} (≤ adult dose)</li>
@@ -1172,18 +1194,18 @@
         </div>
 
         <div class="crisis-box">
-          <h4>Anaphylaxis</h4>
+          <h4>Anaphylaxis <span class="muted" style="font-weight:400;text-transform:none;">· SPA / AAP</span></h4>
           <ul>
             <li>Stop trigger (relaxant, latex, antibiotic, chlorhexidine), 100% O₂</li>
-            <li><strong>Epi IV</strong> 1 mcg/kg: ${d(1, 50, 'mcg')} = ${vol(1, 50, 10)} of 10 mcg/mL; titrate, infusion 0.05–0.1 mcg/kg/min</li>
-            <li><strong>Epi IM</strong> 0.01 mg/kg: ${d(0.01, 0.5)} = ${vol(0.01, 0.5, 1)} of 1 mg/mL</li>
+            <li><strong>Epi IV</strong> 1–2 mcg/kg (severe): ${range(1, 2, 'mcg', 1000)} = ${fmtVol(Math.min(w, 1000) / 10)}–${fmtVol(Math.min(2 * w, 1000) / 10)} mL of 10 mcg/mL; titrate, consider infusion</li>
+            <li><strong>Epi IM</strong> 0.01 mg/kg: ${d(0.01, imEpiMax)} = ${vol(0.01, imEpiMax, 1)} of 1 mg/mL <span class="muted">(max ${imEpiMax} mg)</span></li>
             <li><strong>Fluid</strong> 20 mL/kg: <span class="v">${Math.round(20 * w)} mL</span>, repeat PRN</li>
             <li>Diphenhydramine 1 mg/kg ${d(1, 50)} · Methylpred 2 mg/kg ${d(2, 125)} · Albuterol</li>
           </ul>
         </div>
 
         <div class="crisis-box">
-          <h4>LAST (Local Anesthetic Toxicity)</h4>
+          <h4>LAST (Local Anesthetic Toxicity) <span class="muted" style="font-weight:400;text-transform:none;">· ASRA 2020</span></h4>
           <ul>
             <li>Stop local, call for help, airway/seizure control (benzo)</li>
             <li><strong>20% Lipid bolus</strong> 1.5 mL/kg over 2–3 min: <span class="v">${fmt(1.5 * W.IBW)} mL</span>${W.active ? ' <span class="muted">(IBW)</span>' : ''}</li>
@@ -1194,7 +1216,7 @@
         </div>
 
         <div class="crisis-box">
-          <h4>Malignant Hyperthermia</h4>
+          <h4>Malignant Hyperthermia <span class="muted" style="font-weight:400;text-transform:none;">· MHAUS</span></h4>
           <ul>
             <li>Stop volatiles &amp; sux, 100% O₂ high flow, call <a href="tel:18006449737" style="color: var(--accent);">MH Hotline 1-800-644-9737</a></li>
             <li><strong>Dantrolene</strong> 2.5 mg/kg: ${d(2.5, null)} — repeat to effect (up to 10 mg/kg = <span class="v">${fmt(10 * w)} mg</span>)</li>
@@ -1205,12 +1227,12 @@
         </div>
 
         <div class="crisis-box">
-          <h4>Hyperkalemia</h4>
+          <h4>Hyperkalemia <span class="muted" style="font-weight:400;text-transform:none;">· PALS / Nationwide Children's</span></h4>
           <ul>
             <li><strong>CaCl 10%</strong> 20 mg/kg: ${d(20, 1000)} = ${vol(20, 1000, 100)} (central line preferred)</li>
-            <li><strong>or Ca gluconate 10%</strong> 60 mg/kg: ${d(60, 3000)} = ${vol(60, 3000, 100)}</li>
+            <li><strong>or Ca gluconate 10%</strong> 60–100 mg/kg: ${range(60, 100, 'mg', 3000)} (peripheral IV preferred)</li>
             <li><strong>Insulin</strong> 0.1 U/kg: ${d(0.1, 10, 'U')} + <strong>dextrose</strong> 0.5 g/kg: ${d(0.5, 25, 'g')} (D10 ${fmt(Math.min(5 * w, 250))} mL)</li>
-            <li><strong>NaHCO₃</strong> 1 mEq/kg: ${d(1, 50, 'mEq')} · Albuterol neb · hyperventilate</li>
+            <li><strong>NaHCO₃</strong> 1 mEq/kg if acidotic: ${d(1, 50, 'mEq')} · Albuterol neb · hyperventilate</li>
           </ul>
         </div>
 
@@ -1218,7 +1240,7 @@
           <h4>Hypoglycemia / Seizure</h4>
           <ul>
             <li><strong>Dextrose</strong> 0.5 g/kg: D10 <span class="v">${fmt(Math.min(5 * w, 250))} mL</span>${a != null && a >= 1 ? ` or D25 <span class="v">${fmt(Math.min(2 * w, 100))} mL</span>` : ' (neonate: D10 2 mL/kg = <span class="v">' + fmt(2 * w) + ' mL</span>)'}</li>
-            <li><strong>Midazolam IV</strong> 0.1 mg/kg: ${d(0.1, 5)} · IM 0.2 mg/kg: ${d(0.2, 10)}</li>
+            <li><strong>Midazolam IM</strong> (AES): <span class="v">${w > 40 ? '10 mg' : w >= 13 ? '5 mg' : fmt(0.2 * w) + ' mg'}</span>${w < 13 ? ' (0.2 mg/kg)' : ''} · IV 0.1 mg/kg: ${d(0.1, 5)}</li>
             <li><strong>Lorazepam IV</strong> 0.1 mg/kg: ${d(0.1, 4)}</li>
           </ul>
         </div>

@@ -133,7 +133,25 @@
     .capped { color: var(--warn); font-size: 10px; display: block; font-weight: 600; }
     .fav-btn { background: none; border: none; cursor: pointer; font-size: 18px; line-height: 1; padding: 2px 4px; margin-left: 4px; color: var(--text-muted); vertical-align: -2px; min-width: 28px; min-height: 28px; }
     .fav-btn.on { color: #f59e0b; }
-    .src { display: block; margin-top: 2px; font-size: 9px; color: var(--text-muted); font-style: italic; }
+    .icon-btn { min-width: 34px; font-size: 15px; }
+    @media (max-width: 420px) { .brand-sub { display: none !important; } }
+
+    /* AI: highlighted tab + floating button */
+    .tab-btn.ai-tab { background: linear-gradient(135deg, #7c3aed, #0284c7); color: #fff; border-radius: 8px 8px 0 0; }
+    .tab-btn.ai-tab.active { color: #fff; border-bottom-color: #a78bfa; }
+    .ai-fab { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 60; display: inline-flex; align-items: center; gap: 8px;
+      background: linear-gradient(135deg, #7c3aed, #0284c7); color: #fff; border: none; border-radius: 999px; padding: 12px 18px; font-size: 15px; font-weight: 700;
+      box-shadow: 0 6px 20px rgba(124, 58, 237, .45); cursor: pointer; }
+    .ai-fab:active { transform: scale(.97); }
+    .ai-fab.hidden { display: none; }
+    body { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+
+    /* Sources modal */
+    .src-table { width: 100%; min-width: 0; font-size: 11px; border-collapse: collapse; }
+    .src-table td, .src-table th { padding: 6px 8px; border-bottom: 1px solid var(--border-dark); font-family: inherit; vertical-align: top; position: static; }
+    .src-table th { font-size: 9px; }
+    .src-table tr.grp td { background: var(--section); font-weight: 700; text-transform: uppercase; font-size: 9px; letter-spacing: .05em; color: var(--text-muted); }
+    #modal-sources a { color: var(--accent); }
     .wt-basis { display: inline-block; margin-top: 3px; font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 4px; background: var(--info-bg); color: var(--info-text); border: 1px solid var(--info-border); font-family: inherit; }
     .mini-select { width: auto; min-height: 30px; padding: 4px 8px; font-size: 12px; text-transform: none; letter-spacing: 0; }
 
@@ -157,15 +175,15 @@
     /* Phones: each drug becomes a compact card so dose & volume are always visible */
     @media (max-width: 640px) {
       table { min-width: 0; }
-      thead { display: none; }
-      tbody, tr.section, tr.section td { display: block; }
-      tbody tr:not(.section) { display: grid; grid-template-columns: 1fr auto auto; column-gap: 10px; align-items: center; padding: 9px 10px; border-bottom: 1px solid var(--inset); }
-      tbody tr:not(.section) td { padding: 0; border: none; }
-      tbody tr:not(.section) td.name { grid-column: 1 / 3; }
-      tbody tr:not(.section) td:nth-child(2) { grid-column: 3; grid-row: 1; justify-self: end; }
-      tbody tr:not(.section) td:nth-child(3) { grid-column: 1; grid-row: 2; margin-top: 4px; font-size: 11px; }
-      tbody tr:not(.section) td:nth-child(4) { grid-column: 2; grid-row: 2; font-size: 14px; text-align: right; }
-      tbody tr:not(.section) td:nth-child(5) { grid-column: 3; grid-row: 2; font-size: 14px; }
+      .table-container thead { display: none; }
+      #drug-tbody, #drug-tbody tr.section, #drug-tbody tr.section td { display: block; }
+      #drug-tbody tr:not(.section) { display: grid; grid-template-columns: 1fr auto auto; column-gap: 10px; align-items: center; padding: 9px 10px; border-bottom: 1px solid var(--inset); }
+      #drug-tbody tr:not(.section) td { padding: 0; border: none; }
+      #drug-tbody tr:not(.section) td.name { grid-column: 1 / 3; }
+      #drug-tbody tr:not(.section) td:nth-child(2) { grid-column: 3; grid-row: 1; justify-self: end; }
+      #drug-tbody tr:not(.section) td:nth-child(3) { grid-column: 1; grid-row: 2; margin-top: 4px; font-size: 11px; }
+      #drug-tbody tr:not(.section) td:nth-child(4) { grid-column: 2; grid-row: 2; font-size: 14px; text-align: right; }
+      #drug-tbody tr:not(.section) td:nth-child(5) { grid-column: 3; grid-row: 2; font-size: 14px; }
     }
 
     .pill-group { display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 4px; }
@@ -223,12 +241,13 @@
       <div class="brand-logo">PA</div>
       <div style="min-width:0;">
         <strong style="font-size: 14px; color: var(--text-strong);">PedsAnesth Mobile</strong>
-        <span style="font-size: 10px; color: var(--text-muted); display: block;">ASTM D4774 color labels</span>
+        <span class="brand-sub" style="font-size: 10px; color: var(--text-muted); display: block;">ASTM D4774 color labels</span>
       </div>
     </div>
     <div style="display: flex; gap: 6px; flex-shrink: 0;">
       <button class="btn btn-sm btn-primary" id="install-btn">⬇ Install</button>
       <button class="btn btn-sm theme-btn" id="theme-btn" onclick="toggleTheme()" aria-label="Switch light/dark mode">🌙</button>
+      <button class="btn btn-sm icon-btn" onclick="toggleModal('modal-sources', true)" title="Dose sources" aria-label="Dose sources">📖</button>
       <button class="btn btn-sm" onclick="toggleModal('modal-resources', true)">📚 Info</button>
       <button class="btn btn-danger btn-sm" onclick="toggleModal('modal-emergency', true)">🚨 STAT</button>
     </div>
@@ -372,7 +391,7 @@
         <button class="tab-btn active" onclick="switchTab('tab-drugs', this)">💉 Drug Dosing</button>
         <button class="tab-btn" onclick="switchTab('tab-infusions', this)">⏱ Infusions</button>
         <button class="tab-btn" onclick="switchTab('tab-fluids', this)">💧 Fluids &amp; Blood</button>
-        <button class="tab-btn" onclick="switchTab('tab-ai', this)">🤖 AI Advisor</button>
+        <button class="tab-btn ai-tab" id="ai-tab-btn" onclick="switchTab('tab-ai', this)">✨ AI Advisor</button>
       </div>
 
       <!-- TAB 1: DRUGS TABLE -->
@@ -566,6 +585,56 @@
     </div>
   </div>
 
+  <!-- FLOATING AI BUTTON -->
+  <button class="ai-fab" id="ai-fab" onclick="openAI()" aria-label="Open AI assistant">✨ Ask AI</button>
+
+  <!-- MODAL: SOURCES -->
+  <div id="modal-sources" class="modal-backdrop" onclick="if (event.target === this) toggleModal('modal-sources', false)">
+    <div class="modal-card" style="border-color: #0284c7;" role="dialog" aria-modal="true" aria-label="Dose sources">
+      <div class="modal-header" style="background: #0284c7;">
+        <strong>📖 Dose Sources</strong>
+        <button class="btn btn-sm" onclick="toggleModal('modal-sources', false)">✕</button>
+      </div>
+      <div class="modal-body" style="font-size: 12px; line-height: 1.6; color: var(--text-soft);">
+        <p>Doses were checked in October 2026 against US references. <strong>"Common practice"</strong> means a dose that is widely used but not taken from a label or national guideline; have your pharmacy confirm these first.</p>
+        <h4 style="color: var(--accent); margin: 12px 0 4px;">References</h4>
+        <ul style="padding-left: 16px;">
+          <li><strong>FDA prescribing information:</strong>
+            <a href="https://www.accessdata.fda.gov/drugsatfda_docs/Label/2022/019627s069lbl.pdf" target="_blank" rel="noopener">Diprivan</a>,
+            <a href="https://www.rxlist.com/ultiva-drug.htm" target="_blank" rel="noopener">Ultiva</a>,
+            <a href="https://www.pfizermedical.com/precedex/dosage-admin" target="_blank" rel="noopener">Precedex</a>,
+            <a href="https://www.pfizermedical.com/amidate" target="_blank" rel="noopener">Amidate</a>,
+            <a href="https://www.pfizermedical.com/midazolam" target="_blank" rel="noopener">midazolam</a>,
+            <a href="https://medlibrary.org/lib/rx/meds/anectine/" target="_blank" rel="noopener">Anectine</a>,
+            <a href="https://labeling.pfizer.com/ShowLabeling.aspx?id=4592" target="_blank" rel="noopener">rocuronium</a>,
+            <a href="https://www.accessdata.fda.gov/drugsatfda_docs/label/2022/022225Orig1s012lbl.pdf" target="_blank" rel="noopener">Bridion</a>,
+            <a href="https://medlibrary.org/lib/rx/meds/glycopyrrolate-30/page/3/" target="_blank" rel="noopener">glycopyrrolate</a>,
+            <a href="https://www.accessdata.fda.gov/drugsatfda_docs/label/2021/020007s049lbl.pdf" target="_blank" rel="noopener">Zofran</a>,
+            <a href="https://www.drugs.com/pro/ofirmev.html" target="_blank" rel="noopener">Ofirmev</a>,
+            <a href="https://drugs.com/pro/prostin-vr-pediatric.html" target="_blank" rel="noopener">Prostin VR</a>,
+            <a href="https://www.drugs.com/dosage/ryanodex.html" target="_blank" rel="noopener">Ryanodex</a></li>
+          <li><strong>AHA PALS 2020:</strong>
+            <a href="https://cpr.heart.org/-/media/CPR-Files/CPR-Guidelines-Files/2025-Algorithms/Algorithm-PALS-CA-250123.pdf?sc_lang=en" target="_blank" rel="noopener">cardiac arrest algorithm</a>,
+            <a href="https://acls-algorithms.com/wp-content/uploads/2022/08/2020-2025-PALS-Tachycardia-with-pulse-algorithm.pdf" target="_blank" rel="noopener">tachycardia algorithm</a></li>
+          <li><strong>Society for Pediatric Anesthesia:</strong> <a href="https://pedsanesthesia.org/checklists" target="_blank" rel="noopener">Critical Events Checklists</a></li>
+          <li><strong>ASRA 2020:</strong> <a href="https://asra.com/advisory-guidelines/article/3/local-anesthetic-systemic-toxicity" target="_blank" rel="noopener">LAST checklist</a> · <a href="https://rapm.bmj.com/content/43/2/211" target="_blank" rel="noopener">ASRA/ESRA pediatric regional</a></li>
+          <li><strong>MHAUS:</strong> malignant hyperthermia, dantrolene</li>
+          <li><strong>AAP:</strong> <a href="https://www.pharmacytimes.com/view/aap-reaffirms-epinephrine-as-firstline-anaphylaxis-treatment-recommends-emergency-action-plan" target="_blank" rel="noopener">anaphylaxis 2017</a>, naloxone, <a href="https://www.merckmanuals.com/en-ca/professional/multimedia/table/intravenous-medications-for-children-with-severe-hypertension-and-symptoms-or-signs-of-target-organ-damage" target="_blank" rel="noopener">hypertensive emergency 2017</a></li>
+          <li><strong>American Epilepsy Society 2016:</strong> <a href="https://mdedge.com/neurologyreviews/article/106211/epilepsy-seizures/aes-publishes-guideline-treating-status" target="_blank" rel="noopener">status epilepticus</a></li>
+          <li><strong>Fourth Consensus Guidelines for PONV</strong> (Gan et al., Anesth Analg 2020)</li>
+          <li><strong>Children's hospital pathways:</strong>
+            <a href="https://www.hopkinsmedicine.org/-/media/files/allchildrens/clinical-pathways/postcardiacarrestclinical-pathway-12_29_2021.pdf" target="_blank" rel="noopener">Johns Hopkins All Children's (post-arrest)</a>,
+            <a href="https://www.chop.edu/clinical-pathway/cicu-sedation-analgesia-mechanically-ventilated-patient-infant-child-protocol" target="_blank" rel="noopener">CHOP (sedation)</a>,
+            <a href="https://www.nationwidechildrens.org/-/media/nch/for-medical-professionals/clinical-pathways/ed-hyperkalemia-pathway.pdf" target="_blank" rel="noopener">Nationwide Children's (hyperkalemia)</a>,
+            <a href="https://www.med.unc.edu/pediatrics/cccp/wp-content/uploads/sites/1156/2025/06/PCCM-Infusion-Dosing-Guidelines-20141210.pdf" target="_blank" rel="noopener">UNC (infusions)</a></li>
+          <li><strong>Growth data:</strong> CDC 2000 BMI-for-age (obesity percentile)</li>
+        </ul>
+        <h4 style="color: var(--accent); margin: 12px 0 4px;">Source for each drug</h4>
+        <table class="src-table"><tbody id="src-tbody"></tbody></table>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: RESOURCES -->
   <div id="modal-resources" class="modal-backdrop" onclick="if (event.target === this) toggleModal('modal-resources', false)">
     <div class="modal-card" style="border-color: #0284c7;" role="dialog" aria-modal="true" aria-label="Reference">
@@ -596,16 +665,6 @@
         <p>• IBW, ages 1–18: height &lt;152.4 cm → height² × 1.65 / 1000; ≥152.4 cm → Devine (male 50 / female 45.5 kg + 2.3 kg per inch over 5 ft). Never exceeds TBW.</p>
         <p>• ABW = IBW + 0.4 × (TBW − IBW)</p>
         <p>• Obesity: BMI ≥ 95th percentile for age and sex (CDC 2000, ages 2–20), BMI ≥ 30 for adults. Not assessed under 2 years.</p>
-        <h4 style="color: var(--accent); margin: 12px 0 4px;">Dose sources (US)</h4>
-        <p>Every drug row shows its source (📖). Checked October 2026 against:</p>
-        <p>• <strong>FDA prescribing information:</strong> Diprivan, Ultiva, Precedex (pediatric procedural sedation), Amidate, midazolam, Anectine, rocuronium, vecuronium, cisatracurium, Bridion, Bloxiverz, glycopyrrolate, Zofran, Ofirmev, ketorolac, Prostin VR, Ryanodex/Dantrium</p>
-        <p>• <strong>AHA PALS 2020</strong> (cardiac arrest, bradycardia and tachycardia algorithms, vasoactive drugs)</p>
-        <p>• <strong>Society for Pediatric Anesthesia</strong> Critical Events Checklists (anaphylaxis)</p>
-        <p>• <strong>MHAUS</strong> (malignant hyperthermia) · <strong>ASRA 2020</strong> LAST checklist</p>
-        <p>• <strong>AAP</strong> (anaphylaxis 2017, naloxone, hypertension 2017) · <strong>American Epilepsy Society 2016</strong> (status epilepticus)</p>
-        <p>• <strong>Fourth Consensus Guidelines for PONV</strong> (Gan et al., Anesth Analg 2020)</p>
-        <p>• US children's-hospital pathways (Johns Hopkins All Children's, CHOP, Nationwide Children's) where no label exists</p>
-        <p class="muted">"Common practice" marks doses widely used but not taken from a label or national guideline. Have your pharmacy confirm these first.</p>
         <h4 style="color: var(--accent); margin: 12px 0 4px;">Weight used when obesity scalars are on</h4>
         <div id="scalar-list"></div>
         <p>• Maintenance (Holliday-Segar 4-2-1)</p>
@@ -1004,7 +1063,7 @@
           doseCell = `${prefix}${fmt(r.value)} ${d.unit}` + (r.capped ? `<span class="capped">capped at max ${fmt(d.max)} ${d.unit}</span>` : '');
           volCell = `${prefix}${fmtVol(r.value / d.conc)} mL`;
         }
-        const sub = [d.concText, d.note].filter(Boolean).join(' · ') + `<span class="src">📖 ${d.src}</span>`;
+        const sub = [d.concText, d.note].filter(Boolean).join(' · ');
         rows.push(`<tr>
           <td class="name">${d.name}${favBtn('d:' + d.name)}<small>${sub}</small></td>
           <td><span class="astm-tag ${d.astm}">${d.label}</span></td>
@@ -1064,7 +1123,7 @@
         if (f.group !== last) { html += `<div class="inf-section" data-group="${f.group}">${INF_GROUPS[f.group]}</div>`; last = f.group; }
         html += `<div class="inf-row" data-group="${f.group}" data-i="${i}">
           <div class="inf-head">
-            <div class="inf-name">${f.name}${favBtn('i:' + f.name)}<small><span id="inf-usual-${i}"></span>${f.note ? ' · ' + f.note : ''}<span class="src">📖 ${f.src}</span></small><span class="wt-slot"></span></div>
+            <div class="inf-name">${f.name}${favBtn('i:' + f.name)}<small><span id="inf-usual-${i}"></span>${f.note ? ' · ' + f.note : ''}</small><span class="wt-slot"></span></div>
             <span class="astm-tag ${f.astm}">${f.label}</span>
           </div>
           <div class="inf-field">${unitCtl}
@@ -1128,6 +1187,27 @@
       document.querySelectorAll('#inf-pills .pill').forEach((el) => el.classList.toggle('active', el === pill));
       updateInfusions(lastW);
     });
+
+    function renderSourcesTable() {
+      const crisis = [
+        ['Laryngospasm', 'Common practice'], ['Cardiac arrest, bradycardia, tachycardia', 'AHA PALS 2020'],
+        ['Anaphylaxis', 'SPA checklist / AAP 2017'], ['Local anesthetic toxicity (lipid)', 'ASRA 2020 checklist'],
+        ['Malignant hyperthermia (dantrolene)', 'MHAUS / FDA labels'], ['Hyperkalemia', "PALS / Nationwide Children's"],
+        ['Hypoglycemia / seizure', 'PALS / American Epilepsy Society 2016']
+      ];
+      const grp = (t) => `<tr class="grp"><td colspan="2">${t}</td></tr>`;
+      const row = (n, src) => `<tr><td>${n}</td><td>${src}</td></tr>`;
+      $('src-tbody').innerHTML =
+        grp('Bolus doses') + DRUG_DB.map((d) => row(d.name, d.src)).join('') +
+        grp('Infusions') + INFUSIONS.map((f) => row(f.name, f.src)).join('') +
+        grp('STAT crisis') + crisis.map(([n, src]) => row(n, src)).join('');
+    }
+
+    function openAI() {
+      switchTab('tab-ai', $('ai-tab-btn'));
+      $('ai-tab-btn').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setTimeout(() => (getApiKey() ? $('ai-prompt') : $('api-key-input')).focus({ preventScroll: true }), 400);
+    }
 
     function renderScalarList() {
       const rows = [...DRUG_DB.map((d) => [d.name + ' (bolus)', d.wt || 'TBW']), ...INFUSIONS.map((f) => [f.name + ' (infusion)', f.wt])];
@@ -1281,6 +1361,7 @@
       document.querySelectorAll('.tab-btn').forEach((el) => el.classList.remove('active'));
       $(tabId).classList.add('active');
       btn.classList.add('active');
+      $('ai-fab').classList.toggle('hidden', tabId === 'tab-ai');
     }
 
     $('pill-group').addEventListener('click', (e) => {
@@ -1488,6 +1569,7 @@
     (function init() {
       buildInfusions();
       renderScalarList();
+      renderSourcesTable();
       const savedKey = storageGet(KEY_STORE);
       if (savedKey) { $('api-key-input').value = savedKey; $('remember-key').checked = true; }
       calculateAll();

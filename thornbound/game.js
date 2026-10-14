@@ -214,8 +214,9 @@ function poseFrame(S, face, flip, anim, moving, pose) {
 }
 // A small bounce and sway on every step, so walking always reads as walking even where
 // neighbouring frames in the art are nearly the same.
-// Armoured characters get a heavier stomp, since their walk frames barely change.
-const STEP = { knight: [2.4, 0.07], skeleton: [1.9, 0.055] };
+// The skeleton gets a heavier stomp, since its walk frames barely change; the knight's legs
+// are redrawn (tools/redraw_knight_legs.py), so it only needs a little extra weight.
+const STEP = { knight: [1.7, 0.05], skeleton: [1.9, 0.055] };
 function stepMotion(anim, moving, kind) {
   if (!moving) return [0, 0];
   const [lift, sway] = STEP[kind] || [1.4, 0.045];

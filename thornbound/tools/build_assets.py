@@ -20,12 +20,17 @@ CELL_W, CELL_H, FOOT = 236, 236, 8         # source-pixel cell; feet sit FOOT px
 COLS = 8
 
 
-def cutout(img, bg='black'):
+# Glowing art (ghosts, the crystal) keeps a long soft ramp so its glow fades out; solid
+# characters use a short ramp so dark armour and boots stay opaque instead of see-through.
+GLOWY = {'ghost', 'crystal'}
+
+
+def cutout(img, bg='black', glow=True):
     """RGB image on a flat background -> RGBA with soft edges and solid interiors."""
     rgb = np.asarray(img.convert('RGB')).astype(np.float32)
     if bg == 'black':
         level = rgb.max(axis=2)
-        soft = np.clip((level - 14) / 70, 0, 1)
+        soft = np.clip((level - 14) / 70, 0, 1) if glow else np.clip((level - 9) / 24, 0, 1)
         near_bg = level < 22
     else:  # white
         level = 255 - rgb.min(axis=2)
@@ -33,7 +38,7 @@ def cutout(img, bg='black'):
         near_bg = level < 18
     # Solid core = clearly bright pixels plus any dim pixels they enclose (dark armour).
     # Dim glow connected to the outside stays soft; true-black pockets stay see-through.
-    core = Image.fromarray(np.where(level >= 50, 255, 0).astype(np.uint8)).copy()  # copy: fromarray views are read-only
+    core = Image.fromarray(np.where(level >= (50 if glow else 28), 255, 0).astype(np.uint8)).copy()  # copy: fromarray views are read-only
     w, h = core.size
     for seed in [(0, 0), (w - 1, 0), (0, h - 1), (w - 1, h - 1)]:
         if core.getpixel(seed) == 0:
@@ -49,15 +54,48 @@ def cutout(img, bg='black'):
     return Image.fromarray(out, 'RGBA')
 
 
+def keep_main_body(zone):
+    """Erase slivers of neighbouring frames: keep only the column span holding most of the figure."""
+    a = np.asarray(zone).copy()
+    cols = a[..., 3].astype(np.float32).sum(axis=0)
+    filled = cols > 255 * 2
+    spans, start = [], None
+    for x, f in enumerate(list(filled) + [False]):
+        if f and start is None: start = x
+        if not f and start is not None: spans.append([start, x]); start = None
+    merged = []
+    for sp in spans:  # bridge small gaps (a sword held slightly apart from the body)
+        if merged and sp[0] - merged[-1][1] <= 6: merged[-1][1] = sp[1]
+        else: merged.append(sp)
+    if not merged:
+        return zone
+    main = max(merged, key=lambda sp: cols[sp[0]:sp[1]].sum())
+    a[:, :main[0]] = 0; a[:, main[1]:] = 0
+    return Image.fromarray(a, 'RGBA')
+
+
+def torso_x(img):
+    """Horizontal centre of the body, measured on the middle band so weapons and capes don't pull it."""
+    a = np.asarray(img)[..., 3]
+    ys, xs = np.nonzero(a > 128)
+    if not len(xs):
+        return img.width / 2
+    top, bot = ys.min(), ys.max()
+    band = (ys > top + (bot - top) * 0.35) & (ys < top + (bot - top) * 0.75)
+    return float(np.median(xs[band] if band.any() else xs))
+
+
 def frames_of(sheet):
-    """Yield (name, cell image) for every frame, feet anchored at the cell's bottom centre."""
+    """Yield (name, cell image) for every frame, feet anchored at the cell's bottom centre and each
+    row centred on the body, so turning around doesn't make the character jump sideways."""
     out = []
     for r, name in enumerate(['down', 'up', 'right', 'left']):
         b = WALK_BOTTOM[r]
-        for i, cx in enumerate(WALK_X):
-            zone = sheet.crop((cx - 93, b - ROW_H, cx + 93, b))
+        zones = [keep_main_body(sheet.crop((cx - 93, b - ROW_H, cx + 93, b))) for cx in WALK_X]
+        centre = sum(torso_x(z) for z in zones) / len(zones)   # one offset per row: no jitter between frames
+        for i, zone in enumerate(zones):
             cell = Image.new('RGBA', (CELL_W, CELL_H))
-            cell.paste(zone, (CELL_W // 2 - 93, CELL_H - FOOT - ROW_H), zone)
+            cell.paste(zone, (round(CELL_W / 2 - centre), CELL_H - FOOT - ROW_H), zone)
             out.append((f'{name}{i}', cell))
     for c, (x0, x1) in enumerate(ATK_COLS):
         for r, (y0, y1) in enumerate(ATK_ROWS):
@@ -67,7 +105,7 @@ def frames_of(sheet):
                 continue
             piece = zone.crop(bbox)
             cell = Image.new('RGBA', (CELL_W, CELL_H))
-            px = CELL_W // 2 - (bbox[2] - bbox[0]) // 2
+            px = round(CELL_W / 2 - torso_x(piece))
             py = CELL_H - FOOT - (bbox[3] - bbox[1])
             cell.paste(piece, (px, max(0, py)), piece)
             out.append((f'{"AB"[c]}{r + 1}', cell))
@@ -75,7 +113,7 @@ def frames_of(sheet):
 
 
 def atlas(name, scales):
-    sheet = cutout(Image.open(f'{SRC}/{name}-sheet.jpg'))
+    sheet = cutout(Image.open(f'{SRC}/{name}-sheet.jpg'), glow=name in GLOWY)
     frames = frames_of(sheet)
     meta = {'frames': [n for n, _ in frames], 'cols': COLS}
     for s in scales:

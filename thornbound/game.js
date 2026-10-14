@@ -214,10 +214,13 @@ function poseFrame(S, face, flip, anim, moving, pose) {
 }
 // A small bounce and sway on every step, so walking always reads as walking even where
 // neighbouring frames in the art are nearly the same.
-function stepMotion(anim, moving) {
+// Armoured characters get a heavier stomp, since their walk frames barely change.
+const STEP = { knight: [2.4, 0.07], skeleton: [1.9, 0.055] };
+function stepMotion(anim, moving, kind) {
   if (!moving) return [0, 0];
+  const [lift, sway] = STEP[kind] || [1.4, 0.045];
   const s = Math.sin(anim * Math.PI * 0.8);
-  return [-Math.abs(s) * 1.4, s * 0.045];
+  return [-Math.abs(s) * lift, s * sway];
 }
 function glowSprite(r, color) {
   const c = mk(r * 2, r * 2), x = c.getContext('2d');
@@ -1534,8 +1537,10 @@ function drawPlayer() {
   if (p.inv > 0 && Math.floor(p.inv * 14) % 2 === 0 && !G.dying) return;
   const moving = hyp(p.vx, p.vy) > 8;
   // the casting pose only shows when standing still, so the legs keep walking while shooting
-  const [name, mirror] = poseFrame(S, p.face, p.flip, p.anim, moving, p.castT > 0 && !moving && p.face !== 'up' ? 2 : 0);
-  const [bob, tilt] = stepMotion(p.anim, moving);
+  // only the wizard has a casting pose; sword-and-shield heroes keep their stance when shooting
+  const cast = p.castT > 0 && !moving && p.face !== 'up' && S.kind === 'wizard';
+  const [name, mirror] = poseFrame(S, p.face, p.flip, p.anim, moving, cast ? 2 : 0);
+  const [bob, tilt] = stepMotion(p.anim, moving, S.kind);
   ctx.save();
   if (G.dying) ctx.globalAlpha = clamp(G.dying / 1.4, 0, 1);
   drawFrame(S, name, p.x, p.y + p.r * 0.6 + bob, mirror, 0, tilt);
@@ -1545,7 +1550,7 @@ function drawEnemy(e) {
   const S = e.sheet; if (!S) return;
   const moving = e.d.flying || hyp(e.vx, e.vy) > 8;
   const [name, mirror] = poseFrame(S, e.face, e.flip, e.anim, moving, e.pose);
-  const [bob, tilt] = e.d.flying || e.pose ? [0, 0] : stepMotion(e.anim, moving);
+  const [bob, tilt] = e.d.flying || e.pose ? [0, 0] : stepMotion(e.anim, moving, S.kind);
   const fy = e.y + e.r * 0.6 + (e.d.flying ? Math.sin(G.time * 3 + e.phase) * 2 - 3 : bob);
   ctx.save();
   ctx.globalAlpha = (e.d.alpha || 1) * e.alpha;

@@ -1,5 +1,5 @@
 // Offline cache for the calculator shell. Bump VERSION whenever any cached file changes.
-const VERSION = 'pedsanesth-v9';
+const VERSION = 'pedsanesth-v10';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './manifest-public.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {

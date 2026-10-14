@@ -23,6 +23,7 @@ const ATLAS = { cols: 8, cell: { 0.44: 104, 0.8: 189 }, foot: 8 }; // foot: sour
 // which attack poses each sheet uses: [windup, strike] when facing you, and when facing sideways
 const POSES = {
   wizard: { down: ['A1', 'A1'], side: ['B1', 'B1'] },
+  rogue: { down: ['A2', 'A3'], side: ['B2', 'B3'] },
   skeleton: { down: ['A2', 'A3'], side: ['B1', 'B2'] },
   goblin: { down: ['A2', 'A3'], side: ['B1', 'B2'] },
   ghost: { down: ['A1', 'A2'], side: ['B1', 'B2'] },
@@ -116,8 +117,7 @@ const SKILL_LOCK = { vamp: 'banshee', bounce: 'twins', orbit: 'slayer', rear: 'h
 const CHARS = {
   wanderer: { name: 'Wanderer', desc: 'A travelling wizard. 3 hearts, balanced crystal shards.', lock: null, sheet: 'wizard',
     hp: 6, dmg: 3.5, fd: 0.42, speed: 118, range: 200, shot: 230, skills: {} },
-  // stand-in art (the wizard in green) until the new Thornknight sheet arrives
-  thornknight: { name: 'Thornknight', desc: '4 hearts, heavy slow shards, slower feet. Starts with Thorn Mantle.', lock: 'warlord', sheet: 'wizard', tint: [-100, 1, 0.95],
+  thornknight: { name: 'Thornknight', desc: '4 hearts, heavy slow shards, slower feet. Starts with Thorn Mantle.', lock: 'warlord', sheet: 'rogue',
     hp: 8, dmg: 4.6, fd: 0.56, speed: 106, range: 175, shot: 215, skills: { mantle: 1 } },
   seer: { name: 'Seer', desc: '2 hearts, rapid long-range shards. Starts with Seeking Runes.', lock: 'depths', sheet: 'wizard', tint: [55, 1.1, 1],
     hp: 4, dmg: 3.0, fd: 0.32, speed: 124, range: 240, shot: 250, skills: { homing: 1 } },
@@ -204,8 +204,9 @@ function drawFrame(S, name, x, y, mirror, flash, tilt = 0) {
 }
 // which frame to show for a walker facing face/flip, with an optional attack pose (1 windup, 2 strike)
 // Walk frames to cycle per sheet and row; by default all five. The wizard's front walk skips
-// the two frames where the art leaves his staff out, so it doesn't blink.
-const WALK = { wizard: { down: [0, 1, 3] } };
+// the two frames where the art leaves his staff out, so it doesn't blink; the rogue's first
+// back-view frame is drawn facing you, so it's skipped too.
+const WALK = { wizard: { down: [0, 1, 3] }, rogue: { up: [1, 2, 3, 4] } };
 function poseFrame(S, face, flip, anim, moving, pose) {
   if (pose) { const set = face === 'side' ? S.poses.side : S.poses.down; return [set[Math.min(1, pose - 1)], face === 'side' && flip]; }
   const row = face === 'side' ? (flip ? 'left' : 'right') : face;
@@ -214,8 +215,8 @@ function poseFrame(S, face, flip, anim, moving, pose) {
 }
 // A small bounce and sway on every step, so walking always reads as walking even where
 // neighbouring frames in the art are nearly the same.
-// The skeleton gets a heavier stomp, since its walk frames barely change.
-const STEP = { skeleton: [1.9, 0.055] };
+// The skeleton and the rogue get a heavier stomp, since their side-view walk frames barely change.
+const STEP = { skeleton: [1.9, 0.055], rogue: [1.9, 0.055] };
 function stepMotion(anim, moving, kind) {
   if (!moving) return [0, 0];
   const [lift, sway] = STEP[kind] || [1.4, 0.045];
@@ -1863,7 +1864,7 @@ async function boot() {
   await Promise.all([
     loadImg('goblin', 'assets/goblin@0.44.webp'), loadImg('goblinBig', 'assets/goblin@0.8.webp'),
     loadImg('ghost', 'assets/ghost@0.44.webp'), loadImg('ghostBig', 'assets/ghost@0.8.webp'),
-    loadImg('wizard', 'assets/wizard@0.44.webp'), loadImg('skeleton', 'assets/skeleton@0.44.webp'),
+    loadImg('wizard', 'assets/wizard@0.44.webp'), loadImg('rogue', 'assets/rogue@0.44.webp'), loadImg('skeleton', 'assets/skeleton@0.44.webp'),
     loadImg('c16', 'assets/crystal32.webp'), loadImg('c32', 'assets/crystal64.webp'), loadImg('floor', 'assets/floor.jpg'),
   ]);
   try { await Promise.all(['700 12px "Cinzel"', '400 12px "Alegreya Sans"', '700 12px "Alegreya Sans"'].map((f) => document.fonts.load(f))); } catch (e) {}

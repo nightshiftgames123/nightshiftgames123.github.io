@@ -23,7 +23,6 @@ const ATLAS = { cols: 8, cell: { 0.44: 104, 0.8: 189 }, foot: 8 }; // foot: sour
 // which attack poses each sheet uses: [windup, strike] when facing you, and when facing sideways
 const POSES = {
   wizard: { down: ['A1', 'A1'], side: ['B1', 'B1'] },
-  knight: { down: ['A2', 'A3'], side: ['B1', 'B2'] },
   skeleton: { down: ['A2', 'A3'], side: ['B1', 'B2'] },
   goblin: { down: ['A2', 'A3'], side: ['B1', 'B2'] },
   ghost: { down: ['A1', 'A2'], side: ['B1', 'B2'] },
@@ -117,7 +116,8 @@ const SKILL_LOCK = { vamp: 'banshee', bounce: 'twins', orbit: 'slayer', rear: 'h
 const CHARS = {
   wanderer: { name: 'Wanderer', desc: 'A travelling wizard. 3 hearts, balanced crystal shards.', lock: null, sheet: 'wizard',
     hp: 6, dmg: 3.5, fd: 0.42, speed: 118, range: 200, shot: 230, skills: {} },
-  thornknight: { name: 'Thornknight', desc: '4 hearts, heavy slow shards, slower feet. Starts with Thorn Mantle.', lock: 'warlord', sheet: 'knight',
+  // stand-in art (the wizard in green) until the new Thornknight sheet arrives
+  thornknight: { name: 'Thornknight', desc: '4 hearts, heavy slow shards, slower feet. Starts with Thorn Mantle.', lock: 'warlord', sheet: 'wizard', tint: [-100, 1, 0.95],
     hp: 8, dmg: 4.6, fd: 0.56, speed: 106, range: 175, shot: 215, skills: { mantle: 1 } },
   seer: { name: 'Seer', desc: '2 hearts, rapid long-range shards. Starts with Seeking Runes.', lock: 'depths', sheet: 'wizard', tint: [55, 1.1, 1],
     hp: 4, dmg: 3.0, fd: 0.32, speed: 124, range: 240, shot: 250, skills: { homing: 1 } },
@@ -214,9 +214,8 @@ function poseFrame(S, face, flip, anim, moving, pose) {
 }
 // A small bounce and sway on every step, so walking always reads as walking even where
 // neighbouring frames in the art are nearly the same.
-// The skeleton gets a heavier stomp, since its walk frames barely change; the knight's legs
-// are redrawn (tools/redraw_knight_legs.py), so it only needs a little extra weight.
-const STEP = { knight: [1.7, 0.05], skeleton: [1.9, 0.055] };
+// The skeleton gets a heavier stomp, since its walk frames barely change.
+const STEP = { skeleton: [1.9, 0.055] };
 function stepMotion(anim, moving, kind) {
   if (!moving) return [0, 0];
   const [lift, sway] = STEP[kind] || [1.4, 0.045];
@@ -1864,7 +1863,7 @@ async function boot() {
   await Promise.all([
     loadImg('goblin', 'assets/goblin@0.44.webp'), loadImg('goblinBig', 'assets/goblin@0.8.webp'),
     loadImg('ghost', 'assets/ghost@0.44.webp'), loadImg('ghostBig', 'assets/ghost@0.8.webp'),
-    loadImg('wizard', 'assets/wizard@0.44.webp'), loadImg('knight', 'assets/knight@0.44.webp'), loadImg('skeleton', 'assets/skeleton@0.44.webp'),
+    loadImg('wizard', 'assets/wizard@0.44.webp'), loadImg('skeleton', 'assets/skeleton@0.44.webp'),
     loadImg('c16', 'assets/crystal32.webp'), loadImg('c32', 'assets/crystal64.webp'), loadImg('floor', 'assets/floor.jpg'),
   ]);
   try { await Promise.all(['700 12px "Cinzel"', '400 12px "Alegreya Sans"', '700 12px "Alegreya Sans"'].map((f) => document.fonts.load(f))); } catch (e) {}

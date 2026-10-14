@@ -131,7 +131,7 @@ def atlas(name, scales):
 def main():
     os.makedirs(OUT, exist_ok=True)
     meta = {}
-    for name, scales in [('wizard', [0.44]), ('knight', [0.44]), ('skeleton', [0.44]),
+    for name, scales in [('wizard', [0.44]), ('skeleton', [0.44]),
                          ('goblin', [0.44, 0.8]), ('ghost', [0.44, 0.8])]:
         meta[name] = atlas(name, scales)
     crystal = cutout(Image.open(f'{SRC}/crystal.jpg')).crop((110, 120, 920, 900))

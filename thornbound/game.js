@@ -192,20 +192,32 @@ function makeSheet(kind, scale, img, worldScale = WORLD_SCALE) {
   return { kind, img, white: silhouette(img, '#fff'), cell, ds: worldScale / scale, foot: ATLAS.foot * scale, poses: POSES[kind] };
 }
 // draw one frame with its feet at (x, y); mirror flips it horizontally
-function drawFrame(S, name, x, y, mirror, flash) {
+function drawFrame(S, name, x, y, mirror, flash, tilt = 0) {
   const i = FRAME[name], c = S.cell, sx = (i % ATLAS.cols) * c, sy = Math.floor(i / ATLAS.cols) * c;
-  const w = c * S.ds, h = c * S.ds, dx = x - w / 2, dy = y - (c - S.foot) * S.ds;
+  const w = c * S.ds, h = c * S.ds, dx = -w / 2, dy = -(c - S.foot) * S.ds;
   ctx.save();
+  ctx.translate(x, y); if (tilt) ctx.rotate(tilt); // tilt pivots on the feet
   if (mirror) { ctx.translate(dx + w, dy); ctx.scale(-1, 1); } else ctx.translate(dx, dy);
   ctx.drawImage(S.img, sx, sy, c, c, 0, 0, w, h);
   if (flash) { ctx.globalAlpha *= flash; ctx.drawImage(S.white, sx, sy, c, c, 0, 0, w, h); }
   ctx.restore();
 }
 // which frame to show for a walker facing face/flip, with an optional attack pose (1 windup, 2 strike)
+// Walk frames to cycle per sheet and row; by default all five. The wizard's front walk skips
+// the two frames where the art leaves his staff out, so it doesn't blink.
+const WALK = { wizard: { down: [0, 1, 3] } };
 function poseFrame(S, face, flip, anim, moving, pose) {
   if (pose) { const set = face === 'side' ? S.poses.side : S.poses.down; return [set[Math.min(1, pose - 1)], face === 'side' && flip]; }
   const row = face === 'side' ? (flip ? 'left' : 'right') : face;
-  return [row + (moving ? Math.floor(anim) % 5 : 0), false];
+  const seq = (WALK[S.kind] && WALK[S.kind][row]) || [0, 1, 2, 3, 4];
+  return [row + (moving ? seq[Math.floor(anim) % seq.length] : seq[0]), false];
+}
+// A small bounce and sway on every step, so walking always reads as walking even where
+// neighbouring frames in the art are nearly the same.
+function stepMotion(anim, moving) {
+  if (!moving) return [0, 0];
+  const s = Math.sin(anim * Math.PI * 0.8);
+  return [-Math.abs(s) * 1.4, s * 0.045];
 }
 function glowSprite(r, color) {
   const c = mk(r * 2, r * 2), x = c.getContext('2d');
@@ -703,7 +715,7 @@ function updateEnemy(e, dt) {
   if (!d.flying) collideTiles(e, room, true);
   clampRoom(e);
   if (Math.hypot(e.vx, e.vy) > 6 && !e.pose) faceFrom(e, e.vx, e.vy);
-  e.anim += dt * (4 + Math.hypot(e.vx, e.vy) * 0.08);
+  e.anim += dt * (e.d.flying ? 6 : Math.max(5, Math.hypot(e.vx, e.vy) * 0.11));
 }
 const AI = {
   skeleton(e, dt, o) { AI.goblin(e, dt, o); },
@@ -1125,8 +1137,8 @@ function updatePlayer(dt) {
   collideTiles(p, room, false); clampRoom(p);
   const tt = tileAt(room, toT(p.x), toT(p.y + 2));
   if (tt === 2) hurtPlayer(1, WALL + toT(p.x) * TILE + 16, WALL + toT(p.y + 2) * TILE + 16);
-  const moving = hyp(p.vx, p.vy) > 12;
-  if (moving) { p.anim += dt * hyp(p.vx, p.vy) * 0.075; p.stepT -= dt; if (p.stepT <= 0) { p.stepT = 0.28; part(p.x + rand(-3, 3), p.y + 4, rand(-10, 10), rand(-12, -4), 0.35, 'rgba(120,110,90,0.7)', 2); } }
+  const moving = hyp(p.vx, p.vy) > 8;
+  if (moving) { p.anim += dt * Math.max(6, hyp(p.vx, p.vy) * 0.085); p.stepT -= dt; if (p.stepT <= 0) { p.stepT = 0.28; part(p.x + rand(-3, 3), p.y + 4, rand(-10, 10), rand(-12, -4), 0.35, 'rgba(120,110,90,0.7)', 2); } }
   else p.anim = 0;
   const fx = input.ax || input.mx, fy = input.ay || input.my;
   if (fx || fy) { if (Math.abs(fx) > Math.abs(fy)) { p.face = 'side'; p.flip = fx < 0; } else p.face = fy < 0 ? 'up' : 'down'; }
@@ -1520,19 +1532,24 @@ function drawPlayer() {
   const p = G.player, S = G.sheet;
   if (p.hp <= 0 && !G.dying) return;
   if (p.inv > 0 && Math.floor(p.inv * 14) % 2 === 0 && !G.dying) return;
-  const [name, mirror] = poseFrame(S, p.face, p.flip, p.anim, hyp(p.vx, p.vy) > 12, p.castT > 0 && p.face !== 'up' ? 2 : 0);
+  const moving = hyp(p.vx, p.vy) > 8;
+  // the casting pose only shows when standing still, so the legs keep walking while shooting
+  const [name, mirror] = poseFrame(S, p.face, p.flip, p.anim, moving, p.castT > 0 && !moving && p.face !== 'up' ? 2 : 0);
+  const [bob, tilt] = stepMotion(p.anim, moving);
   ctx.save();
   if (G.dying) ctx.globalAlpha = clamp(G.dying / 1.4, 0, 1);
-  drawFrame(S, name, p.x, p.y + p.r * 0.6, mirror);
+  drawFrame(S, name, p.x, p.y + p.r * 0.6 + bob, mirror, 0, tilt);
   ctx.restore();
 }
 function drawEnemy(e) {
   const S = e.sheet; if (!S) return;
-  const [name, mirror] = poseFrame(S, e.face, e.flip, e.anim, true, e.pose);
-  const fy = e.y + e.r * 0.6 + (e.d.flying ? Math.sin(G.time * 3 + e.phase) * 2 - 3 : 0);
+  const moving = e.d.flying || hyp(e.vx, e.vy) > 8;
+  const [name, mirror] = poseFrame(S, e.face, e.flip, e.anim, moving, e.pose);
+  const [bob, tilt] = e.d.flying || e.pose ? [0, 0] : stepMotion(e.anim, moving);
+  const fy = e.y + e.r * 0.6 + (e.d.flying ? Math.sin(G.time * 3 + e.phase) * 2 - 3 : bob);
   ctx.save();
   ctx.globalAlpha = (e.d.alpha || 1) * e.alpha;
-  drawFrame(S, name, e.x, fy, mirror, e.flash > 0 ? 0.85 : 0);
+  drawFrame(S, name, e.x, fy, mirror, e.flash > 0 ? 0.85 : 0, tilt);
   ctx.restore();
   const top = fy - (S.cell - S.foot) * S.ds * 0.8;
   if (e.slow > 0) { ctx.fillStyle = 'rgba(160,220,255,0.9)'; ctx.beginPath(); ctx.arc(e.x, top + 4, 1.5, 0, TAU); ctx.fill(); }

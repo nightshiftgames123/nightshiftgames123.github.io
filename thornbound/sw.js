@@ -1,5 +1,5 @@
 // Offline cache for Thornbound. Bump VERSION whenever any cached file changes.
-const VERSION = 'thornbound-v4';
+const VERSION = 'thornbound-v5';
 const ASSETS = ['./', './index.html', './game.js', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png',
   './assets/wizard@0.44.webp', './assets/knight@0.44.webp', './assets/skeleton@0.44.webp', './assets/goblin@0.44.webp', './assets/goblin@0.8.webp',
   './assets/ghost@0.44.webp', './assets/ghost@0.8.webp', './assets/crystal32.webp', './assets/crystal64.webp', './assets/crystal160.webp',

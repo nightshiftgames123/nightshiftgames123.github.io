@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#166534" />
+  <meta name="description" content="Common recipes rewritten for your food allergies, with ingredient swaps and a label checker." />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="SafePlate" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icon-180.png" />
+  <link rel="icon" type="image/png" href="icon-192.png" />
+  <title>SafePlate · Allergy-Friendly Recipes</title>
+  <script>
+    // Apply saved (or system) theme before first paint to avoid a flash.
+    (function () {
+      var t = null;
+      try { t = localStorage.getItem('safeplate_theme'); } catch (e) {}
+      if (t !== 'light' && t !== 'dark') t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+  <style>
+    :root {
+      --bg: #fffbf3;
+      --card: #ffffff;
+      --border: #eadfca;
+      --text: #1f2a1f;
+      --muted: #6b705f;
+      --accent: #166534;
+      --accent-soft: #dcfce7;
+      --accent-text: #ffffff;
+      --swap: #b45309;
+      --swap-soft: #fef3c7;
+      --bad: #b91c1c;
+      --bad-soft: #fee2e2;
+      --ok: #15803d;
+      --ok-soft: #dcfce7;
+      --shadow: 0 1px 2px rgba(60, 40, 10, .06), 0 4px 14px rgba(60, 40, 10, .06);
+    }
+    [data-theme="dark"] {
+      --bg: #12160f;
+      --card: #1c2219;
+      --border: #2f3a2a;
+      --text: #eef2e8;
+      --muted: #9aa58f;
+      --accent: #4ade80;
+      --accent-soft: #1d3a24;
+      --accent-text: #0b1a0f;
+      --swap: #fbbf24;
+      --swap-soft: #3a2e12;
+      --bad: #f87171;
+      --bad-soft: #3b1717;
+      --ok: #4ade80;
+      --ok-soft: #173321;
+      --shadow: none;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+      padding-bottom: calc(76px + env(safe-area-inset-bottom));
+    }
+    button, input, select, textarea { font: inherit; color: inherit; }
+    a { color: var(--accent); }
+    .wrap { max-width: 860px; margin: 0 auto; padding: 0 16px; }
+
+    header.top {
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      padding-top: env(safe-area-inset-top);
+    }
+    .brand { display: flex; align-items: center; gap: 10px; padding: 12px 0 8px; }
+    .brand img { width: 34px; height: 34px; border-radius: 9px; }
+    .brand h1 { font-size: 20px; margin: 0; letter-spacing: -.01em; }
+    .brand .tag { color: var(--muted); font-size: 13px; }
+    .brand .spacer { flex: 1; }
+    .icon-btn {
+      border: 1px solid var(--border); background: var(--card); border-radius: 10px;
+      width: 38px; height: 38px; cursor: pointer; font-size: 18px;
+    }
+
+    .avoid { padding: 4px 0 12px; }
+    .avoid-label { font-size: 13px; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
+    .avoid-label button { background: none; border: 0; color: var(--accent); cursor: pointer; font-size: 13px; padding: 0; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip {
+      border: 1px solid var(--border); background: var(--card); border-radius: 999px;
+      padding: 6px 11px; cursor: pointer; font-size: 14px; white-space: nowrap;
+      transition: background .15s, border-color .15s;
+    }
+    .chip[aria-pressed="true"] { background: var(--bad-soft); border-color: var(--bad); color: var(--bad); font-weight: 600; }
+    .chip[aria-pressed="true"]::before { content: "✕ "; }
+    .chip.filter[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+    .chip.filter[aria-pressed="true"]::before { content: ""; }
+
+    nav.tabs {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 10;
+      background: var(--card); border-top: 1px solid var(--border);
+      display: flex; justify-content: center;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    nav.tabs a {
+      flex: 1; max-width: 220px; text-align: center; text-decoration: none; color: var(--muted);
+      padding: 9px 4px 10px; font-size: 12px; font-weight: 600;
+    }
+    nav.tabs a span { display: block; font-size: 21px; line-height: 1.2; }
+    nav.tabs a.active { color: var(--accent); }
+
+    main { padding-top: 16px; }
+    h2 { font-size: 22px; margin: 4px 0 12px; letter-spacing: -.01em; }
+    h3 { font-size: 17px; margin: 0 0 8px; }
+    .muted { color: var(--muted); }
+    .small { font-size: 13px; }
+
+    .toolbar { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+    .search {
+      width: 100%; padding: 11px 14px; border-radius: 12px; border: 1px solid var(--border);
+      background: var(--card); outline: none;
+    }
+    .search:focus, textarea:focus { border-color: var(--accent); }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+      padding: 14px; box-shadow: var(--shadow);
+    }
+    a.rcard { display: flex; gap: 12px; text-decoration: none; color: inherit; align-items: flex-start; }
+    a.rcard:hover { border-color: var(--accent); }
+    .remoji {
+      font-size: 30px; width: 52px; height: 52px; flex: none; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center; background: var(--bg);
+    }
+    .rcard h3 { margin: 0 0 2px; font-size: 16px; }
+    .meta { font-size: 13px; color: var(--muted); }
+    .badge {
+      display: inline-block; font-size: 12px; font-weight: 700; border-radius: 999px;
+      padding: 2px 9px; margin-top: 6px;
+    }
+    .b-ok { background: var(--ok-soft); color: var(--ok); }
+    .b-swap { background: var(--swap-soft); color: var(--swap); }
+    .b-bad { background: var(--bad-soft); color: var(--bad); }
+    .b-neutral { background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
+    .contains { font-size: 13px; margin-top: 4px; letter-spacing: 1px; }
+
+    .back { display: inline-block; margin-bottom: 10px; text-decoration: none; font-weight: 600; }
+    .hero { display: flex; gap: 14px; align-items: center; margin-bottom: 14px; }
+    .hero .remoji { width: 64px; height: 64px; font-size: 38px; background: var(--card); border: 1px solid var(--border); }
+    .hero h2 { margin: 0; }
+
+    .cols { display: grid; gap: 14px; }
+    @media (min-width: 760px) { .cols { grid-template-columns: 5fr 6fr; align-items: start; } }
+
+    ul.ing { list-style: none; padding: 0; margin: 0; }
+    ul.ing li { padding: 9px 0; border-bottom: 1px dashed var(--border); }
+    ul.ing li:last-child { border-bottom: 0; }
+    .q { font-weight: 600; }
+    .was { text-decoration: line-through; color: var(--muted); font-size: 14px; }
+    .now { color: var(--swap); font-weight: 600; }
+    .tip { font-size: 13px; color: var(--muted); margin-top: 3px; }
+    .warn { font-size: 13px; color: var(--swap); margin-top: 3px; }
+    .nope { color: var(--bad); font-weight: 600; }
+
+    ol.steps { padding-left: 22px; margin: 0; }
+    ol.steps li { margin-bottom: 10px; }
+    mark { background: var(--swap-soft); color: var(--swap); border-radius: 4px; padding: 0 3px; font-weight: 600; }
+    mark.bad { background: var(--bad-soft); color: var(--bad); }
+
+    .note {
+      border-left: 4px solid var(--swap); background: var(--swap-soft);
+      padding: 10px 12px; border-radius: 8px; margin-top: 12px; font-size: 14px;
+    }
+    .note.safe { border-color: var(--ok); background: var(--ok-soft); }
+
+    .swap-section { margin-bottom: 18px; }
+    .swap-section > .card { padding: 0; overflow: hidden; }
+    .swap-head { padding: 14px; border-bottom: 1px solid var(--border); }
+    .swap-row { padding: 12px 14px; border-bottom: 1px solid var(--border); }
+    .swap-row:last-child { border-bottom: 0; }
+    .opt { display: flex; gap: 8px; align-items: baseline; margin-top: 6px; font-size: 15px; }
+    .opt .mark { flex: none; width: 18px; text-align: center; }
+    .opt.unsafe { color: var(--muted); }
+    .opt.best { font-weight: 600; }
+    .pill {
+      display: inline-block; font-size: 12px; border-radius: 6px; padding: 0 6px;
+      background: var(--bad-soft); color: var(--bad); margin-left: 4px; font-weight: 600;
+    }
+    .pill.soft { background: var(--bg); color: var(--muted); border: 1px solid var(--border); font-weight: 500; }
+    .hidden-words { font-size: 14px; }
+
+    textarea {
+      width: 100%; min-height: 180px; border-radius: 12px; border: 1px solid var(--border);
+      background: var(--card); padding: 12px 14px; outline: none; resize: vertical;
+    }
+    .btn {
+      border: 0; border-radius: 12px; padding: 11px 18px; font-weight: 700; cursor: pointer;
+      background: var(--accent); color: var(--accent-text);
+    }
+    .btn.ghost { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 16px; }
+    .result-line { padding: 10px 0; border-bottom: 1px dashed var(--border); }
+    .result-line:last-child { border-bottom: 0; }
+
+    .empty { text-align: center; padding: 30px 10px; color: var(--muted); }
+    footer { margin: 28px 0 12px; font-size: 12px; color: var(--muted); text-align: center; }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap">
+      <div class="brand">
+        <img src="icon-192.png" alt="" />
+        <div>
+          <h1>SafePlate</h1>
+          <div class="tag">Everyday recipes, made safe for your allergies</div>
+        </div>
+        <div class="spacer"></div>
+        <button class="icon-btn" id="theme-btn" aria-label="Toggle dark mode">🌙</button>
+      </div>
+      <div class="avoid">
+        <div class="avoid-label">
+          <span id="avoid-summary">Tap everything you need to avoid:</span>
+          <button id="clear-btn" hidden>Clear</button>
+        </div>
+        <div class="chips" id="allergen-chips"></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap" id="view"></main>
+
+  <div class="wrap">
+    <footer>
+      SafePlate offers general cooking ideas, not medical advice. Ingredients and factories change, so read
+      every label every time and follow your allergist's guidance. Nothing you enter leaves this device.
+    </footer>
+  </div>
+
+  <nav class="tabs" aria-label="Sections">
+    <a href="#recipes" data-tab="recipes"><span>📖</span>Recipes</a>
+    <a href="#swaps" data-tab="swaps"><span>🔁</span>Swaps</a>
+    <a href="#check" data-tab="check"><span>🔍</span>Check a recipe</a>
+  </nav>
+
+  <script>
+  // ---------------------------------------------------------------------------
+  // Data
+  // ---------------------------------------------------------------------------
+
+  // The nine major US food allergens. Wheat also stands in for gluten.
+  var ALLERGENS = [
+    { id: 'milk', name: 'Milk / Dairy', short: 'Dairy', emoji: '🥛',
+      tip: 'Plant milks swap 1:1 in most recipes. For richness (sauces, soups) use canned coconut milk; for baking, any unsweetened plant milk works.',
+      hidden: ['casein', 'caseinate', 'whey', 'lactose', 'lactalbumin', 'butterfat', 'ghee', 'curds', 'paneer', 'custard', 'ice cream', 'milk solids'] },
+    { id: 'egg', name: 'Egg', short: 'Egg', emoji: '🥚',
+      tip: 'Pick the swap by the egg\'s job: binding (flax egg), lift in cakes (aquafaba), moisture (applesauce), or scrambles (tofu or chickpea flour).',
+      hidden: ['albumin', 'albumen', 'ovalbumin', 'lysozyme', 'meringue', 'mayonnaise', 'aioli', 'eggnog'] },
+    { id: 'peanut', name: 'Peanut', short: 'Peanut', emoji: '🥜',
+      tip: 'Sunflower seed butter is the closest swap for peanut butter. Watch for "may contain peanuts" warnings on chocolate, granola and Asian or African sauces.',
+      hidden: ['arachis oil', 'groundnuts', 'beer nuts', 'monkey nuts', 'mixed nuts', 'satay', 'peanut flour', 'mandelonas'] },
+    { id: 'treenut', name: 'Tree nuts', short: 'Tree nut', emoji: '🌰',
+      tip: 'Toasted pumpkin or sunflower seeds give the same crunch. Check pesto, baked goods, cereals and "dairy-free" products, which are often cashew- or almond-based.',
+      hidden: ['almond', 'cashew', 'walnut', 'pecan', 'pistachio', 'hazelnut', 'filbert', 'macadamia', 'brazil nut', 'pine nut', 'praline', 'marzipan', 'gianduja', 'frangipane', 'pesto', 'nut butter'] },
+    { id: 'soy', name: 'Soy', short: 'Soy', emoji: '🫘',
+      tip: 'Coconut aminos replace soy sauce. Soy hides in vegan products, chocolate (soy lecithin), bread and many processed foods.',
+      hidden: ['soya', 'edamame', 'tofu', 'tempeh', 'miso', 'natto', 'shoyu', 'tamari', 'soy lecithin', 'textured vegetable protein', 'TVP', 'hydrolyzed soy protein'] },
+    { id: 'wheat', name: 'Wheat / Gluten', short: 'Wheat', emoji: '🌾',
+      tip: 'Use a 1:1 gluten-free flour blend that already contains xanthan gum. For celiac disease, barley, rye and non-certified oats are also off-limits.',
+      hidden: ['semolina', 'durum', 'spelt', 'farro', 'bulgur', 'couscous', 'seitan', 'einkorn', 'kamut', 'malt', 'barley', 'rye', 'panko', 'orzo', 'graham'] },
+    { id: 'fish', name: 'Fish', short: 'Fish', emoji: '🐟',
+      tip: 'Chicken, cauliflower and chickpeas stand in for fish in most dishes. Fish hides in Worcestershire sauce, Caesar dressing and Asian sauces.',
+      hidden: ['anchovy', 'fish sauce', 'worcestershire', 'caesar dressing', 'surimi', 'bonito', 'dashi', 'fish stock', 'roe', 'caviar'] },
+    { id: 'shellfish', name: 'Shellfish', short: 'Shellfish', emoji: '🦐',
+      tip: 'Chicken or firm tofu replace shrimp well. Many people who react to crustaceans also avoid mollusks (clams, mussels, squid), so ask your allergist.',
+      hidden: ['shrimp', 'prawn', 'crab', 'lobster', 'crayfish', 'krill', 'scampi', 'shrimp paste', 'oyster sauce', 'clams', 'mussels', 'squid', 'calamari'] },
+    { id: 'sesame', name: 'Sesame', short: 'Sesame', emoji: '⚪',
+      tip: 'Sunflower seed butter replaces tahini. Sesame hides in breads and buns, hummus, dressings, spice blends and Middle Eastern or Asian dishes.',
+      hidden: ['tahini', 'benne', 'gomasio', 'halva', 'halvah', 'hummus', 'za\'atar', 'zaatar', 'gingelly'] }
+  ];
+  var A = {};
+  ALLERGENS.forEach(function (a) { A[a.id] = a; });
+
+  // Ingredient library. n = full name, s = short name used in steps, a = allergens,
+  // m = often contains (label warning), k = words the label checker matches, swaps
+  // in order of preference; the first one free of all the user's allergens wins.
+  var LIB = {
+    butter: { n: 'butter', s: 'butter', a: ['milk'], k: ['butter', 'unsalted butter', 'salted butter', 'margarine'],
+      swaps: [
+        { n: 'dairy-free butter sticks (olive or avocado-oil based)', s: 'dairy-free butter', a: [], tip: 'Use 1:1. Some brands contain soy or cashew, so check the label.' },
+        { n: 'refined coconut oil', s: 'coconut oil', a: [], tip: 'Use 1:1, solid for cookies and melted for batters. Refined coconut oil has no coconut taste.' }
+      ] },
+    milk: { n: 'milk', s: 'milk', a: ['milk'], k: ['milk', 'whole milk', 'skim milk', '2% milk', 'evaporated milk', 'condensed milk', 'sweetened condensed milk'],
+      swaps: [
+        { n: 'oat milk (certified gluten-free)', s: 'oat milk', a: [], tip: 'Use 1:1. Pick unsweetened for savory dishes.' },
+        { n: 'soy milk', s: 'soy milk', a: ['soy'], tip: 'Use 1:1. Highest protein, so it behaves most like dairy in baking.' },
+        { n: 'rice milk', s: 'rice milk', a: [], tip: 'Use 1:1. Thinner, so add 1 tsp cornstarch per cup for sauces.' }
+      ] },
+    buttermilk: { n: 'buttermilk', s: 'buttermilk', a: ['milk'], k: ['buttermilk'],
+      swaps: [{ n: 'oat milk + 1 tbsp lemon juice per cup (rest 5 min)', s: '"oat buttermilk"', a: [], tip: 'The acid curdles it slightly, just like real buttermilk.' }] },
+    cream: { n: 'heavy cream', s: 'cream', a: ['milk'], k: ['heavy cream', 'whipping cream', 'cream', 'half-and-half', 'half and half', 'light cream'],
+      swaps: [{ n: 'full-fat canned coconut milk', s: 'coconut milk', a: [], tip: 'Use 1:1. Shake the can well; adds a light coconut note.' }] },
+    cheddar: { n: 'shredded cheddar', s: 'cheese', a: ['milk'], k: ['cheese', 'cheddar', 'mozzarella', 'monterey jack', 'swiss cheese', 'american cheese', 'colby', 'provolone', 'feta'],
+      swaps: [{ n: 'dairy-free cheese shreds', s: 'dairy-free cheese', a: [], tip: 'Melts best stirred into a hot sauce. Many are coconut-based; some contain cashew or soy, so check.' }] },
+    parmesan: { n: 'grated parmesan', s: 'parmesan', a: ['milk'], k: ['parmesan', 'parmigiano', 'pecorino', 'romano'],
+      swaps: [{ n: 'nutritional yeast + a pinch of salt', s: 'nutritional yeast', a: [], tip: 'Use about ¾ of the amount. Adds savory, cheesy flavor.' }] },
+    cream_cheese: { n: 'cream cheese', s: 'cream cheese', a: ['milk'], k: ['cream cheese', 'mascarpone', 'ricotta'],
+      swaps: [
+        { n: 'oat-based cream cheese', s: 'oat cream cheese', a: [], tip: 'Use 1:1 in spreads and frostings.' },
+        { n: 'cashew cream cheese', s: 'cashew cream cheese', a: ['treenut'], tip: 'Use 1:1. Richest texture.' }
+      ] },
+    yogurt: { n: 'plain yogurt', s: 'yogurt', a: ['milk'], k: ['yogurt', 'yoghurt', 'greek yogurt', 'kefir'],
+      swaps: [
+        { n: 'unsweetened coconut yogurt', s: 'coconut yogurt', a: [], tip: 'Use 1:1.' },
+        { n: 'unsweetened soy yogurt', s: 'soy yogurt', a: ['soy'], tip: 'Use 1:1. Tangier, closest to Greek yogurt.' }
+      ] },
+    sour_cream: { n: 'sour cream', s: 'sour cream', a: ['milk'], k: ['sour cream', 'creme fraiche', 'crème fraîche'],
+      swaps: [{ n: 'coconut yogurt + a squeeze of lime', s: 'lime coconut yogurt', a: [], tip: 'Use 1:1.' }] },
+    egg_bind: { n: 'eggs in baking & binding', s: 'egg', a: ['egg'], k: ['egg', 'eggs', 'egg yolk', 'egg yolks', 'egg white', 'egg whites', 'large egg', 'large eggs'],
+      swaps: [
+        { n: 'flax egg (1 tbsp ground flaxseed + 3 tbsp water per egg, rested 5 min)', s: 'flax egg', a: [], tip: 'Best binder for cookies, quick breads and meatballs.' },
+        { n: 'aquafaba (3 tbsp chickpea can liquid per egg)', s: 'aquafaba', a: [], tip: 'Gives lift in pancakes and cakes.' },
+        { n: 'unsweetened applesauce (¼ cup per egg)', s: 'applesauce', a: [], tip: 'Adds moisture. Bakes a bit denser.' }
+      ] },
+    egg_main: { n: 'scrambled eggs (fried rice, stir-fries)', s: 'egg', a: ['egg'], k: [],
+      swaps: [
+        { n: 'crumbled extra-firm tofu with a pinch of turmeric', s: 'tofu scramble', a: ['soy'], tip: 'Season with a pinch of kala namak (black salt) for an eggy taste.' },
+        { n: 'chickpea-flour "egg" (¼ cup chickpea flour + ¼ cup water + pinch of turmeric per 2 eggs)', s: 'chickpea "egg"', a: [], tip: 'Pour into the pan like an omelet, let it set, then break into pieces.' }
+      ] },
+    egg_dip: { n: 'beaten eggs for dipping & coating', s: 'egg', a: ['egg'], k: [],
+      swaps: [{ n: 'chickpea-flour slurry (2 tbsp chickpea flour + 3 tbsp water per egg)', s: 'chickpea slurry', a: [], tip: 'Coats and binds like beaten egg for dredging and dipping.' }] },
+    mayo: { n: 'mayonnaise', s: 'mayo', a: ['egg'], k: ['mayonnaise', 'mayo', 'aioli'],
+      swaps: [
+        { n: 'egg-free mayo (aquafaba or pea-protein based)', s: 'egg-free mayo', a: [], tip: 'Use 1:1. Some brands use soy, so check if needed.' },
+        { n: 'mashed ripe avocado + lemon juice', s: 'mashed avocado', a: [], tip: 'Use 1:1. Make it fresh; it browns.' }
+      ] },
+    flour: { n: 'all-purpose flour', s: 'flour', a: ['wheat'], k: ['flour', 'all-purpose flour', 'all purpose flour', 'bread flour', 'cake flour', 'self-rising flour', 'wheat flour', 'whole wheat flour', 'plain flour'],
+      swaps: [{ n: 'gluten-free 1:1 baking flour (with xanthan gum)', s: 'gluten-free flour', a: [], tip: 'Use 1:1, ideally by weight. Rest batters 10 minutes so the rice flour hydrates.' }] },
+    breadcrumbs: { n: 'breadcrumbs', s: 'breadcrumbs', a: ['wheat'], m: ['milk', 'egg', 'soy', 'sesame'], k: ['breadcrumbs', 'bread crumbs', 'panko'],
+      swaps: [
+        { n: 'gluten-free panko or breadcrumbs', s: 'GF breadcrumbs', a: [], tip: 'Use 1:1. Check for other allergens on the label.' },
+        { n: 'crushed gluten-free cornflakes', s: 'crushed cornflakes', a: [], tip: 'Use 1:1. Extra crunchy coating.' }
+      ] },
+    pasta: { n: 'pasta', s: 'pasta', a: ['wheat'], k: ['pasta', 'spaghetti', 'macaroni', 'penne', 'fettuccine', 'linguine', 'rigatoni', 'fusilli', 'lasagna noodles', 'noodles'],
+      swaps: [
+        { n: 'gluten-free pasta (brown rice or corn)', s: 'gluten-free pasta', a: [], tip: 'Cook 1–2 minutes less than the package says. It firms up as it sits.' },
+        { n: 'chickpea or lentil pasta', s: 'chickpea pasta', a: [], tip: 'Higher protein. Rinse after draining to remove foam.' }
+      ] },
+    bread: { n: 'bread', s: 'bread', a: ['wheat'], m: ['milk', 'egg', 'soy', 'sesame'], k: ['bread', 'sandwich bread', 'bun', 'buns', 'bagel', 'pita', 'brioche', 'sourdough'],
+      swaps: [{ n: 'gluten-free bread (top-allergen-free brand)', s: 'gluten-free bread', a: [], tip: 'Toast or warm it first; GF bread is sturdier warm.' }] },
+    tortillas: { n: 'flour tortillas', s: 'tortillas', a: ['wheat'], k: ['flour tortilla', 'flour tortillas', 'tortilla', 'tortillas', 'wrap', 'wraps'],
+      swaps: [{ n: 'corn tortillas', s: 'corn tortillas', a: [], tip: 'Warm in a dry skillet so they don\'t crack. Choose 100% corn.' }] },
+    croutons: { n: 'croutons', s: 'croutons', a: ['wheat'], m: ['milk'], k: ['croutons'],
+      swaps: [{ n: 'crispy roasted chickpeas', s: 'roasted chickpeas', a: [], tip: 'Roast drained chickpeas with oil and salt at 425°F (220°C) for 20–25 min.' }] },
+    soy_sauce: { n: 'soy sauce', s: 'soy sauce', a: ['soy', 'wheat'], k: ['soy sauce', 'shoyu', 'teriyaki', 'teriyaki sauce'],
+      swaps: [
+        { n: 'tamari (wheat-free soy sauce)', s: 'tamari', a: ['soy'], tip: 'Use 1:1. Check it says gluten-free.' },
+        { n: 'coconut aminos + a pinch of salt', s: 'coconut aminos', a: [], tip: 'Use 1:1. Sweeter and less salty than soy sauce.' }
+      ] },
+    sesame_oil: { n: 'toasted sesame oil', s: 'sesame oil', a: ['sesame'], k: ['sesame oil', 'toasted sesame oil'],
+      swaps: [{ n: 'avocado or olive oil', s: 'oil', a: [], tip: 'You lose the nutty aroma; extra garlic or green onion makes up for it.' }] },
+    sesame_seeds: { n: 'sesame seeds', s: 'sesame seeds', a: ['sesame'], k: ['sesame seeds', 'sesame'],
+      swaps: [{ n: 'toasted sunflower seeds or sliced green onion', s: 'sunflower seeds', a: [], tip: 'Use as a garnish 1:1.' }] },
+    tahini: { n: 'tahini', s: 'tahini', a: ['sesame'], k: ['tahini', 'tahina'],
+      swaps: [{ n: 'unsweetened sunflower seed butter', s: 'sunflower seed butter', a: [], tip: 'Use 1:1 and add an extra squeeze of lemon.' }] },
+    peanut_butter: { n: 'peanut butter', s: 'peanut butter', a: ['peanut'], k: ['peanut butter'],
+      swaps: [
+        { n: 'sunflower seed butter', s: 'sunflower seed butter', a: [], tip: 'Use 1:1. Made in peanut-free facilities by several brands.' },
+        { n: 'almond butter', s: 'almond butter', a: ['treenut'], tip: 'Use 1:1.' },
+        { n: 'soy nut butter', s: 'soy nut butter', a: ['soy'], tip: 'Use 1:1.' }
+      ] },
+    peanuts: { n: 'roasted peanuts', s: 'peanuts', a: ['peanut'], k: ['peanuts', 'peanut'],
+      swaps: [{ n: 'toasted pumpkin seeds (pepitas)', s: 'pumpkin seeds', a: [], tip: 'Use 1:1 for crunch.' }] },
+    walnuts: { n: 'walnuts', s: 'walnuts', a: ['treenut'], k: ['walnuts', 'walnut', 'pecans', 'pecan', 'almonds', 'almond', 'cashews', 'cashew', 'hazelnuts', 'hazelnut', 'pistachios', 'pistachio', 'macadamia', 'brazil nuts'],
+      swaps: [
+        { n: 'toasted sunflower or pumpkin seeds', s: 'toasted seeds', a: [], tip: 'Use 1:1, or simply leave them out.' }
+      ] },
+    pine_nuts: { n: 'pine nuts', s: 'pine nuts', a: ['treenut'], k: ['pine nuts', 'pine nut', 'pignoli'],
+      swaps: [{ n: 'toasted sunflower seeds', s: 'sunflower seeds', a: [], tip: 'Use 1:1. Toast them for the best flavor.' }] },
+    fish_sauce: { n: 'fish sauce', s: 'fish sauce', a: ['fish'], k: ['fish sauce', 'nam pla'],
+      swaps: [
+        { n: 'tamari + a squeeze of lime', s: 'tamari', a: ['soy'], tip: 'Use 1:1.' },
+        { n: 'coconut aminos + a pinch of salt', s: 'coconut aminos', a: [], tip: 'Use 1:1.' }
+      ] },
+    worcestershire: { n: 'Worcestershire sauce', s: 'Worcestershire', a: ['fish'], k: ['worcestershire', 'worcestershire sauce'],
+      swaps: [{ n: 'anchovy-free (vegan) Worcestershire sauce', s: 'vegan Worcestershire', a: [], tip: 'Use 1:1. Some brands contain soy or wheat, so check.' }] },
+    anchovy: { n: 'anchovy fillets', s: 'anchovies', a: ['fish'], k: ['anchovy', 'anchovies', 'anchovy paste'],
+      swaps: [{ n: 'chopped capers (1 tsp per 2 fillets)', s: 'capers', a: [], tip: 'Gives the same briny, salty punch.' }] },
+    shrimp: { n: 'shrimp', s: 'shrimp', a: ['shellfish'], k: ['shrimp', 'prawns', 'prawn', 'crab', 'lobster', 'crawfish', 'crayfish'],
+      swaps: [
+        { n: 'thinly sliced chicken breast', s: 'chicken', a: [], tip: 'Cook until no longer pink inside, 165°F (74°C), about 4–5 min.' },
+        { n: 'extra-firm tofu cubes', s: 'tofu', a: ['soy'], tip: 'Press and pat dry so it browns.' }
+      ] },
+    cod: { n: 'white fish fillets', s: 'fish', a: ['fish'], k: ['fish', 'cod', 'salmon', 'tilapia', 'halibut', 'haddock', 'trout', 'mahi mahi', 'white fish'],
+      swaps: [
+        { n: 'chicken breast strips', s: 'chicken', a: [], tip: 'Cook 4–5 min per side, to 165°F (74°C).' },
+        { n: 'cauliflower florets', s: 'cauliflower', a: [], tip: 'Cook until tender and browned, 6–8 min.' }
+      ] },
+    tuna: { n: 'canned tuna', s: 'tuna', a: ['fish'], k: ['tuna'],
+      swaps: [{ n: 'mashed chickpeas', s: 'chickpeas', a: [], tip: 'Mash roughly with a fork. A little chopped nori adds sea flavor.' }] },
+    choc_chips: { n: 'chocolate chips', s: 'chocolate chips', a: ['milk'], m: ['soy', 'treenut', 'peanut'], k: ['chocolate chips', 'chocolate', 'milk chocolate', 'chocolate chunks'],
+      swaps: [{ n: 'top-allergen-free chocolate chips', s: 'allergy-friendly chocolate chips', a: [], tip: 'Several brands are free of all major allergens.' }] },
+    marinara: { n: 'marinara sauce', s: 'marinara', a: [], m: ['milk'], k: ['marinara', 'pasta sauce', 'tomato sauce'], swaps: [] },
+    broth: { n: 'vegetable broth', s: 'broth', a: [], m: ['soy', 'wheat'], k: ['broth', 'stock', 'bouillon'], swaps: [] },
+    rice_noodles: { n: 'flat rice noodles', s: 'noodles', a: [], m: ['wheat'], k: ['rice noodles'], swaps: [] }
+  };
+
+  // Recipes. Ingredients: [quantity, name as written, library id (optional)].
+  // Steps reference library ids as {id}; they fill in with whatever the user ends up using.
+  var RECIPES = [
+    { id: 'pancakes', t: 'Fluffy Pancakes', e: '🥞', c: 'Breakfast', time: '20 min', serves: '4',
+      ing: [['1½ cups', 'all-purpose flour', 'flour'], ['2 tbsp', 'sugar'], ['2 tsp', 'baking powder'], ['½ tsp', 'salt'],
+            ['1¼ cups', 'milk', 'milk'], ['1 large', 'egg', 'egg_bind'], ['3 tbsp', 'melted butter, plus more for the pan', 'butter']],
+      steps: ['Whisk the {flour}, sugar, baking powder and salt in a large bowl.',
+              'In another bowl, whisk the {milk}, {egg_bind} and melted {butter}.',
+              'Pour wet into dry and stir until just combined; a few lumps are fine. Rest 5 minutes.',
+              'Heat a skillet over medium heat, grease lightly with {butter}, and pour in ¼-cup portions.',
+              'Flip when bubbles form and the edges look set, about 2 minutes, then cook 1 minute more.'],
+      notes: { wheat: 'Gluten-free pancakes brown faster, so drop the heat slightly.' } },
+    { id: 'cookies', t: 'Chocolate Chip Cookies', e: '🍪', c: 'Baking', time: '30 min', serves: '24 cookies',
+      ing: [['1 cup', 'softened butter', 'butter'], ['¾ cup', 'brown sugar'], ['½ cup', 'white sugar'], ['1 large', 'egg', 'egg_bind'],
+            ['2 tsp', 'vanilla extract'], ['2¼ cups', 'all-purpose flour', 'flour'], ['1 tsp', 'baking soda'], ['½ tsp', 'salt'],
+            ['1½ cups', 'chocolate chips', 'choc_chips']],
+      steps: ['Heat the oven to 375°F (190°C) and line two baking sheets with parchment.',
+              'Beat the {butter} with both sugars until light and fluffy, about 2 minutes.',
+              'Beat in the {egg_bind} and vanilla.',
+              'Stir in the {flour}, baking soda and salt until no dry streaks remain, then fold in the {choc_chips}.',
+              'Scoop tablespoon-size balls 2 inches apart. Bake 9–11 minutes, until the edges are golden.',
+              'Cool 5 minutes on the sheet before moving.'],
+      notes: { wheat: 'Chill gluten-free dough 30 minutes so the cookies don\'t spread too much.', milk: 'With coconut oil, chill the dough 20 minutes before scooping.' } },
+    { id: 'mac', t: 'Stovetop Mac & Cheese', e: '🧀', c: 'Mains', time: '25 min', serves: '4',
+      ing: [['8 oz', 'elbow macaroni', 'pasta'], ['3 tbsp', 'butter', 'butter'], ['3 tbsp', 'all-purpose flour', 'flour'],
+            ['2 cups', 'milk', 'milk'], ['2 cups', 'shredded cheddar', 'cheddar'], ['½ tsp', 'salt'], ['¼ tsp', 'mustard powder']],
+      steps: ['Cook the {pasta} in well-salted water until just al dente, then drain.',
+              'Melt the {butter} in a saucepan over medium heat. Whisk in the {flour} and cook 1 minute.',
+              'Slowly whisk in the {milk} and simmer, stirring, until thickened, 4–5 minutes.',
+              'Take off the heat and stir in the {cheddar}, salt and mustard powder until smooth.',
+              'Fold in the {pasta} and serve hot.'],
+      notes: { milk: 'Stir 2 tbsp nutritional yeast into the sauce for a sharper, cheesier flavor.' } },
+    { id: 'meatballs', t: 'Spaghetti & Meatballs', e: '🍝', c: 'Mains', time: '45 min', serves: '4',
+      ing: [['1 lb', 'ground beef'], ['½ cup', 'breadcrumbs', 'breadcrumbs'], ['1 large', 'egg', 'egg_bind'], ['⅓ cup', 'grated parmesan', 'parmesan'],
+            ['2 cloves', 'garlic, minced'], ['1 tsp', 'Italian seasoning'], ['½ tsp', 'salt'], ['3 cups', 'marinara sauce', 'marinara'],
+            ['12 oz', 'spaghetti', 'pasta']],
+      steps: ['Gently mix the beef, {breadcrumbs}, {egg_bind}, {parmesan}, garlic, Italian seasoning and salt. Don\'t overwork it.',
+              'Roll into 1½-inch balls and brown in an oiled skillet over medium-high heat, 6–8 minutes, turning.',
+              'Add the {marinara}, cover, and simmer 15 minutes until cooked through (160°F / 71°C).',
+              'Meanwhile, cook the {pasta}. Serve the meatballs and sauce over it.'] },
+    { id: 'stirfry', t: 'Chicken & Broccoli Stir-Fry', e: '🥦', c: 'Mains', time: '25 min', serves: '4',
+      ing: [['1 lb', 'chicken breast, thinly sliced'], ['4 cups', 'broccoli florets'], ['1', 'red bell pepper, sliced'],
+            ['3 tbsp', 'soy sauce', 'soy_sauce'], ['1 tbsp', 'toasted sesame oil', 'sesame_oil'], ['1 tbsp', 'cornstarch'],
+            ['2 cloves', 'garlic, minced'], ['1 tbsp', 'fresh ginger, grated'], ['1 tbsp', 'neutral oil'],
+            ['1 tbsp', 'sesame seeds', 'sesame_seeds'], ['4 cups', 'cooked rice']],
+      steps: ['Toss the chicken with 1 tbsp of the {soy_sauce} and the cornstarch.',
+              'Stir the remaining {soy_sauce} with the {sesame_oil} and 3 tbsp water.',
+              'Heat the neutral oil in a wok over high heat. Sear the chicken until cooked through, 5–6 minutes, then remove.',
+              'Stir-fry the broccoli and pepper 3 minutes, then add the garlic and ginger for 30 seconds.',
+              'Return the chicken, pour in the sauce, and toss until glossy.',
+              'Serve over rice, topped with {sesame_seeds}.'] },
+    { id: 'padthai', t: 'Shrimp Pad Thai', e: '🍜', c: 'Mains', time: '30 min', serves: '3',
+      ing: [['8 oz', 'flat rice noodles', 'rice_noodles'], ['8 oz', 'shrimp, peeled', 'shrimp'], ['2 large', 'eggs', 'egg_main'],
+            ['3 tbsp', 'fish sauce', 'fish_sauce'], ['2 tbsp', 'tamarind paste'], ['2 tbsp', 'brown sugar'], ['2 tbsp', 'neutral oil'],
+            ['2 cloves', 'garlic, minced'], ['1 cup', 'bean sprouts'], ['3', 'green onions, cut in 1-inch pieces'],
+            ['¼ cup', 'roasted peanuts, chopped', 'peanuts'], ['1', 'lime, in wedges']],
+      steps: ['Soak the {rice_noodles} in hot water 8–10 minutes until pliable, then drain.',
+              'Whisk the {fish_sauce}, tamarind and brown sugar.',
+              'Heat the oil in a wok over high heat. Cook the garlic 20 seconds, then add the {shrimp} and cook through.',
+              'Push everything to one side, add the {egg_main} and cook until just set, then break it up.',
+              'Add the noodles and sauce and toss 2–3 minutes, then toss in the sprouts and green onions.',
+              'Top with {peanuts} and serve with lime wedges.'] },
+    { id: 'pesto', t: 'Basil Pesto Pasta', e: '🌿', c: 'Mains', time: '20 min', serves: '4',
+      ing: [['12 oz', 'pasta', 'pasta'], ['2 cups', 'fresh basil leaves, packed'], ['⅓ cup', 'pine nuts', 'pine_nuts'],
+            ['½ cup', 'grated parmesan', 'parmesan'], ['½ cup', 'olive oil'], ['2 cloves', 'garlic'], ['1 tbsp', 'lemon juice'], ['', 'salt to taste']],
+      steps: ['Cook the {pasta}, saving ½ cup of the cooking water before draining.',
+              'Toast the {pine_nuts} in a dry skillet over medium heat for 2–3 minutes until golden.',
+              'Blend the basil, toasted {pine_nuts}, garlic and lemon juice until chopped, then stream in the olive oil.',
+              'Stir in the {parmesan} and salt to taste.',
+              'Toss with the {pasta}, adding splashes of pasta water until glossy.'] },
+    { id: 'smoothie', t: 'Peanut Butter Banana Smoothie', e: '🥤', c: 'Breakfast', time: '5 min', serves: '2',
+      ing: [['2', 'ripe bananas, frozen'], ['2 tbsp', 'peanut butter', 'peanut_butter'], ['1 cup', 'milk', 'milk'],
+            ['½ cup', 'plain yogurt', 'yogurt'], ['1 tbsp', 'honey'], ['½ cup', 'ice']],
+      steps: ['Add the {milk} and {yogurt} to the blender first, then the bananas, {peanut_butter}, honey and ice.',
+              'Blend until completely smooth, about 45 seconds.',
+              'Taste, and add more honey or a splash of {milk} to adjust.'] },
+    { id: 'bananabread', t: 'Banana Bread', e: '🍌', c: 'Baking', time: '70 min', serves: '10 slices',
+      ing: [['3', 'very ripe bananas'], ['⅓ cup', 'melted butter', 'butter'], ['¾ cup', 'sugar'], ['1 large', 'egg', 'egg_bind'],
+            ['1 tsp', 'vanilla extract'], ['1 tsp', 'baking soda'], ['pinch', 'salt'], ['1½ cups', 'all-purpose flour', 'flour'],
+            ['½ cup', 'chopped walnuts', 'walnuts']],
+      steps: ['Heat the oven to 350°F (175°C) and grease a 9×5-inch loaf pan.',
+              'Mash the bananas, then stir in the {butter}, sugar, {egg_bind} and vanilla.',
+              'Sprinkle in the baking soda and salt and stir, then fold in the {flour} until no streaks remain.',
+              'Fold in the {walnuts} and pour into the pan.',
+              'Bake 55–65 minutes, until a skewer comes out clean. Cool 10 minutes before slicing.'],
+      notes: { wheat: 'Gluten-free loaves may need 5–10 extra minutes; tent with foil if the top browns too fast.' } },
+    { id: 'hummus', t: 'Classic Hummus', e: '🥙', c: 'Snacks', time: '10 min', serves: '6',
+      ing: [['1 can (15 oz)', 'chickpeas, drained'], ['¼ cup', 'tahini', 'tahini'], ['3 tbsp', 'lemon juice'], ['1 clove', 'garlic'],
+            ['2 tbsp', 'olive oil'], ['½ tsp', 'ground cumin'], ['½ tsp', 'salt'], ['2–4 tbsp', 'ice water']],
+      steps: ['Blend the {tahini} and lemon juice for 1 minute until whipped and pale.',
+              'Add the garlic, cumin, salt and olive oil and blend again.',
+              'Add the chickpeas and blend 2 minutes, scraping down the sides.',
+              'With the motor running, add ice water a spoonful at a time until silky. Serve drizzled with oil.'],
+      notes: { sesame: 'Sunflower seed butter can turn hummus slightly green as it sits. That\'s a harmless reaction and it\'s still safe to eat.' } },
+    { id: 'caesar', t: 'Caesar Salad', e: '🥗', c: 'Salads & Soups', time: '15 min', serves: '4',
+      ing: [['2 heads', 'romaine, chopped'], ['⅓ cup', 'mayonnaise', 'mayo'], ['2', 'anchovy fillets, minced', 'anchovy'],
+            ['1 tsp', 'Worcestershire sauce', 'worcestershire'], ['2 tbsp', 'lemon juice'], ['1 clove', 'garlic, grated'],
+            ['⅓ cup', 'grated parmesan', 'parmesan'], ['2 cups', 'croutons', 'croutons'], ['', 'black pepper']],
+      steps: ['Whisk the {mayo}, {anchovy}, {worcestershire}, lemon juice, garlic and half the {parmesan}. Season with pepper.',
+              'Toss the romaine with the dressing.',
+              'Top with the {croutons} and the remaining {parmesan}.'] },
+    { id: 'tacos', t: 'Crispy Fish Tacos', e: '🌮', c: 'Mains', time: '25 min', serves: '4',
+      ing: [['1 lb', 'cod fillets', 'cod'], ['½ cup', 'all-purpose flour', 'flour'], ['1 tsp', 'chili powder'], ['½ tsp', 'salt'],
+            ['2 tbsp', 'neutral oil'], ['8', 'small flour tortillas', 'tortillas'], ['2 cups', 'shredded cabbage'],
+            ['½ cup', 'sour cream', 'sour_cream'], ['1', 'lime'], ['', 'fresh cilantro']],
+      steps: ['Cut the {cod} into strips and pat dry.',
+              'Mix the {flour}, chili powder and salt, then dredge the strips.',
+              'Pan-fry in the oil over medium-high heat until golden and cooked through.',
+              'Stir the juice of half the lime into the {sour_cream}.',
+              'Warm the {tortillas}, then fill with cabbage, the crispy strips, the sauce and cilantro.'] },
+    { id: 'tuna', t: 'Tuna Salad Sandwich', e: '🥪', c: 'Lunch', time: '10 min', serves: '2',
+      ing: [['1 can (5 oz)', 'tuna, drained', 'tuna'], ['3 tbsp', 'mayonnaise', 'mayo'], ['1 stalk', 'celery, diced'],
+            ['1 tbsp', 'lemon juice'], ['', 'salt and pepper'], ['4 slices', 'sandwich bread', 'bread'], ['', 'lettuce leaves']],
+      steps: ['Flake the {tuna} into a bowl.',
+              'Mix in the {mayo}, celery, lemon juice, salt and pepper.',
+              'Spread onto the {bread}, add lettuce, and close the sandwiches.'] },
+    { id: 'frenchtoast', t: 'French Toast', e: '🍞', c: 'Breakfast', time: '20 min', serves: '4',
+      ing: [['8 slices', 'thick-cut bread', 'bread'], ['3 large', 'eggs', 'egg_dip'], ['¾ cup', 'milk', 'milk'], ['1 tsp', 'cinnamon'],
+            ['1 tsp', 'vanilla extract'], ['2 tbsp', 'butter', 'butter'], ['', 'maple syrup, to serve']],
+      steps: ['Whisk the {egg_dip}, {milk}, cinnamon and vanilla in a shallow dish.',
+              'Melt some of the {butter} in a skillet over medium heat.',
+              'Dip each slice of {bread} for about 10 seconds per side.',
+              'Cook 2–3 minutes per side until golden, adding {butter} as needed. Serve with maple syrup.'],
+      notes: { wheat: 'Gluten-free bread soaks up liquid fast; dip it quickly and use slightly stale slices.' } },
+    { id: 'tenders', t: 'Baked Chicken Tenders', e: '🍗', c: 'Mains', time: '30 min', serves: '4',
+      ing: [['1½ lb', 'chicken tenders'], ['½ cup', 'all-purpose flour', 'flour'], ['2 large', 'eggs, beaten', 'egg_dip'],
+            ['1½ cups', 'panko breadcrumbs', 'breadcrumbs'], ['½ tsp', 'garlic powder'], ['1 tsp', 'salt'], ['', 'cooking spray']],
+      steps: ['Heat the oven to 425°F (220°C) and set a rack on a baking sheet.',
+              'Season the {flour} with the salt and garlic powder.',
+              'Dredge each tender in the {flour}, dip in the {egg_dip}, then press into the {breadcrumbs}.',
+              'Arrange on the rack and mist with cooking spray.',
+              'Bake 18–20 minutes, flipping halfway, until cooked through (165°F / 74°C).'] },
+    { id: 'friedrice', t: 'Shrimp Fried Rice', e: '🍤', c: 'Mains', time: '20 min', serves: '4',
+      ing: [['3 cups', 'cold cooked rice'], ['8 oz', 'shrimp, peeled', 'shrimp'], ['2 large', 'eggs', 'egg_main'],
+            ['1 cup', 'frozen peas and carrots'], ['3', 'green onions, sliced'], ['2 tbsp', 'soy sauce', 'soy_sauce'],
+            ['1 tsp', 'toasted sesame oil', 'sesame_oil'], ['2 tbsp', 'neutral oil'], ['2 cloves', 'garlic, minced']],
+      steps: ['Heat 1 tbsp neutral oil in a wok over high heat. Cook the {shrimp} until cooked through, then set aside.',
+              'Add the {egg_main} and cook until just set, breaking into pieces. Set aside.',
+              'Add the remaining oil, the garlic and peas and carrots; stir-fry 2 minutes.',
+              'Add the rice, pressing it against the pan, and fry 3–4 minutes until hot and slightly crisp.',
+              'Return the {shrimp} and {egg_main}, add the {soy_sauce} and {sesame_oil}, and toss with the green onions.'] },
+    { id: 'tomatosoup', t: 'Creamy Tomato Soup', e: '🍅', c: 'Salads & Soups', time: '35 min', serves: '4',
+      ing: [['2 tbsp', 'butter', 'butter'], ['1', 'onion, chopped'], ['2 cloves', 'garlic'], ['28 oz', 'canned crushed tomatoes'],
+            ['2 cups', 'vegetable broth', 'broth'], ['1 tsp', 'sugar'], ['½ cup', 'heavy cream', 'cream'], ['', 'fresh basil, salt and pepper']],
+      steps: ['Melt the {butter} in a pot over medium heat and cook the onion until soft, 6–8 minutes. Add the garlic for 1 minute.',
+              'Add the tomatoes, {broth} and sugar. Simmer 20 minutes.',
+              'Blend until smooth, then stir in the {cream}. Season with salt, pepper and torn basil.'] }
+  ];
+
+  // Words the label checker treats specially: matched before the allergen words so
+  // e.g. "coconut milk" or "rice noodles" don't get flagged as dairy or wheat.
+  var EXCEPTIONS = [
+    ['coconut milk', []], ['coconut cream', []], ['coconut yogurt', []], ['oat milk', []], ['rice milk', []], ['hemp milk', []],
+    ['almond milk', ['treenut']], ['cashew milk', ['treenut']], ['soy milk', ['soy']], ['soymilk', ['soy']],
+    ['cocoa butter', []], ['sunflower butter', []], ['sunflower seed butter', []], ['sunbutter', []], ['almond butter', ['treenut']],
+    ['cashew butter', ['treenut']], ['cream of tartar', []], ['water chestnut', []], ['nutmeg', []], ['coconut aminos', []],
+    ['rice flour', []], ['coconut flour', []], ['chickpea flour', []], ['corn flour', []], ['cornstarch', []], ['corn starch', []],
+    ['almond flour', ['treenut']], ['rice noodles', []], ['rice vermicelli', []], ['corn tortilla', []], ['corn tortillas', []],
+    ['peanut oil', ['peanut']], ['eggplant', []], ['chestnut', ['treenut']], ['nuts', ['treenut', 'peanut']]
+  ];
+  // "Dairy-free", "egg-free" etc. on a line switch that allergen off for the line (with a reminder to verify).
+  var FREE_FROM = [
+    [/\b(dairy|milk|lactose)[- ]free\b/g, ['milk']], [/\begg[- ]free\b/g, ['egg']], [/\b(gluten|wheat)[- ]free\b/g, ['wheat']],
+    [/\bsoy[- ]free\b/g, ['soy']], [/\bpeanut[- ]free\b/g, ['peanut']], [/\bnut[- ]free\b/g, ['treenut', 'peanut']],
+    [/\bsesame[- ]free\b/g, ['sesame']], [/\bvegan\b/g, ['milk', 'egg', 'fish', 'shellfish']]
+  ];
+
+  // ---------------------------------------------------------------------------
+  // State and helpers
+  // ---------------------------------------------------------------------------
+  var sel = loadSel();
+  var recipeFilter = { q: '', cat: 'All', show: 'all' };
+
+  function loadSel() {
+    try {
+      var v = JSON.parse(localStorage.getItem('safeplate_allergens') || '[]');
+      return v.filter(function (id) { return A[id]; });
+    } catch (e) { return []; }
+  }
+  function saveSel() { try { localStorage.setItem('safeplate_allergens', JSON.stringify(sel)); } catch (e) {} }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function hits(list) { return (list || []).filter(function (a) { return sel.indexOf(a) !== -1; }); }
+  function names(list) { return list.map(function (a) { return A[a].short.toLowerCase(); }).join(', '); }
+  function emojis(list) { return list.map(function (a) { return '<span title="' + esc(A[a].name) + '">' + A[a].emoji + '</span>'; }).join(' '); }
+
+  // What to use for one library ingredient given the user's allergens.
+  function resolve(id) {
+    var lib = LIB[id];
+    var bad = hits(lib.a);
+    var warn = hits(lib.m);
+    if (!bad.length) return { kind: 'ok', lib: lib, warn: warn };
+    for (var i = 0; i < lib.swaps.length; i++) {
+      var o = lib.swaps[i];
+      if (!hits(o.a).length) return { kind: 'swap', lib: lib, opt: o, bad: bad };
+    }
+    return { kind: 'none', lib: lib, bad: bad };
+  }
+
+  function recipeAllergens(r) {
+    var out = [];
+    r.ing.forEach(function (i) { if (i[2]) LIB[i[2]].a.forEach(function (a) { if (out.indexOf(a) === -1) out.push(a); }); });
+    return ALLERGENS.map(function (a) { return a.id; }).filter(function (id) { return out.indexOf(id) !== -1; });
+  }
+
+  function recipeStatus(r) {
+    var s = { swaps: 0, none: 0, warns: 0 };
+    r.ing.forEach(function (i) {
+      if (!i[2]) return;
+      var res = resolve(i[2]);
+      if (res.kind === 'swap') s.swaps++;
+      else if (res.kind === 'none') s.none++;
+      if (res.warn && res.warn.length) s.warns++;
+    });
+    s.level = s.none ? 'bad' : s.swaps ? 'swap' : 'ok';
+    return s;
+  }
+
+  function statusBadge(s) {
+    if (!sel.length) return '<span class="badge b-neutral">Pick allergens to adapt</span>';
+    if (s.level === 'bad') return '<span class="badge b-bad">No safe swap for ' + s.none + ' item' + (s.none > 1 ? 's' : '') + '</span>';
+    if (s.level === 'swap') return '<span class="badge b-swap">' + s.swaps + ' swap' + (s.swaps > 1 ? 's' : '') + ' to make it safe</span>';
+    return '<span class="badge b-ok">Safe as written' + (s.warns ? ' · check labels' : '') + '</span>';
+  }
+
+  // ---------------------------------------------------------------------------
+  // Allergen bar
+  // ---------------------------------------------------------------------------
+  function renderChips() {
+    document.getElementById('allergen-chips').innerHTML = ALLERGENS.map(function (a) {
+      return '<button class="chip" data-a="' + a.id + '" aria-pressed="' + (sel.indexOf(a.id) !== -1) + '">' + a.emoji + ' ' + esc(a.name) + '</button>';
+    }).join('');
+    document.getElementById('avoid-summary').textContent = sel.length
+      ? 'Avoiding ' + sel.length + ': ' + sel.map(function (id) { return A[id].short; }).join(', ')
+      : 'Tap everything you need to avoid:';
+    document.getElementById('clear-btn').hidden = !sel.length;
+  }
+  document.getElementById('allergen-chips').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-a]');
+    if (!b) return;
+    var id = b.getAttribute('data-a');
+    var i = sel.indexOf(id);
+    if (i === -1) sel.push(id); else sel.splice(i, 1);
+    saveSel(); renderChips(); route();
+  });
+  document.getElementById('clear-btn').addEventListener('click', function () { sel = []; saveSel(); renderChips(); route(); });
+
+  // ---------------------------------------------------------------------------
+  // Views
+  // ---------------------------------------------------------------------------
+  var view = document.getElementById('view');
+
+  function renderRecipes() {
+    var cats = ['All'];
+    RECIPES.forEach(function (r) { if (cats.indexOf(r.c) === -1) cats.push(r.c); });
+    view.innerHTML =
+      '<h2>Recipes</h2>' +
+      '<div class="toolbar">' +
+        '<input class="search" id="rq" type="search" placeholder="Search recipes or ingredients…" value="' + esc(recipeFilter.q) + '" />' +
+        '<div class="chips" id="rcats">' + cats.map(function (c) {
+          return '<button class="chip filter" data-cat="' + esc(c) + '" aria-pressed="' + (recipeFilter.cat === c) + '">' + esc(c) + '</button>';
+        }).join('') + '</div>' +
+        (sel.length ? '<div class="chips" id="rshow">' +
+          [['all', 'All recipes'], ['ok', 'Safe as written'], ['swap', 'Needs swaps']].map(function (o) {
+            return '<button class="chip filter" data-show="' + o[0] + '" aria-pressed="' + (recipeFilter.show === o[0]) + '">' + o[1] + '</button>';
+          }).join('') + '</div>' : '') +
+      '</div>' +
+      '<div class="grid" id="rgrid"></div>';
+    drawGrid();
+    document.getElementById('rq').addEventListener('input', function (e) { recipeFilter.q = e.target.value; drawGrid(); });
+    view.querySelectorAll('[data-cat]').forEach(function (b) {
+      b.addEventListener('click', function () { recipeFilter.cat = b.getAttribute('data-cat'); renderRecipes(); });
+    });
+    view.querySelectorAll('[data-show]').forEach(function (b) {
+      b.addEventListener('click', function () { recipeFilter.show = b.getAttribute('data-show'); renderRecipes(); });
+    });
+  }
+
+  function drawGrid() {
+    var q = recipeFilter.q.trim().toLowerCase();
+    var order = { ok: 0, swap: 1, bad: 2 };
+    var list = RECIPES.map(function (r) { return { r: r, s: recipeStatus(r) }; }).filter(function (x) {
+      if (recipeFilter.cat !== 'All' && x.r.c !== recipeFilter.cat) return false;
+      if (sel.length && recipeFilter.show !== 'all' && x.s.level !== recipeFilter.show) return false;
+      if (!q) return true;
+      var hay = (x.r.t + ' ' + x.r.c + ' ' + x.r.ing.map(function (i) { return i[1]; }).join(' ')).toLowerCase();
+      return hay.indexOf(q) !== -1;
+    });
+    if (sel.length) list.sort(function (a, b) { return order[a.s.level] - order[b.s.level] || a.s.swaps - b.s.swaps; });
+    var grid = document.getElementById('rgrid');
+    if (!list.length) { grid.innerHTML = '<div class="empty">No recipes match. Try another search or filter.</div>'; return; }
+    grid.innerHTML = list.map(function (x) {
+      var r = x.r, al = recipeAllergens(r);
+      return '<a class="card rcard" href="#r/' + r.id + '">' +
+        '<div class="remoji">' + r.e + '</div>' +
+        '<div><h3>' + esc(r.t) + '</h3>' +
+        '<div class="meta">' + esc(r.c) + ' · ' + esc(r.time) + '</div>' +
+        (al.length ? '<div class="contains" aria-label="Normally contains ' + esc(names(al)) + '">' + emojis(al) + '</div>' : '') +
+        statusBadge(x.s) + '</div></a>';
+    }).join('');
+  }
+
+  function renderRecipe(id) {
+    var r = RECIPES.filter(function (x) { return x.id === id; })[0];
+    if (!r) { location.hash = '#recipes'; return; }
+    var s = recipeStatus(r);
+    var al = recipeAllergens(r);
+
+    var ingHtml = r.ing.map(function (i) {
+      var q = i[0] ? '<span class="q">' + esc(i[0]) + '</span> ' : '';
+      if (!i[2]) return '<li>' + q + esc(i[1]) + '</li>';
+      var res = resolve(i[2]);
+      if (res.kind === 'ok') {
+        return '<li>' + q + esc(i[1]) +
+          (res.warn.length ? '<div class="warn">⚠️ Often contains ' + esc(names(res.warn)) + '. Check the label.</div>' : '') + '</li>';
+      }
+      if (res.kind === 'swap') {
+        return '<li><div class="was">' + esc((i[0] ? i[0] + ' ' : '') + i[1]) + '</div>' +
+          '<div>→ <span class="now">' + esc(res.opt.n) + '</span></div>' +
+          (res.opt.tip ? '<div class="tip">' + esc(res.opt.tip) + '</div>' : '') + '</li>';
+      }
+      return '<li>' + q + '<span class="nope">' + esc(i[1]) + '</span>' +
+        '<div class="warn">Contains ' + esc(names(res.bad)) + ', and every swap we know of does too. Leave it out or ask your allergist.</div></li>';
+    }).join('');
+
+    var stepHtml = r.steps.map(function (st) {
+      var html = esc(st).replace(/\{(\w+)\}/g, function (_, key) {
+        var res = resolve(key);
+        if (res.kind === 'swap') return '<mark>' + esc(res.opt.s) + '</mark>';
+        if (res.kind === 'none') return '<mark class="bad">' + esc(res.lib.s) + ' (leave out)</mark>';
+        return esc(res.lib.s);
+      });
+      return '<li>' + html + '</li>';
+    }).join('');
+
+    var notes = '';
+    if (r.notes) Object.keys(r.notes).forEach(function (a) {
+      if (sel.indexOf(a) !== -1 && al.indexOf(a) !== -1) notes += '<div class="note">' + A[a].emoji + ' ' + esc(r.notes[a]) + '</div>';
+    });
+    var summary = !sel.length
+      ? '<div class="note">Pick your allergens at the top and this recipe rewrites itself with safe swaps.</div>'
+      : s.level === 'ok'
+        ? '<div class="note safe">✅ This recipe has none of your allergens as written.' + (s.warns ? ' A few items often carry them, so check those labels.' : '') + '</div>'
+        : s.level === 'swap'
+          ? '<div class="note">🔁 ' + s.swaps + ' ingredient' + (s.swaps > 1 ? 's were' : ' was') + ' swapped for you. Swaps are highlighted in the steps.</div>'
+          : '<div class="note" style="border-color:var(--bad);background:var(--bad-soft)">⚠️ We couldn\'t find a safe swap for every ingredient. Review the red items.</div>';
+    var crossContact = sel.length && al.some(function (a) { return sel.indexOf(a) !== -1; })
+      ? '<div class="note safe">🧽 <b>Avoid cross-contact:</b> wash boards, pans and utensils first, cook the safe version before anything else, and keep allergen-containing packages off the counter.</div>'
+      : '';
+
+    view.innerHTML =
+      '<a class="back" href="#recipes">← All recipes</a>' +
+      '<div class="hero"><div class="remoji">' + r.e + '</div><div>' +
+        '<h2>' + esc(r.t) + '</h2>' +
+        '<div class="meta">' + esc(r.c) + ' · ' + esc(r.time) + ' · Serves ' + esc(r.serves) + '</div>' +
+        (al.length ? '<div class="meta">Normally contains: ' + esc(names(al)) + '</div>' : '') +
+      '</div></div>' +
+      summary + notes +
+      '<div class="cols" style="margin-top:14px">' +
+        '<div class="card"><h3>Ingredients</h3><ul class="ing">' + ingHtml + '</ul></div>' +
+        '<div class="card"><h3>Steps</h3><ol class="steps">' + stepHtml + '</ol>' + crossContact + '</div>' +
+      '</div>';
+    window.scrollTo(0, 0);
+  }
+
+  var swapsShowAll = false;
+  function renderSwaps() {
+    var list = (!sel.length || swapsShowAll) ? ALLERGENS : ALLERGENS.filter(function (a) { return sel.indexOf(a.id) !== -1; });
+    var html = '<h2>Swap guide</h2>' +
+      '<div class="toolbar"><input class="search" id="sq" type="search" placeholder="What do you want to replace? e.g. butter, eggs, soy sauce" /></div>' +
+      '<p class="muted small" style="margin-top:0">' + (sel.length
+        ? (swapsShowAll ? 'Showing every allergen. ' : 'Showing your allergens. ') +
+          '<a href="#swaps" id="toggle-all">' + (swapsShowAll ? 'Show only mine' : 'Show all allergens') + '</a>. ✓ marks the best swap that avoids all of your allergens.'
+        : 'Pick allergens at the top to highlight the swaps that are safe for you.') + '</p>' +
+      '<div id="swap-list">';
+    list.forEach(function (a) {
+      var items = Object.keys(LIB).filter(function (k) { return LIB[k].a.indexOf(a.id) !== -1; });
+      html += '<section class="swap-section" data-allergen="' + a.id + '"><div class="card">' +
+        '<div class="swap-head"><h3>' + a.emoji + ' ' + esc(a.name) + '</h3><div class="small">' + esc(a.tip) + '</div></div>';
+      items.forEach(function (k) {
+        var lib = LIB[k];
+        var best = resolve(k);
+        html += '<div class="swap-row" data-search="' + esc((lib.n + ' ' + lib.k.join(' ')).toLowerCase()) + '">' +
+          '<div><span class="muted small">Instead of</span> <b>' + esc(lib.n) + '</b>' +
+          (lib.a.length > 1 ? ' <span class="pill soft">also ' + esc(names(lib.a.filter(function (x) { return x !== a.id; }))) + '</span>' : '') + '</div>';
+        lib.swaps.forEach(function (o) {
+          var bad = hits(o.a);
+          var isBest = sel.length && best.opt === o;
+          html += '<div class="opt' + (bad.length ? ' unsafe' : '') + (isBest ? ' best' : '') + '">' +
+            '<span class="mark">' + (isBest ? '✓' : bad.length ? '✕' : '·') + '</span><div>' + esc(o.n) +
+            o.a.map(function (x) { return ' <span class="pill' + (bad.indexOf(x) !== -1 ? '' : ' soft') + '">has ' + esc(A[x].short.toLowerCase()) + '</span>'; }).join('') +
+            (o.tip ? '<div class="tip">' + esc(o.tip) + '</div>' : '') + '</div></div>';
+        });
+        html += '</div>';
+      });
+      html += '<div class="swap-row hidden-words"><span class="muted small">Other label names to watch for:</span><br>' + esc(a.hidden.join(', ')) + '</div>';
+      html += '</div></section>';
+    });
+    html += '</div><div class="empty" id="swap-empty" hidden>No swap found for that. Try the label checker on the "Check a recipe" tab.</div>';
+    view.innerHTML = html;
+    var t = document.getElementById('toggle-all');
+    if (t) t.addEventListener('click', function (e) { e.preventDefault(); swapsShowAll = !swapsShowAll; renderSwaps(); });
+    document.getElementById('sq').addEventListener('input', function (e) {
+      var q = e.target.value.trim().toLowerCase(), any = false;
+      view.querySelectorAll('.swap-section').forEach(function (sec) {
+        var shown = 0;
+        sec.querySelectorAll('.swap-row[data-search]').forEach(function (row) {
+          var ok = !q || row.getAttribute('data-search').indexOf(q) !== -1;
+          row.hidden = !ok; if (ok) shown++;
+        });
+        sec.querySelector('.hidden-words').hidden = !!q;
+        sec.hidden = q && !shown; if (!sec.hidden) any = true;
+      });
+      document.getElementById('swap-empty').hidden = any;
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Label / recipe checker
+  // ---------------------------------------------------------------------------
+  var PATTERNS = (function () {
+    var p = [];
+    function add(phrase, a, lib) {
+      var e = phrase.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      p.push({ len: phrase.length, re: new RegExp('(^|[^a-z])' + e + '(?:e?s)?(?![a-z])', 'g'), a: a, lib: lib });
+    }
+    EXCEPTIONS.forEach(function (x) { add(x[0], x[1], null); });
+    Object.keys(LIB).forEach(function (id) { LIB[id].k.forEach(function (k) { add(k, LIB[id].a.concat(LIB[id].m || []).filter(function (a, i, arr) { return arr.indexOf(a) === i; }), id); }); });
+    ALLERGENS.forEach(function (al) { al.hidden.forEach(function (h) { add(h, [al.id], null); }); });
+    ['wheat', 'soy', 'soybean', 'gluten'].forEach(function (w) { add(w, [w === 'gluten' ? 'wheat' : w === 'soybean' ? 'soy' : w], null); });
+    p.sort(function (x, y) { return y.len - x.len; });
+    return p;
+  })();
+
+  function checkLine(line) {
+    var text = ' ' + line.toLowerCase() + ' ';
+    var freed = [];
+    FREE_FROM.forEach(function (f) {
+      if (f[0].test(text)) { f[1].forEach(function (a) { if (freed.indexOf(a) === -1) freed.push(a); }); text = text.replace(f[0], ' '); }
+      f[0].lastIndex = 0;
+    });
+    var found = [];
+    PATTERNS.forEach(function (p) {
+      text = text.replace(p.re, function (m, pre) {
+        var real = p.a.filter(function (a) { return freed.indexOf(a) === -1; });
+        // A library hit also carries "often contains" allergens; only the true ones count as certain.
+        var sure = p.lib ? LIB[p.lib].a.filter(function (a) { return freed.indexOf(a) === -1; }) : real;
+        if (real.length) found.push({ word: m.slice(pre.length).trim(), a: sure, maybe: real.filter(function (a) { return sure.indexOf(a) === -1; }), lib: p.lib });
+        return pre + new Array(m.length - pre.length + 1).join(' ');
+      });
+    });
+    return { found: found, freed: freed };
+  }
+
+  function renderCheck() {
+    var draft = '';
+    try { draft = localStorage.getItem('safeplate_check') || ''; } catch (e) {}
+    view.innerHTML =
+      '<h2>Check a recipe</h2>' +
+      '<p class="muted" style="margin-top:0">Paste the ingredient list from any recipe or food label, one item per line. SafePlate flags your allergens and suggests swaps.</p>' +
+      '<textarea id="ctext" placeholder="2 cups all-purpose flour&#10;1 cup butter&#10;2 eggs&#10;1 cup chopped pecans">' + esc(draft) + '</textarea>' +
+      '<div class="row"><button class="btn" id="cbtn">Check ingredients</button>' +
+      '<button class="btn ghost" id="cex">Try an example</button><button class="btn ghost" id="cclr">Clear</button></div>' +
+      '<div id="cout"></div>';
+    var ta = document.getElementById('ctext');
+    document.getElementById('cbtn').addEventListener('click', runCheck);
+    document.getElementById('cex').addEventListener('click', function () {
+      ta.value = '2 cups all-purpose flour\n1 cup unsalted butter, softened\n1 cup brown sugar\n2 large eggs\n1 tsp vanilla\n1 cup chopped pecans\n½ cup dairy-free chocolate chips\n2 tbsp soy sauce\n1 can coconut milk';
+      runCheck();
+    });
+    document.getElementById('cclr').addEventListener('click', function () { ta.value = ''; document.getElementById('cout').innerHTML = ''; saveDraft(); ta.focus(); });
+    ta.addEventListener('input', saveDraft);
+    function saveDraft() { try { localStorage.setItem('safeplate_check', ta.value); } catch (e) {} }
+    if (draft.trim()) runCheck();
+  }
+
+  function runCheck() {
+    var lines = document.getElementById('ctext').value.split(/\n|;/).map(function (l) { return l.trim(); }).filter(Boolean);
+    var out = document.getElementById('cout');
+    if (!lines.length) { out.innerHTML = ''; return; }
+    var flagged = 0;
+    var rows = lines.map(function (line) {
+      var r = checkLine(line);
+      var parts = [];
+      r.found.forEach(function (f) {
+        var mine = hits(f.a), maybeMine = hits(f.maybe);
+        if (sel.length && !mine.length && !maybeMine.length) return;
+        if (!sel.length) {
+          parts.push('<div class="tip">Contains ' + esc(names(f.a.length ? f.a : f.maybe)) + (f.a.length ? '' : ' (often)') + '</div>');
+          return;
+        }
+        if (mine.length) {
+          flagged++;
+          var sw = '';
+          if (f.lib) {
+            var res = resolve(f.lib);
+            sw = res.kind === 'swap'
+              ? '<div>→ Try <span class="now">' + esc(res.opt.n) + '</span><div class="tip">' + esc(res.opt.tip || '') + '</div></div>'
+              : res.kind === 'none' ? '<div class="tip">No swap we know of avoids all of your allergens. Leave it out.</div>' : '';
+          } else {
+            sw = '<div class="tip">' + mine.map(function (a) { return esc(A[a].tip); }).join(' ') + '</div>';
+          }
+          parts.push('<div><span class="nope">⚠️ Contains ' + esc(names(mine)) + '</span> <span class="muted small">(' + esc(f.word) + ')</span>' + sw + '</div>');
+        } else {
+          parts.push('<div class="warn">⚠️ ' + esc(f.word) + ': often contains ' + esc(names(maybeMine)) + '. Check the label.</div>');
+        }
+      });
+      if (r.freed.length && sel.some(function (a) { return r.freed.indexOf(a) !== -1; })) {
+        parts.push('<div class="tip">Labeled free of ' + esc(names(r.freed)) + '. Still confirm on the package.</div>');
+      }
+      var ok = !parts.length && sel.length;
+      return '<div class="result-line"><div>' + (ok ? '✅ ' : '') + esc(line) + '</div>' + parts.join('') + '</div>';
+    }).join('');
+    var head = !sel.length
+      ? '<div class="note">Pick your allergens at the top for personal results. Here\'s everything we spotted:</div>'
+      : flagged
+        ? '<div class="note" style="border-color:var(--bad);background:var(--bad-soft)">Found ' + flagged + ' ingredient' + (flagged > 1 ? 's' : '') + ' with your allergens. Swaps are below.</div>'
+        : '<div class="note safe">✅ Nothing on your list was spotted. Brands vary, so still read each label.</div>';
+    out.innerHTML = head + '<div class="card" style="margin-top:12px">' + rows + '</div>';
+  }
+
+  // ---------------------------------------------------------------------------
+  // Routing, theme, offline
+  // ---------------------------------------------------------------------------
+  function route() {
+    var h = location.hash.replace(/^#/, '') || 'recipes';
+    var tab = h.indexOf('r/') === 0 ? 'recipes' : h;
+    document.querySelectorAll('nav.tabs a').forEach(function (a) { a.classList.toggle('active', a.getAttribute('data-tab') === tab); });
+    if (h.indexOf('r/') === 0) renderRecipe(h.slice(2));
+    else if (h === 'swaps') renderSwaps();
+    else if (h === 'check') renderCheck();
+    else renderRecipes();
+  }
+  window.addEventListener('hashchange', function () { route(); if (location.hash.indexOf('#r/') !== 0) window.scrollTo(0, 0); });
+
+  var themeBtn = document.getElementById('theme-btn');
+  function syncThemeBtn() { themeBtn.textContent = document.documentElement.getAttribute('data-theme') === 'dark' ? '☀️' : '🌙'; }
+  themeBtn.addEventListener('click', function () {
+    var t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', t);
+    try { localStorage.setItem('safeplate_theme', t); } catch (e) {}
+    syncThemeBtn();
+  });
+
+  syncThemeBtn();
+  renderChips();
+  route();
+  if ('serviceWorker' in navigator) window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+  </script>
+</body>
+</html>

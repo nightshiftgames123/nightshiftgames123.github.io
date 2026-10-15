@@ -253,6 +253,14 @@
 
     .empty { text-align: center; padding: 30px 10px; color: var(--muted); }
     footer { margin: 28px 0 12px; font-size: 12px; color: var(--muted); text-align: center; }
+    .scan-card { border-color: var(--ai); }
+    .scan-photo { display: block; max-width: 100%; max-height: 220px; border-radius: 12px; margin: 10px auto 0; border: 1px solid var(--border); }
+    .verdict { font-size: 17px; font-weight: 700; }
+    .scan-list { margin: 6px 0 0; padding-inline-start: 20px; font-size: 14px; }
+    .scan-list .mine { color: var(--bad); font-weight: 700; }
+    details.scan-text { margin-top: 10px; font-size: 14px; }
+    details.scan-text summary { cursor: pointer; color: var(--accent); font-weight: 600; }
+    details.scan-text p { white-space: pre-wrap; background: var(--bg); border-radius: 10px; padding: 10px; }
     .support-btn {
       display: inline-flex; align-items: center; gap: 6px; margin-bottom: 10px; padding: 8px 14px;
       border-radius: 999px; border: 1px solid var(--border); background: var(--card);
@@ -320,7 +328,7 @@
     clear: { en: 'Clear', ar: 'مسح' },
     tabRecipes: { en: 'Recipes', ar: 'الوصفات' },
     tabSwaps: { en: 'Swaps', ar: 'البدائل' },
-    tabCheck: { en: 'Check a recipe', ar: 'افحص وصفة' },
+    tabCheck: { en: 'Scan & check', ar: 'امسح وافحص' },
     tabAi: { en: 'AI Chef', ar: 'الشيف الذكي' },
     support: { en: '☕ Like this app? Support it on Ko-fi', ar: '☕ أعجبك التطبيق؟ ادعمه على Ko-fi' },
     footer: {
@@ -371,7 +379,32 @@
     has: { en: 'has ', ar: 'فيه ' },
     labelNames: { en: 'Other label names to watch for:', ar: 'أسماء أخرى على الملصقات انتبه لها:' },
     noSwapFound: { en: 'No swap found for that. Try the "Check a recipe" tab or ask the AI chef.', ar: 'لم نجد بديلاً لذلك. جرّب تبويب "افحص وصفة" أو اسأل الشيف الذكي.' },
-    checkTitle: { en: 'Check a recipe', ar: 'افحص وصفة' },
+    checkTitle: { en: 'Scan & check', ar: 'امسح وافحص' },
+    typeTitle: { en: 'Or type / paste ingredients', ar: 'أو اكتب / الصق المكوّنات' },
+    scanTitle: { en: 'AI label scanner', ar: 'ماسح الملصقات الذكي' },
+    scanIntro: { en: 'Take a photo of the ingredient list on any package, in any language. The AI reads it and checks it against your allergens.', ar: 'صوّر قائمة المكوّنات على أي عبوة، بأي لغة. سيقرؤها الذكاء الاصطناعي ويفحصها مقابل حساسيتك.' },
+    scanTake: { en: '📷 Take photo', ar: '📷 التقط صورة' },
+    scanChoose: { en: '🖼️ Choose photo', ar: '🖼️ اختر صورة' },
+    scanPrivacy: { en: 'The photo goes to Google Gemini only when you scan, using the same free key as the AI chef.', ar: 'تُرسل الصورة إلى Google Gemini فقط عند المسح، باستخدام مفتاح Gemini المجاني نفسه الخاص بالشيف الذكي.' },
+    scanNeedKey: { en: 'The scanner needs your free Gemini key. Add it in the AI Chef tab first:', ar: 'يحتاج الماسح إلى مفتاح Gemini المجاني. أضفه أولاً في تبويب الشيف الذكي:' },
+    scanOpenAi: { en: 'Open AI Chef', ar: 'افتح الشيف الذكي' },
+    scanReading: { en: '⏳ Reading the label…', ar: '⏳ جارٍ قراءة الملصق…' },
+    scanUnreadable: { en: 'Couldn\'t read an ingredient list in this photo. Move closer, avoid glare, and make sure the whole list is sharp.', ar: 'تعذّرت قراءة قائمة مكوّنات في هذه الصورة. اقترب أكثر، وتجنّب انعكاس الضوء، وتأكد أن القائمة كاملة وواضحة.' },
+    scanBad: { en: function (l) { return '⛔ Not safe for you: contains ' + l; }, ar: function (l) { return '⛔ غير آمن لك: يحتوي على ' + l; } },
+    scanMay: { en: function (l) { return '⚠️ May contain ' + l + ' (shared equipment or factory). Many allergists advise avoiding these products.'; }, ar: function (l) { return '⚠️ قد يحتوي على ' + l + ' (خطوط إنتاج أو مصنع مشترك). ينصح كثير من أطباء الحساسية بتجنّب هذه المنتجات.'; } },
+    scanOk: { en: function (l) { return '✅ No ' + l + ' listed on this label.'; }, ar: function (l) { return '✅ لا يذكر هذا الملصق ' + l + '.'; } },
+    scanOkNote: { en: 'AI can misread small print. Read the label yourself too, and scan again whenever the packaging changes.', ar: 'قد يخطئ الذكاء الاصطناعي في قراءة الخط الصغير. اقرأ الملصق بنفسك أيضاً، وأعد المسح كلما تغيّرت العبوة.' },
+    scanPick: { en: 'Pick your allergens at the top to get a verdict. Here is what the label lists:', ar: 'اختر الحساسية من الأعلى لتحصل على نتيجة. هذا ما يذكره الملصق:' },
+    scanContains: { en: 'Contains', ar: 'يحتوي على' },
+    scanMayLabel: { en: 'May contain', ar: 'قد يحتوي على' },
+    scanNoneFound: { en: 'none listed', ar: 'لا شيء مذكور' },
+    scanIngredients: { en: 'Ingredients as the AI read them', ar: 'المكوّنات كما قرأها الذكاء الاصطناعي' },
+    scanLocal: { en: 'found by SafePlate\'s word list', ar: 'رصده قاموس SafePlate' },
+    scanToChecker: { en: 'Check with the word list', ar: 'افحصها بالقاموس' },
+    scanAlt: { en: '🤖 Find a safe alternative', ar: '🤖 ابحث عن بديل آمن' },
+    scanAltPrompt: { en: function (x) { return 'I scanned "' + x + '" and it isn\'t safe for me. Suggest safe store-bought alternatives to look for, or a simple homemade version.'; }, ar: function (x) { return 'مسحت منتج "' + x + '" وهو غير آمن لي. اقترح بدائل آمنة أبحث عنها في المتجر، أو نسخة منزلية بسيطة.'; } },
+    scanThisProduct: { en: 'this product', ar: 'هذا المنتج' },
+    scanFail: { en: 'Scan failed: ', ar: 'فشل المسح: ' },
     checkIntro: { en: 'Paste the ingredient list from any recipe or food label, one item per line. SafePlate flags your allergens and suggests swaps. English and Arabic both work.', ar: 'الصق قائمة المكوّنات من أي وصفة أو ملصق طعام، مكوّناً في كل سطر. سيحدد SafePlate مسببات حساسيتك ويقترح بدائل. يعمل بالعربية والإنجليزية.' },
     checkPlaceholder: { en: '2 cups all-purpose flour\n1 cup butter\n2 eggs\n1 cup chopped pecans', ar: '2 كوب دقيق\n1 كوب زبدة\n2 بيضة\n1 كوب جوز مفروم' },
     checkBtn: { en: 'Check ingredients', ar: 'افحص المكوّنات' },
@@ -1182,7 +1215,7 @@
     document.getElementById('support-link').textContent = t('support');
     document.getElementById('footer-text').textContent = t('footer');
     document.getElementById('tabs').innerHTML =
-      [['recipes', '📖', 'tabRecipes'], ['swaps', '🔁', 'tabSwaps'], ['check', '🔍', 'tabCheck'], ['ai', '🤖', 'tabAi']].map(function (x) {
+      [['recipes', '📖', 'tabRecipes'], ['swaps', '🔁', 'tabSwaps'], ['check', '📷', 'tabCheck'], ['ai', '🤖', 'tabAi']].map(function (x) {
         return '<a href="#' + x[0] + '" data-tab="' + x[0] + '"><span>' + x[1] + '</span>' + t(x[2]) + '</a>';
       }).join('');
     document.getElementById('key-modal-body').innerHTML = t('keyModal') +
@@ -1442,6 +1475,15 @@
     var draft = load('safeplate_check') || '';
     view.innerHTML =
       '<h2>' + t('checkTitle') + '</h2>' +
+      '<div class="card scan-card"><h3>📷 ' + t('scanTitle') + '</h3>' +
+        '<p class="small" style="margin:0">' + t('scanIntro') + '</p>' +
+        '<div class="row" style="margin:10px 0 4px"><label class="btn ai" for="scan-cam">' + t('scanTake') + '</label>' +
+        '<label class="btn ghost" for="scan-file">' + t('scanChoose') + '</label></div>' +
+        '<input type="file" id="scan-cam" accept="image/*" capture="environment" hidden />' +
+        '<input type="file" id="scan-file" accept="image/*" hidden />' +
+        '<div class="small muted">' + t('scanPrivacy') + '</div>' +
+        '<div id="scan-out"></div></div>' +
+      '<h3 style="margin-top:22px">' + t('typeTitle') + '</h3>' +
       '<p class="muted" style="margin-top:0">' + t('checkIntro') + '</p>' +
       '<textarea id="ctext" placeholder="' + esc(t('checkPlaceholder')) + '">' + esc(draft) + '</textarea>' +
       '<div class="row"><button class="btn" id="cbtn">' + t('checkBtn') + '</button>' +
@@ -1453,6 +1495,11 @@
     document.getElementById('cex').addEventListener('click', function () { ta.value = t('exampleText'); saveDraft(); runCheck(); });
     document.getElementById('cclr').addEventListener('click', function () { ta.value = ''; document.getElementById('cout').innerHTML = ''; saveDraft(); ta.focus(); });
     ta.addEventListener('input', saveDraft);
+    ['scan-cam', 'scan-file'].forEach(function (id) {
+      var inp = document.getElementById(id);
+      inp.addEventListener('change', function () { var f = inp.files && inp.files[0]; inp.value = ''; scanImage(f); });
+    });
+    drawScan();
     if (draft.trim()) runCheck();
   }
 
@@ -1638,6 +1685,178 @@
   function showAiError(msg) {
     var box = document.getElementById('chat');
     if (box) box.insertAdjacentHTML('beforeend', '<div class="msg model"><p class="err">⚠️ ' + esc(msg) + '</p></div>');
+  }
+
+  // ---------------------------------------------------------------------------
+  // AI label scanner: Gemini reads a photo of the ingredient list; the app decides
+  // the verdict from the user's allergens and double-checks with its own word list.
+  // ---------------------------------------------------------------------------
+  var lastScan = null;   // { img, busy, error, data }
+  var ALLERGEN_IDS = ALLERGENS.map(function (a) { return a.id; });
+  var SCAN_ITEM = { type: 'OBJECT', properties: { allergen: { type: 'STRING', enum: ALLERGEN_IDS }, evidence: { type: 'STRING' } }, required: ['allergen', 'evidence'] };
+  var SCAN_SCHEMA = {
+    type: 'OBJECT',
+    properties: {
+      readable: { type: 'BOOLEAN' },
+      product: { type: 'STRING' },
+      ingredients_text: { type: 'STRING' },
+      warnings_text: { type: 'STRING' },
+      contains: { type: 'ARRAY', items: SCAN_ITEM },
+      may_contain: { type: 'ARRAY', items: SCAN_ITEM },
+      notes: { type: 'STRING' }
+    },
+    required: ['readable', 'ingredients_text', 'contains', 'may_contain']
+  };
+
+  function scanPrompt() {
+    return [
+      'You read photos of food packaging for people with food allergies. Be exact and conservative.',
+      '1. readable: false if the photo shows no legible ingredient list (blurry, cut off, not food). Never guess ingredients you cannot see.',
+      '2. product: the product name if visible, else empty.',
+      '3. ingredients_text: transcribe the ingredient list exactly, in its original language (if the label has several languages, prefer English or Arabic).',
+      '4. warnings_text: transcribe any "Contains", "May contain", "Made in a facility that also processes..." or similar statements exactly.',
+      '5. contains: every allergen present in the ingredients or a "Contains" statement, using these ids: milk, egg, peanut, treenut, soy, wheat, fish, shellfish, sesame.',
+      '   Include hidden sources: whey, casein, ghee, butter, lactose → milk; albumin, mayonnaise → egg; lecithin (soy), soya, tofu → soy; flour, semolina, malt, barley, rye, spelt, bulgur and gluten → wheat; anchovy, fish sauce → fish; shrimp, crab → shellfish; tahini → sesame; almond, cashew, hazelnut, pistachio, walnut, pecan, praline → treenut. Coconut and nutmeg are not tree nuts.',
+      '   evidence: the exact word(s) from the label that show it.',
+      '6. may_contain: allergens only in precautionary statements ("may contain", "traces of", "same facility/line").',
+      '7. notes: one or two short sentences in ' + (isAr() ? 'Arabic' : 'English') + ' about anything unclear (e.g. part of the list is hidden, "natural flavors", unspecified "vegetable oil" or "lecithin").'
+    ].join('\n');
+  }
+
+  // Shrink the photo before sending: faster on mobile data and well within API limits.
+  function shrinkImage(file) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onerror = function () { reject(new Error('read')); };
+      reader.onload = function () {
+        var img = new Image();
+        img.onerror = function () { reject(new Error('image')); };
+        img.onload = function () {
+          var max = 1600, w = img.naturalWidth, h = img.naturalHeight, k = Math.min(1, max / Math.max(w, h));
+          var c = document.createElement('canvas');
+          c.width = Math.round(w * k); c.height = Math.round(h * k);
+          c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+          resolve(c.toDataURL('image/jpeg', 0.85));
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function scanImage(file) {
+    if (!file) return;
+    if (!apiKey()) { lastScan = { needKey: true }; drawScan(); return; }
+    lastScan = { busy: true };
+    drawScan();
+    shrinkImage(file).then(function (dataUrl) {
+      lastScan.img = dataUrl;
+      drawScan();
+      return fetch(GEMINI_BASE + '/models/' + encodeURIComponent(GEMINI_MODEL) + ':generateContent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey() },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [
+            { inlineData: { mimeType: 'image/jpeg', data: dataUrl.split(',')[1] } },
+            { text: scanPrompt() }
+          ] }],
+          generationConfig: { temperature: 0, responseMimeType: 'application/json', responseSchema: SCAN_SCHEMA, maxOutputTokens: 4096 }
+        })
+      });
+    }).then(function (res) {
+      return res.json().catch(function () { return {}; }).then(function (d) {
+        if (!res.ok) throw new Error(explainError(res.status, d.error && d.error.message));
+        var cand = d.candidates && d.candidates[0];
+        var text = ((cand && cand.content && cand.content.parts) || []).filter(function (p) { return p.text && !p.thought; }).map(function (p) { return p.text; }).join('');
+        text = text.replace(/^\s*```(?:json)?\s*|\s*```\s*$/g, '');
+        if (!text) throw new Error(t('errEmpty'));
+        return JSON.parse(text);
+      });
+    }).then(function (data) {
+      lastScan.busy = false;
+      lastScan.data = cleanScan(data);
+      drawScan();
+    }).catch(function (err) {
+      lastScan.busy = false;
+      lastScan.error = err instanceof TypeError ? t('errNetwork') : err instanceof SyntaxError ? t('errEmpty') : err.message;
+      drawScan();
+    });
+  }
+
+  // Keep only known allergen ids, then add anything SafePlate's own word list finds
+  // in the transcribed ingredients that the AI missed.
+  function cleanScan(d) {
+    function list(arr) {
+      var seen = {};
+      return (arr || []).filter(function (x) { return x && ALLERGEN_IDS.indexOf(x.allergen) !== -1 && !seen[x.allergen] && (seen[x.allergen] = true); });
+    }
+    var out = { readable: d.readable !== false, product: d.product || '', ingredients: d.ingredients_text || '', warnings: d.warnings_text || '', notes: d.notes || '',
+      contains: list(d.contains), may: list(d.may_contain) };
+    var have = out.contains.map(function (x) { return x.allergen; });
+    out.ingredients.split(/[,،;\n()\[\]]/).forEach(function (part) {
+      if (!part.trim()) return;
+      checkLine(part).found.forEach(function (f) {
+        f.a.forEach(function (a) {
+          if (have.indexOf(a) === -1) { have.push(a); out.contains.push({ allergen: a, evidence: f.word, local: true }); }
+        });
+      });
+    });
+    out.may = out.may.filter(function (x) { return have.indexOf(x.allergen) === -1; });
+    return out;
+  }
+
+  function drawScan() {
+    var box = document.getElementById('scan-out');
+    if (!box || !lastScan) { if (box) box.innerHTML = ''; return; }
+    var s = lastScan;
+    if (s.needKey) {
+      box.innerHTML = '<div class="note danger">' + t('scanNeedKey') + ' <a href="#ai">' + t('scanOpenAi') + '</a></div>';
+      return;
+    }
+    var html = s.img ? '<img class="scan-photo" src="' + s.img + '" alt="" />' : '';
+    if (s.busy) { box.innerHTML = html + '<div class="note ai">' + t('scanReading') + '</div>'; return; }
+    if (s.error) { box.innerHTML = html + '<div class="note danger">⚠️ ' + t('scanFail') + esc(s.error) + '</div>'; return; }
+    var d = s.data;
+    if (!d.readable) { box.innerHTML = html + '<div class="note danger">' + t('scanUnreadable') + '</div>'; return; }
+
+    var c = d.contains.map(function (x) { return x.allergen; });
+    var m = d.may.map(function (x) { return x.allergen; });
+    var badC = hits(c), badM = hits(m);
+    var verdict = !sel.length ? '<div class="note">' + t('scanPick') + '</div>'
+      : badC.length ? '<div class="note danger verdict">' + esc(t('scanBad', names(badC))) + '</div>'
+      : badM.length ? '<div class="note verdict">' + esc(t('scanMay', names(badM))) + '</div>'
+      : '<div class="note safe verdict">' + esc(t('scanOk', names(sel))) + '<div class="small" style="font-weight:400">' + t('scanOkNote') + '</div></div>';
+    function items(arr) {
+      if (!arr.length) return '<ul class="scan-list"><li class="muted">' + t('scanNoneFound') + '</li></ul>';
+      return '<ul class="scan-list">' + arr.map(function (x) {
+        var mine = sel.indexOf(x.allergen) !== -1;
+        return '<li' + (mine ? ' class="mine"' : '') + '>' + A[x.allergen].emoji + ' ' + esc(L(A[x.allergen], 'name')) +
+          ' <span class="muted small">(' + esc(x.evidence) + (x.local ? ' · ' + t('scanLocal') : '') + ')</span></li>';
+      }).join('') + '</ul>';
+    }
+    html += verdict +
+      (d.product ? '<h3 style="margin:12px 0 4px">' + esc(d.product) + '</h3>' : '') +
+      '<div style="margin-top:8px"><b>' + t('scanContains') + '</b>' + items(d.contains) + '</div>' +
+      '<div style="margin-top:8px"><b>' + t('scanMayLabel') + '</b>' + items(d.may) + '</div>' +
+      (d.notes ? '<div class="tip" style="margin-top:8px">ℹ️ ' + esc(d.notes) + '</div>' : '') +
+      '<details class="scan-text"><summary>' + t('scanIngredients') + '</summary><p dir="auto">' + esc(d.ingredients + (d.warnings ? '\n\n' + d.warnings : '')) + '</p></details>' +
+      '<div class="row">' +
+        '<button class="btn ghost small" id="scan-to-check">' + t('scanToChecker') + '</button>' +
+        (badC.length || badM.length ? '<button class="btn ai small" id="scan-alt">' + t('scanAlt') + '</button>' : '') +
+      '</div>';
+    box.innerHTML = html;
+    document.getElementById('scan-to-check').addEventListener('click', function () {
+      var ta = document.getElementById('ctext');
+      ta.value = d.ingredients.split(/[,،;]\s*/).join('\n');
+      store('safeplate_check', ta.value);
+      runCheck();
+      ta.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    var alt = document.getElementById('scan-alt');
+    if (alt) alt.addEventListener('click', function () {
+      aiAutoSend = t('scanAltPrompt', d.product || t('scanThisProduct'));
+      location.hash = '#ai';
+    });
   }
 
   function explainError(status, message) {

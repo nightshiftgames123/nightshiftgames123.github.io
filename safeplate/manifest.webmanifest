@@ -1,7 +1,7 @@
 {
   "name": "SafePlate · Allergy-Friendly Recipes",
   "short_name": "SafePlate",
-  "description": "Common recipes rewritten for your food allergies, with ingredient swaps and a label checker.",
+  "description": "Common recipes rewritten for your food allergies, with swaps, a label checker and an AI chef. English and Arabic.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

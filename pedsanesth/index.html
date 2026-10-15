@@ -544,7 +544,8 @@
       <!-- TAB 3: AI ASSISTANT -->
       <div id="tab-ai" class="tab-pane">
         <div class="card">
-          <div class="card-title">Nasma AI · powered by Gemini <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Get a free key ↗</a></div>
+          <div class="card-title">Nasma AI · powered by Gemini</div>
+          <button class="btn btn-sm" style="width:100%; margin-bottom:10px; background: var(--info-bg); color: var(--info-text); border: 1px solid var(--info-border);" onclick="toggleModal('modal-key', true)">🔑 How to get your free Gemini key</button>
 
           <div class="form-group">
             <label for="api-key-input">Gemini API Key</label>
@@ -565,7 +566,7 @@
             <button class="btn ai-btn" style="flex:1;" onclick="queryGemini('ask')">Ask Question</button>
           </div>
 
-          <div class="ai-output" id="ai-response-box"><span class="muted">Enter your free Gemini API key above to use the AI assistant. The calculator works fully without it.</span></div>
+          <div class="ai-output" id="ai-response-box"><span class="muted">Enter your free Gemini API key above to use Nasma AI (tap 🔑 for step-by-step help). The calculator works fully without it.</span></div>
           <p class="metric-sub" style="margin-top:6px;">AI output can be wrong. Verify every dose against the calculator and your institution's references.</p>
         </div>
       </div>
@@ -600,6 +601,31 @@
 
   <!-- FLOATING AI BUTTON -->
   <button class="ai-fab" id="ai-fab" onclick="openAI()" aria-label="Open Nasma AI assistant">✨ Ask Nasma</button>
+
+  <!-- MODAL: GEMINI KEY INSTRUCTIONS -->
+  <div id="modal-key" class="modal-backdrop" onclick="if (event.target === this) toggleModal('modal-key', false)">
+    <div class="modal-card" style="border-color: #7c3aed;" role="dialog" aria-modal="true" aria-label="How to get a Gemini key">
+      <div class="modal-header" style="background: linear-gradient(135deg, #7c3aed, #0284c7);">
+        <strong>🔑 Get your free Gemini key</strong>
+        <button class="btn btn-sm" onclick="toggleModal('modal-key', false)">✕</button>
+      </div>
+      <div class="modal-body" style="font-size: 13px; line-height: 1.6; color: var(--text-soft);">
+        <p style="margin-bottom: 10px;">Nasma AI uses Google's Gemini. The key is free and takes about 2 minutes. You only do this once.</p>
+        <ol style="padding-left: 18px;">
+          <li style="margin-bottom: 8px;"><strong>Open Google AI Studio</strong> with the button below and sign in with any Google (Gmail) account.</li>
+          <li style="margin-bottom: 8px;">Tap <strong>"Create API key"</strong>. If asked, accept the terms and choose or create a project (the default is fine).</li>
+          <li style="margin-bottom: 8px;"><strong>Copy the key.</strong> It's a long code that usually starts with <code>AIza</code>.</li>
+          <li style="margin-bottom: 8px;">Come back here, <strong>paste it into the "Gemini API Key" box</strong>, and tick <em>"Remember key on this device"</em>.</li>
+        </ol>
+        <a class="btn btn-primary" style="width:100%; margin: 6px 0 12px; text-decoration:none; min-height:44px; font-size:14px;" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Open Google AI Studio ↗</a>
+        <div class="alert alert-info" style="margin-top: 0;">
+          • <strong>Keep your key private.</strong> Don't share it or post it. You can delete it and make a new one anytime in AI Studio.<br/>
+          • The free plan has a daily limit. If you see a "rate limit" message, wait a minute and try again.<br/>
+          • The key is stored only on your phone, never on our side.
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- MODAL: SOURCES -->
   <div id="modal-sources" class="modal-backdrop" onclick="if (event.target === this) toggleModal('modal-sources', false)">

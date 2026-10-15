@@ -1451,7 +1451,18 @@
         if (W.bmi != null) parts.push(`BMI ${W.bmi.toFixed(1)}${W.ref ? ` (95th percentile for age ${W.ref.p95.toFixed(1)})` : ''}${W.obese ? ' — OBESE' : ''}`);
         if (W.ibwRaw != null) parts.push(`IBW ${fmt(Math.min(W.ibwRaw, W.TBW))} kg; obesity weight scalars ${W.active ? 'ON' : 'off'}`);
         parts.push(`Maintenance fluids ${grab('fluid-hourly')}, EBV ${grab('metric-ebv')}`);
+        if (W.active) {
+          const by = { IBW: [], ABW: [], TBW: [] };
+          DRUG_DB.forEach((d) => by[d.wt || 'TBW'].push(d.name));
+          INFUSIONS.forEach((f) => by[f.wt].push(f.name + ' infusion'));
+          parts.push(`Dosing weights (obesity scalars ON): IBW ${fmt(W.IBW)} kg, ABW ${fmt(W.ABW)} kg, TBW ${fmt(W.TBW)} kg`);
+          Object.entries(by).forEach(([k, list]) => parts.push(`  ${k}: ${list.join(', ')}`));
+        }
       }
+      // The app's verified reference doses, so the AI stays consistent with the calculator.
+      parts.push('App reference doses (per kg; max; source):');
+      DRUG_DB.forEach((d) => parts.push(`  ${d.name}: ${d.range} ${d.unit}/kg${d.kind === 'max' ? ' (maximum total dose)' : ''}${d.max != null ? `, max ${d.max} ${d.unit}` : ''}; ${d.src}`));
+      INFUSIONS.forEach((f) => parts.push(`  ${f.name} infusion: ${f.lo}–${f.hi} ${f.dU === 'mU' ? 'milliunits' : f.dU}/kg/${f.dT}; ${f.src}`));
       return parts.join('\n');
     }
 
@@ -1461,6 +1472,9 @@
 - Flag pediatric-specific hazards (airway, laryngospasm, emergence delirium, OSA/opioid sensitivity, PONV, hypothermia, hypoglycemia).
 - If key information is missing, state your assumptions briefly rather than refusing.
 - Do not invent facts about the patient. Keep it under about 400 words unless asked for more.
+- Prefer US references: FDA prescribing information, AHA PALS, Society for Pediatric Anesthesia (SPA) checklists, ASRA, MHAUS, AAP. Name the source briefly for key doses, and say clearly when a use or dose is off-label in children.
+- The clinician's app uses the reference doses listed with the patient. Use the same doses; if you recommend a different dose, say so explicitly and explain why.
+- Obese patients: when the patient data says obesity weight scalars are ON, calculate each drug on the weight the app assigns it (IBW, ABW or TBW, listed with the patient) and state which weight you used. Resuscitation drugs use actual weight, capped at adult doses.
 - End with one line reminding the clinician to verify doses against institutional references.`;
 
     let aiBusy = false;

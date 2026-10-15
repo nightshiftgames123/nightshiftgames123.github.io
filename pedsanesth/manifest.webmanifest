@@ -1,7 +1,7 @@
 {
-  "name": "PedsAnesth Mobile",
-  "short_name": "PedsAnesth",
-  "description": "Weight-based pediatric anesthesia calculator with ASTM D4774 color labels.",
+  "name": "Nasma AI · Pediatric Anesthesia",
+  "short_name": "Nasma AI",
+  "description": "AI-assisted pediatric anesthesia calculator: doses, infusions, airway and crisis support.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

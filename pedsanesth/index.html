@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="PedsAnesth" />
+  <meta name="apple-mobile-web-app-title" content="Nasma AI" />
   <link rel="manifest" id="manifest-link" href="manifest.webmanifest" />
   <script>
     // Public edition (reached via /pedsanesth-app/) shows the support button.
@@ -20,7 +20,7 @@
   </script>
   <link rel="apple-touch-icon" href="icon-180.png" />
   <link rel="icon" type="image/png" href="icon-192.png" />
-  <title>PedsAnesth Mobile</title>
+  <title>Nasma AI · Pediatric Anesthesia</title>
   <script>
     // Apply saved (or system) theme before first paint to avoid a flash.
     (function () {
@@ -250,10 +250,10 @@
 
   <header>
     <div class="brand">
-      <div class="brand-logo">PA</div>
+      <div class="brand-logo">N</div>
       <div style="min-width:0;">
-        <strong style="font-size: 14px; color: var(--text-strong);">PedsAnesth Mobile</strong>
-        <span class="brand-sub" style="font-size: 10px; color: var(--text-muted); display: block;">ASTM D4774 color labels</span>
+        <strong style="font-size: 14px; color: var(--text-strong);">Nasma AI <span style="font-weight:400; color: var(--text-muted);">· نسمة</span></strong>
+        <span class="brand-sub" style="font-size: 10px; color: var(--text-muted); display: block;">Pediatric anesthesia assistant</span>
       </div>
     </div>
     <div style="display: flex; gap: 6px; flex-shrink: 0;">
@@ -403,7 +403,7 @@
         <button class="tab-btn active" onclick="switchTab('tab-drugs', this)">💉 Drug Dosing</button>
         <button class="tab-btn" onclick="switchTab('tab-infusions', this)">⏱ Infusions</button>
         <button class="tab-btn" onclick="switchTab('tab-fluids', this)">💧 Fluids &amp; Blood</button>
-        <button class="tab-btn ai-tab" id="ai-tab-btn" onclick="switchTab('tab-ai', this)">✨ AI Advisor</button>
+        <button class="tab-btn ai-tab" id="ai-tab-btn" onclick="switchTab('tab-ai', this)">✨ Nasma AI</button>
       </div>
 
       <!-- TAB 1: DRUGS TABLE -->
@@ -544,7 +544,7 @@
       <!-- TAB 3: AI ASSISTANT -->
       <div id="tab-ai" class="tab-pane">
         <div class="card">
-          <div class="card-title">Gemini AI Consultant <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Get a free key ↗</a></div>
+          <div class="card-title">Nasma AI · powered by Gemini <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Get a free key ↗</a></div>
 
           <div class="form-group">
             <label for="api-key-input">Gemini API Key</label>
@@ -599,7 +599,7 @@
   </div>
 
   <!-- FLOATING AI BUTTON -->
-  <button class="ai-fab" id="ai-fab" onclick="openAI()" aria-label="Open AI assistant">✨ Ask AI</button>
+  <button class="ai-fab" id="ai-fab" onclick="openAI()" aria-label="Open Nasma AI assistant">✨ Ask Nasma</button>
 
   <!-- MODAL: SOURCES -->
   <div id="modal-sources" class="modal-backdrop" onclick="if (event.target === this) toggleModal('modal-sources', false)">
@@ -1466,7 +1466,7 @@
       return parts.join('\n');
     }
 
-    const SYSTEM_PROMPT = `You are a consultant pediatric anesthesiologist giving concise decision support to another anesthesia clinician.
+    const SYSTEM_PROMPT = `You are Nasma AI, an assistant that answers like a consultant pediatric anesthesiologist giving concise decision support to another anesthesia clinician.
 - Be practical and specific; use short headings and bullet points.
 - Give weight-based doses as mg/kg (or mcg/kg) AND the calculated amount for this patient, with typical maximums.
 - Flag pediatric-specific hazards (airway, laryngospasm, emergence delirium, OSA/opioid sensitivity, PONV, hypothermia, hypoglycemia).

@@ -1,0 +1,1973 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#166534" />
+  <meta name="description" content="Common recipes rewritten for your food allergies, with ingredient swaps, a label checker and an AI chef. English and Arabic." />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="SafePlate" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icon-180.png" />
+  <link rel="icon" type="image/png" href="icon-192.png" />
+  <title>SafePlate · Allergy-Friendly Recipes</title>
+  <script>
+    // Apply theme and language before first paint to avoid a flash.
+    (function () {
+      var t = null, l = null;
+      try { t = localStorage.getItem('safeplate_theme'); l = localStorage.getItem('safeplate_lang'); } catch (e) {}
+      if (t !== 'light' && t !== 'dark') t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      var q = /[?&]lang=(ar|en)\b/.exec(location.search);
+      if (q) l = q[1];
+      if (l !== 'ar' && l !== 'en') l = /^ar\b/i.test(navigator.language || '') ? 'ar' : 'en';
+      var d = document.documentElement;
+      d.setAttribute('data-theme', t);
+      d.setAttribute('lang', l);
+      d.setAttribute('dir', l === 'ar' ? 'rtl' : 'ltr');
+    })();
+  </script>
+  <style>
+    :root {
+      --bg: #fffbf3;
+      --card: #ffffff;
+      --border: #eadfca;
+      --text: #1f2a1f;
+      --muted: #6b705f;
+      --accent: #166534;
+      --accent-soft: #dcfce7;
+      --accent-text: #ffffff;
+      --swap: #b45309;
+      --swap-soft: #fef3c7;
+      --bad: #b91c1c;
+      --bad-soft: #fee2e2;
+      --ok: #15803d;
+      --ok-soft: #dcfce7;
+      --ai: #6d28d9;
+      --ai-soft: #ede9fe;
+      --shadow: 0 1px 2px rgba(60, 40, 10, .06), 0 4px 14px rgba(60, 40, 10, .06);
+    }
+    [data-theme="dark"] {
+      --bg: #12160f;
+      --card: #1c2219;
+      --border: #2f3a2a;
+      --text: #eef2e8;
+      --muted: #9aa58f;
+      --accent: #4ade80;
+      --accent-soft: #1d3a24;
+      --accent-text: #0b1a0f;
+      --swap: #fbbf24;
+      --swap-soft: #3a2e12;
+      --bad: #f87171;
+      --bad-soft: #3b1717;
+      --ok: #4ade80;
+      --ok-soft: #173321;
+      --ai: #c4b5fd;
+      --ai-soft: #2a2140;
+      --shadow: none;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+      padding-bottom: calc(76px + env(safe-area-inset-bottom));
+    }
+    [lang="ar"] body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans Arabic", "Geeza Pro", Tahoma, sans-serif; line-height: 1.7; }
+    button, input, select, textarea { font: inherit; color: inherit; }
+    a { color: var(--accent); }
+    .wrap { max-width: 860px; margin: 0 auto; padding: 0 16px; }
+
+    header.top {
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      padding-top: env(safe-area-inset-top);
+    }
+    .brand { display: flex; align-items: center; gap: 10px; padding: 12px 0 8px; }
+    .brand img { width: 34px; height: 34px; border-radius: 9px; }
+    .brand h1 { font-size: 20px; margin: 0; letter-spacing: -.01em; }
+    .brand .tag { color: var(--muted); font-size: 13px; }
+    .brand .spacer { flex: 1; }
+    .icon-btn {
+      border: 1px solid var(--border); background: var(--card); border-radius: 10px;
+      min-width: 38px; height: 38px; cursor: pointer; font-size: 18px; padding: 0 8px;
+    }
+    .lang-btn { font-size: 14px; font-weight: 700; }
+
+    .avoid { padding: 4px 0 12px; }
+    .avoid-label { font-size: 13px; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
+    .avoid-label button { background: none; border: 0; color: var(--accent); cursor: pointer; font-size: 13px; padding: 0; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip {
+      border: 1px solid var(--border); background: var(--card); border-radius: 999px;
+      padding: 6px 11px; cursor: pointer; font-size: 14px; white-space: nowrap;
+      transition: background .15s, border-color .15s;
+    }
+    .chip[aria-pressed="true"] { background: var(--bad-soft); border-color: var(--bad); color: var(--bad); font-weight: 600; }
+    .chip[aria-pressed="true"]::before { content: "✕ "; }
+    .chip.filter[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+    .chip.filter[aria-pressed="true"]::before { content: ""; }
+    .chip.idea { border-color: var(--ai); color: var(--ai); background: var(--ai-soft); white-space: normal; text-align: start; }
+
+    nav.tabs {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 10;
+      background: var(--card); border-top: 1px solid var(--border);
+      display: flex; justify-content: center;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    nav.tabs a {
+      flex: 1; max-width: 200px; text-align: center; text-decoration: none; color: var(--muted);
+      padding: 9px 2px 10px; font-size: 12px; font-weight: 600; line-height: 1.3;
+    }
+    nav.tabs a span { display: block; font-size: 21px; line-height: 1.2; }
+    nav.tabs a.active { color: var(--accent); }
+
+    main { padding-top: 16px; }
+    h2 { font-size: 22px; margin: 4px 0 12px; letter-spacing: -.01em; }
+    h3 { font-size: 17px; margin: 0 0 8px; }
+    .muted { color: var(--muted); }
+    .small { font-size: 13px; }
+
+    .toolbar { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+    .search {
+      width: 100%; padding: 11px 14px; border-radius: 12px; border: 1px solid var(--border);
+      background: var(--card); outline: none;
+    }
+    .search:focus, textarea:focus { border-color: var(--accent); }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+      padding: 14px; box-shadow: var(--shadow);
+    }
+    a.rcard { display: flex; gap: 12px; text-decoration: none; color: inherit; align-items: flex-start; }
+    a.rcard:hover { border-color: var(--accent); }
+    .remoji {
+      font-size: 30px; width: 52px; height: 52px; flex: none; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center; background: var(--bg);
+    }
+    .rcard h3 { margin: 0 0 2px; font-size: 16px; }
+    .meta { font-size: 13px; color: var(--muted); }
+    .badge {
+      display: inline-block; font-size: 12px; font-weight: 700; border-radius: 999px;
+      padding: 2px 9px; margin-top: 6px;
+    }
+    .b-ok { background: var(--ok-soft); color: var(--ok); }
+    .b-swap { background: var(--swap-soft); color: var(--swap); }
+    .b-bad { background: var(--bad-soft); color: var(--bad); }
+    .b-neutral { background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
+    .contains { font-size: 13px; margin-top: 4px; letter-spacing: 1px; }
+
+    .back { display: inline-block; margin-bottom: 10px; text-decoration: none; font-weight: 600; }
+    .hero { display: flex; gap: 14px; align-items: center; margin-bottom: 14px; }
+    .hero .remoji { width: 64px; height: 64px; font-size: 38px; background: var(--card); border: 1px solid var(--border); }
+    .hero h2 { margin: 0; }
+
+    .cols { display: grid; gap: 14px; }
+    @media (min-width: 760px) { .cols { grid-template-columns: 5fr 6fr; align-items: start; } }
+
+    ul.ing { list-style: none; padding: 0; margin: 0; }
+    ul.ing li { padding: 9px 0; border-bottom: 1px dashed var(--border); }
+    ul.ing li:last-child { border-bottom: 0; }
+    .q { font-weight: 600; }
+    .was { text-decoration: line-through; color: var(--muted); font-size: 14px; }
+    .now { color: var(--swap); font-weight: 600; }
+    .tip { font-size: 13px; color: var(--muted); margin-top: 3px; }
+    .warn { font-size: 13px; color: var(--swap); margin-top: 3px; }
+    .nope { color: var(--bad); font-weight: 600; }
+
+    ol.steps { padding-inline-start: 22px; margin: 0; }
+    ol.steps li { margin-bottom: 10px; }
+    mark { background: var(--swap-soft); color: var(--swap); border-radius: 4px; padding: 0 3px; font-weight: 600; }
+    mark.bad { background: var(--bad-soft); color: var(--bad); }
+
+    .note {
+      border-inline-start: 4px solid var(--swap); background: var(--swap-soft);
+      padding: 10px 12px; border-radius: 8px; margin-top: 12px; font-size: 14px;
+    }
+    .note.safe { border-color: var(--ok); background: var(--ok-soft); }
+    .note.danger { border-color: var(--bad); background: var(--bad-soft); }
+    .note.ai { border-color: var(--ai); background: var(--ai-soft); }
+
+    .swap-section { margin-bottom: 18px; }
+    .swap-section > .card { padding: 0; overflow: hidden; }
+    .swap-head { padding: 14px; border-bottom: 1px solid var(--border); }
+    .swap-row { padding: 12px 14px; border-bottom: 1px solid var(--border); }
+    .swap-row:last-child { border-bottom: 0; }
+    .opt { display: flex; gap: 8px; align-items: baseline; margin-top: 6px; font-size: 15px; }
+    .opt .mark { flex: none; width: 18px; text-align: center; }
+    .opt.unsafe { color: var(--muted); }
+    .opt.best { font-weight: 600; }
+    .pill {
+      display: inline-block; font-size: 12px; border-radius: 6px; padding: 0 6px;
+      background: var(--bad-soft); color: var(--bad); margin-inline-start: 4px; font-weight: 600;
+    }
+    .pill.soft { background: var(--bg); color: var(--muted); border: 1px solid var(--border); font-weight: 500; }
+    .hidden-words { font-size: 14px; }
+
+    textarea {
+      width: 100%; min-height: 180px; border-radius: 12px; border: 1px solid var(--border);
+      background: var(--card); padding: 12px 14px; outline: none; resize: vertical;
+    }
+    .btn {
+      border: 0; border-radius: 12px; padding: 11px 18px; font-weight: 700; cursor: pointer;
+      background: var(--accent); color: var(--accent-text); text-decoration: none; display: inline-block; text-align: center;
+    }
+    .btn:disabled { opacity: .55; cursor: default; }
+    .btn.ghost { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+    .btn.ai { background: var(--ai); color: #fff; }
+    [data-theme="dark"] .btn.ai { color: #1a1030; }
+    .btn.small { padding: 7px 12px; font-size: 14px; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 16px; }
+    .result-line { padding: 10px 0; border-bottom: 1px dashed var(--border); }
+    .result-line:last-child { border-bottom: 0; }
+
+    /* AI chef */
+    .key-card label { font-size: 14px; font-weight: 600; display: block; margin-bottom: 6px; }
+    .key-card input[type="password"] {
+      width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); outline: none;
+    }
+    .check-row { display: flex; align-items: center; gap: 8px; font-size: 14px; margin-top: 8px; }
+    .chat { display: flex; flex-direction: column; gap: 10px; margin: 14px 0; }
+    .msg { max-width: 92%; padding: 10px 14px; border-radius: 16px; font-size: 15px; overflow-wrap: anywhere; }
+    .msg.user { align-self: flex-end; background: var(--accent); color: var(--accent-text); border-end-end-radius: 4px; white-space: pre-wrap; }
+    .msg.model { align-self: flex-start; background: var(--card); border: 1px solid var(--border); border-end-start-radius: 4px; }
+    .msg.model h3 { font-size: 16px; margin: 10px 0 6px; }
+    .msg.model h4 { font-size: 15px; margin: 8px 0 4px; }
+    .msg.model p { margin: 6px 0; }
+    .msg.model ul, .msg.model ol { margin: 6px 0; padding-inline-start: 22px; }
+    .msg.model li { margin-bottom: 4px; }
+    .msg .err { color: var(--bad); }
+    .composer { display: flex; gap: 8px; align-items: flex-end; }
+    .composer textarea { min-height: 52px; height: 52px; flex: 1; }
+
+    .modal { position: fixed; inset: 0; z-index: 50; background: rgba(0, 0, 0, .5); display: none; align-items: flex-end; justify-content: center; padding: 16px; }
+    .modal.open { display: flex; }
+    @media (min-width: 600px) { .modal { align-items: center; } }
+    .modal .card { max-width: 480px; width: 100%; max-height: 90vh; overflow: auto; }
+    .modal ol { padding-inline-start: 20px; }
+    .modal li { margin-bottom: 8px; }
+
+    .empty { text-align: center; padding: 30px 10px; color: var(--muted); }
+    footer { margin: 28px 0 12px; font-size: 12px; color: var(--muted); text-align: center; }
+    .scan-card { border-color: var(--ai); }
+    .scan-photo { display: block; max-width: 100%; max-height: 220px; border-radius: 12px; margin: 10px auto 0; border: 1px solid var(--border); }
+    .verdict { font-size: 17px; font-weight: 700; }
+    .scan-list { margin: 6px 0 0; padding-inline-start: 20px; font-size: 14px; }
+    .scan-list .mine { color: var(--bad); font-weight: 700; }
+    details.scan-text { margin-top: 10px; font-size: 14px; }
+    details.scan-text summary { cursor: pointer; color: var(--accent); font-weight: 600; }
+    details.scan-text p { white-space: pre-wrap; background: var(--bg); border-radius: 10px; padding: 10px; }
+    .support-btn {
+      display: inline-flex; align-items: center; gap: 6px; margin-bottom: 10px; padding: 8px 14px;
+      border-radius: 999px; border: 1px solid var(--border); background: var(--card);
+      color: var(--text); font-size: 14px; font-weight: 600; text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap">
+      <div class="brand">
+        <img src="icon-192.png" alt="" />
+        <div>
+          <h1>SafePlate</h1>
+          <div class="tag" id="tagline"></div>
+        </div>
+        <div class="spacer"></div>
+        <button class="icon-btn lang-btn" id="lang-btn"></button>
+        <button class="icon-btn" id="theme-btn"></button>
+      </div>
+      <div class="avoid">
+        <div class="avoid-label">
+          <span id="avoid-summary"></span>
+          <button id="clear-btn" hidden></button>
+        </div>
+        <div class="chips" id="allergen-chips"></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap" id="view"></main>
+
+  <div class="wrap">
+    <footer>
+      <a class="support-btn" id="support-link" href="https://ko-fi.com/nightshiftapps" target="_blank" rel="noopener"></a><br>
+      <span id="footer-text"></span>
+    </footer>
+  </div>
+
+  <nav class="tabs" id="tabs"></nav>
+
+  <div class="modal" id="key-modal" role="dialog" aria-modal="true">
+    <div class="card" id="key-modal-body"></div>
+  </div>
+
+  <script>
+  // ---------------------------------------------------------------------------
+  // Language
+  // ---------------------------------------------------------------------------
+  var lang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
+  function isAr() { return lang === 'ar'; }
+  // A field in the current language: o.ar[f] when Arabic is on and present, else o[f].
+  function L(o, f) { return isAr() && o.ar && o.ar[f] != null ? o.ar[f] : o[f]; }
+  // Arabic count phrases: 1 / 2 / 3–10 / 11+ take different noun forms.
+  function arCount(n, one, two, few, many) { return n === 1 ? one : n === 2 ? two : n <= 10 ? n + ' ' + few : n + ' ' + many; }
+
+  var STR = {
+    title: { en: 'SafePlate · Allergy-Friendly Recipes', ar: 'SafePlate · وصفات آمنة لحساسية الطعام' },
+    tagline: { en: 'Everyday recipes, made safe for your allergies', ar: 'وصفات يومية آمنة لحساسيتك الغذائية' },
+    langBtn: { en: 'عربي', ar: 'EN' },
+    langLabel: { en: 'التبديل إلى العربية', ar: 'Switch to English' },
+    darkLabel: { en: 'Toggle dark mode', ar: 'تبديل الوضع الليلي' },
+    avoidPrompt: { en: 'Tap everything you need to avoid:', ar: 'اختر كل ما تحتاج إلى تجنّبه:' },
+    avoiding: { en: function (n, l) { return 'Avoiding ' + n + ': ' + l; }, ar: function (n, l) { return 'تتجنّب: ' + l; } },
+    clear: { en: 'Clear', ar: 'مسح' },
+    tabRecipes: { en: 'Recipes', ar: 'الوصفات' },
+    tabSwaps: { en: 'Swaps', ar: 'البدائل' },
+    tabCheck: { en: 'Scan & check', ar: 'امسح وافحص' },
+    tabAi: { en: 'AI Chef', ar: 'الشيف الذكي' },
+    support: { en: '☕ Like this app? Support it on Ko-fi', ar: '☕ أعجبك التطبيق؟ ادعمه على Ko-fi' },
+    footer: {
+      en: 'SafePlate offers general cooking ideas, not medical advice. Ingredients and factories change, so read every label every time and follow your allergist\'s guidance. Your allergens and recipes stay on this device; AI questions go to Google Gemini only when you ask one.',
+      ar: 'يقدّم SafePlate أفكاراً عامة للطبخ وليس نصيحة طبية. المكونات والمصانع تتغير، فاقرأ كل ملصق في كل مرة واتبع إرشادات طبيب الحساسية. اختياراتك ووصفاتك تبقى على جهازك، ولا تُرسل أسئلة الذكاء الاصطناعي إلى Google Gemini إلا عندما تسأل.'
+    },
+    recipes: { en: 'Recipes', ar: 'الوصفات' },
+    searchRecipes: { en: 'Search recipes or ingredients…', ar: 'ابحث عن وصفة أو مكوّن…' },
+    showAll: { en: 'All recipes', ar: 'كل الوصفات' },
+    showOk: { en: 'Safe as written', ar: 'آمنة كما هي' },
+    showSwap: { en: 'Needs swaps', ar: 'تحتاج بدائل' },
+    noMatch: { en: 'No recipes match. Try another search or filter, or ask the AI chef.', ar: 'لا توجد وصفات مطابقة. جرّب بحثاً آخر، أو اسأل الشيف الذكي.' },
+    badgePick: { en: 'Pick allergens to adapt', ar: 'اختر الحساسية لتعديل الوصفة' },
+    badgeNone: { en: function (n) { return 'No safe swap for ' + n + ' item' + (n > 1 ? 's' : ''); }, ar: function (n) { return 'لا يوجد بديل آمن لـ' + arCount(n, 'مكوّن واحد', 'مكوّنين', 'مكوّنات', 'مكوّناً'); } },
+    badgeSwaps: { en: function (n) { return n + ' swap' + (n > 1 ? 's' : '') + ' to make it safe'; }, ar: function (n) { return arCount(n, 'بديل واحد', 'بديلان', 'بدائل', 'بديلاً') + ' لتصبح آمنة'; } },
+    badgeOk: { en: 'Safe as written', ar: 'آمنة كما هي' },
+    badgeCheck: { en: ' · check labels', ar: ' · افحص الملصقات' },
+    allRecipes: { en: '← All recipes', ar: '→ كل الوصفات' },
+    serves: { en: 'Serves', ar: 'تكفي' },
+    normally: { en: 'Normally contains: ', ar: 'تحتوي عادةً على: ' },
+    containsAria: { en: 'Normally contains ', ar: 'تحتوي عادةً على ' },
+    ingredients: { en: 'Ingredients', ar: 'المكوّنات' },
+    steps: { en: 'Steps', ar: 'الخطوات' },
+    arrow: { en: '→', ar: '←' },
+    oftenContains: { en: function (l) { return '⚠️ Often contains ' + l + '. Check the label.'; }, ar: function (l) { return '⚠️ غالباً يحتوي على ' + l + '. افحص الملصق.'; } },
+    noSwap: { en: function (l) { return 'Contains ' + l + ', and every swap we know of does too. Leave it out or ask your allergist.'; }, ar: function (l) { return 'يحتوي على ' + l + '، وكل البدائل التي نعرفها كذلك. احذفه أو اسأل طبيب الحساسية.'; } },
+    leaveOut: { en: ' (leave out)', ar: ' (احذفه)' },
+    sumPick: { en: 'Pick your allergens at the top and this recipe rewrites itself with safe swaps.', ar: 'اختر الحساسية من الأعلى وستُعاد كتابة الوصفة تلقائياً ببدائل آمنة.' },
+    sumOk: { en: '✅ This recipe has none of your allergens as written.', ar: '✅ هذه الوصفة لا تحتوي على أي من مسببات حساسيتك كما هي.' },
+    sumOkWarn: { en: ' A few items often carry them, so check those labels.', ar: ' بعض المكوّنات قد تحتوي عليها أحياناً، فافحص ملصقاتها.' },
+    sumSwap: { en: function (n) { return '🔁 ' + n + ' ingredient' + (n > 1 ? 's were' : ' was') + ' swapped for you. Swaps are highlighted in the steps.'; }, ar: function (n) { return '🔁 تم استبدال ' + arCount(n, 'مكوّن واحد', 'مكوّنين', 'مكوّنات', 'مكوّناً') + ' لك. البدائل مظلّلة في الخطوات.'; } },
+    sumBad: { en: '⚠️ We couldn\'t find a safe swap for every ingredient. Review the red items.', ar: '⚠️ لم نجد بديلاً آمناً لكل المكوّنات. راجع العناصر الحمراء.' },
+    crossContact: {
+      en: '🧽 <b>Avoid cross-contact:</b> wash boards, pans and utensils first, cook the safe version before anything else, and keep allergen-containing packages off the counter.',
+      ar: '🧽 <b>تجنّب التلوث المتبادل:</b> اغسل الألواح والأواني والأدوات أولاً، واطبخ النسخة الآمنة قبل أي شيء آخر، وأبعد العبوات التي تحتوي على مسببات الحساسية عن سطح العمل.'
+    },
+    askAboutRecipe: { en: '🤖 Ask the AI chef about this recipe', ar: '🤖 اسأل الشيف الذكي عن هذه الوصفة' },
+    swapGuide: { en: 'Swap guide', ar: 'دليل البدائل' },
+    searchSwaps: { en: 'What do you want to replace? e.g. butter, eggs, soy sauce', ar: 'ماذا تريد أن تستبدل؟ مثلاً: زبدة، بيض، طحينة' },
+    swapsShowingAll: { en: 'Showing every allergen. ', ar: 'تُعرض كل أنواع الحساسية. ' },
+    swapsShowingMine: { en: 'Showing your allergens. ', ar: 'تُعرض أنواع حساسيتك فقط. ' },
+    swapsOnlyMine: { en: 'Show only mine', ar: 'اعرض حساسيتي فقط' },
+    swapsAll: { en: 'Show all allergens', ar: 'اعرض كل الأنواع' },
+    swapsBest: { en: '. ✓ marks the best swap that avoids all of your allergens.', ar: '. ✓ تشير إلى أفضل بديل يتجنّب كل مسببات حساسيتك.' },
+    swapsPick: { en: 'Pick allergens at the top to highlight the swaps that are safe for you.', ar: 'اختر الحساسية من الأعلى لتظليل البدائل الآمنة لك.' },
+    insteadOf: { en: 'Instead of', ar: 'بدلاً من' },
+    also: { en: 'also ', ar: 'أيضاً ' },
+    has: { en: 'has ', ar: 'فيه ' },
+    labelNames: { en: 'Other label names to watch for:', ar: 'أسماء أخرى على الملصقات انتبه لها:' },
+    noSwapFound: { en: 'No swap found for that. Try the "Check a recipe" tab or ask the AI chef.', ar: 'لم نجد بديلاً لذلك. جرّب تبويب "افحص وصفة" أو اسأل الشيف الذكي.' },
+    checkTitle: { en: 'Scan & check', ar: 'امسح وافحص' },
+    typeTitle: { en: 'Or type / paste ingredients', ar: 'أو اكتب / الصق المكوّنات' },
+    scanTitle: { en: 'AI label scanner', ar: 'ماسح الملصقات الذكي' },
+    scanIntro: { en: 'Take a photo of the ingredient list on any package, in any language. The AI reads it and checks it against your allergens.', ar: 'صوّر قائمة المكوّنات على أي عبوة، بأي لغة. سيقرؤها الذكاء الاصطناعي ويفحصها مقابل حساسيتك.' },
+    scanTake: { en: '📷 Take photo', ar: '📷 التقط صورة' },
+    scanChoose: { en: '🖼️ Choose photo', ar: '🖼️ اختر صورة' },
+    scanPrivacy: { en: 'The photo goes to Google Gemini only when you scan, using the same free key as the AI chef.', ar: 'تُرسل الصورة إلى Google Gemini فقط عند المسح، باستخدام مفتاح Gemini المجاني نفسه الخاص بالشيف الذكي.' },
+    scanNeedKey: { en: 'The scanner needs your free Gemini key. Add it in the AI Chef tab first:', ar: 'يحتاج الماسح إلى مفتاح Gemini المجاني. أضفه أولاً في تبويب الشيف الذكي:' },
+    scanOpenAi: { en: 'Open AI Chef', ar: 'افتح الشيف الذكي' },
+    scanReading: { en: '⏳ Reading the label…', ar: '⏳ جارٍ قراءة الملصق…' },
+    scanUnreadable: { en: 'Couldn\'t read an ingredient list in this photo. Move closer, avoid glare, and make sure the whole list is sharp.', ar: 'تعذّرت قراءة قائمة مكوّنات في هذه الصورة. اقترب أكثر، وتجنّب انعكاس الضوء، وتأكد أن القائمة كاملة وواضحة.' },
+    scanBad: { en: function (l) { return '⛔ Not safe for you: contains ' + l; }, ar: function (l) { return '⛔ غير آمن لك: يحتوي على ' + l; } },
+    scanMay: { en: function (l) { return '⚠️ May contain ' + l + ' (shared equipment or factory). Many allergists advise avoiding these products.'; }, ar: function (l) { return '⚠️ قد يحتوي على ' + l + ' (خطوط إنتاج أو مصنع مشترك). ينصح كثير من أطباء الحساسية بتجنّب هذه المنتجات.'; } },
+    scanOk: { en: function (l) { return '✅ No ' + l + ' listed on this label.'; }, ar: function (l) { return '✅ لا يذكر هذا الملصق ' + l + '.'; } },
+    scanOkNote: { en: 'AI can misread small print. Read the label yourself too, and scan again whenever the packaging changes.', ar: 'قد يخطئ الذكاء الاصطناعي في قراءة الخط الصغير. اقرأ الملصق بنفسك أيضاً، وأعد المسح كلما تغيّرت العبوة.' },
+    scanPick: { en: 'Pick your allergens at the top to get a verdict. Here is what the label lists:', ar: 'اختر الحساسية من الأعلى لتحصل على نتيجة. هذا ما يذكره الملصق:' },
+    scanContains: { en: 'Contains', ar: 'يحتوي على' },
+    scanMayLabel: { en: 'May contain', ar: 'قد يحتوي على' },
+    scanNoneFound: { en: 'none listed', ar: 'لا شيء مذكور' },
+    scanIngredients: { en: 'Ingredients as the AI read them', ar: 'المكوّنات كما قرأها الذكاء الاصطناعي' },
+    scanLocal: { en: 'found by SafePlate\'s word list', ar: 'رصده قاموس SafePlate' },
+    scanToChecker: { en: 'Check with the word list', ar: 'افحصها بالقاموس' },
+    scanAlt: { en: '🤖 Find a safe alternative', ar: '🤖 ابحث عن بديل آمن' },
+    scanAltPrompt: { en: function (x) { return 'I scanned "' + x + '" and it isn\'t safe for me. Suggest safe store-bought alternatives to look for, or a simple homemade version.'; }, ar: function (x) { return 'مسحت منتج "' + x + '" وهو غير آمن لي. اقترح بدائل آمنة أبحث عنها في المتجر، أو نسخة منزلية بسيطة.'; } },
+    scanThisProduct: { en: 'this product', ar: 'هذا المنتج' },
+    scanFail: { en: 'Scan failed: ', ar: 'فشل المسح: ' },
+    checkIntro: { en: 'Paste the ingredient list from any recipe or food label, one item per line. SafePlate flags your allergens and suggests swaps. English and Arabic both work.', ar: 'الصق قائمة المكوّنات من أي وصفة أو ملصق طعام، مكوّناً في كل سطر. سيحدد SafePlate مسببات حساسيتك ويقترح بدائل. يعمل بالعربية والإنجليزية.' },
+    checkPlaceholder: { en: '2 cups all-purpose flour\n1 cup butter\n2 eggs\n1 cup chopped pecans', ar: '2 كوب دقيق\n1 كوب زبدة\n2 بيضة\n1 كوب جوز مفروم' },
+    checkBtn: { en: 'Check ingredients', ar: 'افحص المكوّنات' },
+    example: { en: 'Try an example', ar: 'جرّب مثالاً' },
+    exampleText: {
+      en: '2 cups all-purpose flour\n1 cup unsalted butter, softened\n1 cup brown sugar\n2 large eggs\n1 tsp vanilla\n1 cup chopped pecans\n½ cup dairy-free chocolate chips\n2 tbsp soy sauce\n1 can coconut milk',
+      ar: '2 كوب طحين\n1 كوب زبدة طرية\n1 كوب سكر\n2 بيضة\n1 ملعقة صغيرة فانيليا\n½ كوب فستق حلبي مفروم\n¼ كوب طحينة\n1 علبة حليب جوز الهند\n1 كوب زبادي خالي من الألبان'
+    },
+    clearBtn: { en: 'Clear', ar: 'مسح' },
+    checkRewrite: { en: '🤖 Ask the AI chef to rewrite this recipe', ar: '🤖 اطلب من الشيف الذكي إعادة كتابة الوصفة' },
+    containsAll: { en: function (l, often) { return 'Contains ' + l + (often ? ' (often)' : ''); }, ar: function (l, often) { return (often ? 'غالباً يحتوي على ' : 'يحتوي على ') + l; } },
+    contains: { en: '⚠️ Contains ', ar: '⚠️ يحتوي على ' },
+    tryThis: { en: 'Try ', ar: 'جرّب ' },
+    noSafeSwap: { en: 'No swap we know of avoids all of your allergens. Leave it out.', ar: 'لا نعرف بديلاً يتجنّب كل مسببات حساسيتك. احذفه.' },
+    oftenLabel: { en: function (w, l) { return '⚠️ ' + w + ': often contains ' + l + '. Check the label.'; }, ar: function (w, l) { return '⚠️ ' + w + ': غالباً يحتوي على ' + l + '. افحص الملصق.'; } },
+    labeledFree: { en: function (l) { return 'Labeled free of ' + l + '. Still confirm on the package.'; }, ar: function (l) { return 'مكتوب أنه خالٍ من ' + l + '. تأكد من العبوة رغم ذلك.'; } },
+    checkHeadPick: { en: 'Pick your allergens at the top for personal results. Here\'s everything we spotted:', ar: 'اختر الحساسية من الأعلى لنتائج مخصصة لك. هذا كل ما وجدناه:' },
+    checkHeadBad: { en: function (n) { return 'Found ' + n + ' ingredient' + (n > 1 ? 's' : '') + ' with your allergens. Swaps are below.'; }, ar: function (n) { return 'وجدنا ' + arCount(n, 'مكوّناً واحداً', 'مكوّنين', 'مكوّنات', 'مكوّناً') + ' فيها مسببات حساسيتك. البدائل بالأسفل.'; } },
+    checkHeadOk: { en: '✅ Nothing on your list was spotted. Brands vary, so still read each label.', ar: '✅ لم نجد شيئاً من قائمتك. العلامات التجارية تختلف، فاقرأ كل ملصق رغم ذلك.' },
+
+    aiTitle: { en: 'AI Chef', ar: 'الشيف الذكي' },
+    aiIntro: {
+      en: 'Ask for any dish, made safe for your allergies: family recipes, party food, lunchbox ideas, or what to cook tonight.',
+      ar: 'اطلب أي طبق بنسخة آمنة لحساسيتك: وصفات العائلة، أكل الحفلات، أفكار لانش بوكس، أو ماذا تطبخ الليلة.'
+    },
+    aiPowered: { en: 'Powered by Google Gemini with your own free key.', ar: 'يعمل بـ Google Gemini باستخدام مفتاحك المجاني.' },
+    keyHow: { en: '🔑 How to get your free Gemini key', ar: '🔑 كيف تحصل على مفتاح Gemini المجاني' },
+    keyLabel: { en: 'Gemini API key', ar: 'مفتاح Gemini API' },
+    keyPlaceholder: { en: 'Paste your key (starts with AIza…)', ar: 'الصق مفتاحك (يبدأ بـ AIza…)' },
+    keyRemember: { en: 'Remember key on this device', ar: 'تذكّر المفتاح على هذا الجهاز' },
+    keySaved: { en: '🔑 Gemini key added', ar: '🔑 تمت إضافة مفتاح Gemini' },
+    keyChange: { en: 'Change', ar: 'تغيير' },
+    aiNoAllergens: { en: 'Tip: pick your allergens at the top so the chef knows what to avoid.', ar: 'نصيحة: اختر الحساسية من الأعلى ليعرف الشيف ما يجب تجنّبه.' },
+    aiAvoiding: { en: function (l) { return 'The chef will avoid: ' + l; }, ar: function (l) { return 'سيتجنّب الشيف: ' + l; } },
+    aiIdeas: {
+      en: ['Birthday cake', 'Chicken shawarma', 'Lasagna', 'What can I pack for a school lunch?', 'A quick dinner in 20 minutes'],
+      ar: ['كبسة دجاج', 'كيكة عيد ميلاد', 'معمول العيد', 'ماذا أضع في لانش بوكس المدرسة؟', 'عشاء سريع في 20 دقيقة']
+    },
+    aiPlaceholder: { en: 'Type a dish or a question…', ar: 'اكتب اسم طبق أو سؤالاً…' },
+    aiSend: { en: 'Send', ar: 'إرسال' },
+    aiNew: { en: 'New chat', ar: 'محادثة جديدة' },
+    aiThinking: { en: '⏳ Cooking up an answer…', ar: '⏳ يحضّر الشيف الإجابة…' },
+    aiNeedKey: { en: '⚠️ Add your free Gemini key above first (tap 🔑 for step-by-step help).', ar: '⚠️ أضف مفتاح Gemini المجاني في الأعلى أولاً (اضغط 🔑 للشرح خطوة بخطوة).' },
+    aiDisclaimer: { en: 'AI can make mistakes. Double-check every ingredient label, and never rely on AI in an emergency.', ar: 'قد يخطئ الذكاء الاصطناعي. افحص ملصق كل مكوّن، ولا تعتمد عليه أبداً في حالة طارئة.' },
+    aboutRecipe: { en: function (x) { return 'I\'m making "' + x + '" from SafePlate. '; }, ar: function (x) { return 'أحضّر وصفة "' + x + '" من SafePlate. '; } },
+    rewritePrompt: { en: 'Rewrite this recipe so it is safe for me, with the full ingredient list and steps:\n\n', ar: 'أعد كتابة هذه الوصفة لتكون آمنة لي، مع قائمة المكوّنات الكاملة والخطوات:\n\n' },
+    errNetwork: { en: 'Network error. The AI chef needs internet (the rest of the app works offline).', ar: 'خطأ في الشبكة. الشيف الذكي يحتاج إلى الإنترنت (باقي التطبيق يعمل دون اتصال).' },
+    errKey: { en: 'Invalid API key. Copy it again from Google AI Studio.', ar: 'المفتاح غير صالح. انسخه مرة أخرى من Google AI Studio.' },
+    errForbidden: { en: 'This key isn\'t allowed to use the Gemini API (403). Check it in Google AI Studio.', ar: 'هذا المفتاح غير مسموح له باستخدام Gemini (403). تحقّق منه في Google AI Studio.' },
+    errRate: { en: 'Free-tier limit reached (429). Wait a minute and try again.', ar: 'تم بلوغ حد الاستخدام المجاني (429). انتظر دقيقة وحاول مجدداً.' },
+    errServer: { en: 'Gemini is having problems. Try again shortly.', ar: 'Gemini يواجه مشكلة. حاول مجدداً بعد قليل.' },
+    errEmpty: { en: 'No answer came back. Try again or rephrase.', ar: 'لم تصل إجابة. حاول مجدداً أو أعد صياغة السؤال.' },
+    errCut: { en: '… (answer was cut off at the length limit; ask "continue")', ar: '… (انقطعت الإجابة عند حد الطول؛ اكتب "أكمل")' },
+    keyModal: {
+      en: '<h3>🔑 Get your free Gemini key</h3><p>The AI chef uses Google\'s Gemini. The key is free and takes about 2 minutes. You only do this once.</p><ol>' +
+        '<li><b>Open Google AI Studio</b> with the button below and sign in with any Google (Gmail) account.</li>' +
+        '<li>Tap <b>"Create API key"</b>. If asked, accept the terms and choose or create a project (the default is fine).</li>' +
+        '<li><b>Copy the key.</b> It\'s a long code that usually starts with <code>AIza</code>.</li>' +
+        '<li>Come back here, <b>paste it into the "Gemini API key" box</b>, and keep <i>"Remember key on this device"</i> ticked.</li></ol>' +
+        '<a class="btn" style="width:100%;margin:6px 0 12px" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Open Google AI Studio ↗</a>' +
+        '<div class="note ai" style="margin-top:0">• <b>Keep your key private.</b> Don\'t share it. You can delete it and make a new one anytime in AI Studio.<br>• The free plan has a daily limit. If you see a "limit" message, wait a minute.<br>• The key is stored only on your device.</div>',
+      ar: '<h3>🔑 احصل على مفتاح Gemini المجاني</h3><p>يستخدم الشيف الذكي خدمة Gemini من Google. المفتاح مجاني ويستغرق نحو دقيقتين، وتفعل ذلك مرة واحدة فقط.</p><ol>' +
+        '<li><b>افتح Google AI Studio</b> من الزر بالأسفل وسجّل الدخول بأي حساب Google (Gmail).</li>' +
+        '<li>اضغط <b>"Create API key"</b>. إن طُلب منك، وافق على الشروط واختر مشروعاً أو أنشئ واحداً (الافتراضي مناسب).</li>' +
+        '<li><b>انسخ المفتاح.</b> هو رمز طويل يبدأ عادةً بـ <code>AIza</code>.</li>' +
+        '<li>عُد إلى هنا، <b>والصقه في خانة "مفتاح Gemini API"</b>، وأبقِ خيار <i>"تذكّر المفتاح على هذا الجهاز"</i> مفعّلاً.</li></ol>' +
+        '<a class="btn" style="width:100%;margin:6px 0 12px" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">افتح Google AI Studio ↗</a>' +
+        '<div class="note ai" style="margin-top:0">• <b>حافظ على سرية مفتاحك.</b> لا تشاركه مع أحد. يمكنك حذفه وإنشاء مفتاح جديد في أي وقت.<br>• للخطة المجانية حد يومي. إن ظهرت رسالة "حد الاستخدام"، انتظر دقيقة.<br>• يُحفظ المفتاح على جهازك فقط.</div>'
+    },
+    close: { en: 'Close', ar: 'إغلاق' }
+  };
+  function t(key) {
+    var v = STR[key][lang];
+    return typeof v === 'function' ? v.apply(null, Array.prototype.slice.call(arguments, 1)) : v;
+  }
+
+  var CATS = { All: 'الكل', Breakfast: 'فطور', Mains: 'أطباق رئيسية', Baking: 'مخبوزات وحلويات', Snacks: 'وجبات خفيفة', Lunch: 'غداء', 'Salads & Soups': 'سلطات وشوربات' };
+  function catName(c) { return isAr() ? (CATS[c] || c) : c; }
+
+  // ---------------------------------------------------------------------------
+  // Data
+  // ---------------------------------------------------------------------------
+
+  // The nine major US food allergens. Wheat also stands in for gluten.
+  var ALLERGENS = [
+    { id: 'milk', name: 'Milk / Dairy', short: 'Dairy', emoji: '🥛',
+      tip: 'Plant milks swap 1:1 in most recipes. For richness (sauces, soups) use canned coconut milk; for baking, any unsweetened plant milk works.',
+      hidden: ['casein', 'caseinate', 'whey', 'lactose', 'lactalbumin', 'butterfat', 'ghee', 'curds', 'paneer', 'custard', 'ice cream', 'milk solids'],
+      ar: { name: 'الحليب ومشتقاته', short: 'الألبان',
+        tip: 'الحليب النباتي يحل محل الحليب بنفس الكمية في معظم الوصفات. للصلصات والشوربات الغنية استخدم حليب جوز الهند المعلّب، وللمخبوزات أي حليب نباتي غير محلّى.',
+        hidden: ['كازين', 'كازينات', 'مصل اللبن', 'شرش اللبن', 'لاكتوز', 'سمن', 'قشطة', 'لبنة', 'كريمة', 'جبن', 'لبن', 'حليب مجفف', 'مسحوق الحليب', 'مهلبية', 'بوظة', 'آيس كريم'] } },
+    { id: 'egg', name: 'Egg', short: 'Egg', emoji: '🥚',
+      tip: 'Pick the swap by the egg\'s job: binding (flax egg), lift in cakes (aquafaba), moisture (applesauce), or scrambles (tofu or chickpea flour).',
+      hidden: ['albumin', 'albumen', 'ovalbumin', 'lysozyme', 'meringue', 'mayonnaise', 'aioli', 'eggnog'],
+      ar: { name: 'البيض', short: 'البيض',
+        tip: 'اختر البديل حسب دور البيض: للربط (بيضة الكتان)، للانتفاخ في الكيك (الأكوافابا)، للرطوبة (صلصة التفاح)، وللبيض المطهو (التوفو أو دقيق الحمص).',
+        hidden: ['ألبومين', 'زلال', 'مايونيز', 'ميرينغ', 'صفار', 'بياض البيض', 'بيض بودرة'] } },
+    { id: 'peanut', name: 'Peanut', short: 'Peanut', emoji: '🥜',
+      tip: 'Sunflower seed butter is the closest swap for peanut butter. Watch for "may contain peanuts" warnings on chocolate, granola and Asian or African sauces.',
+      hidden: ['arachis oil', 'groundnuts', 'beer nuts', 'monkey nuts', 'mixed nuts', 'satay', 'peanut flour', 'mandelonas'],
+      ar: { name: 'الفول السوداني', short: 'الفول السوداني',
+        tip: 'زبدة بذور دوار الشمس هي أقرب بديل لزبدة الفول السوداني. انتبه لعبارة "قد يحتوي على الفول السوداني" على الشوكولاتة والغرانولا والصلصات الآسيوية.',
+        hidden: ['فول سوداني', 'فستق سوداني', 'فستق عبيد', 'زيت الفول السوداني', 'ساتيه', 'مكسرات مشكلة'] } },
+    { id: 'treenut', name: 'Tree nuts', short: 'Tree nut', emoji: '🌰',
+      tip: 'Toasted pumpkin or sunflower seeds give the same crunch. Check pesto, baked goods, cereals and "dairy-free" products, which are often cashew- or almond-based.',
+      hidden: ['almond', 'cashew', 'walnut', 'pecan', 'pistachio', 'hazelnut', 'filbert', 'macadamia', 'brazil nut', 'pine nut', 'praline', 'marzipan', 'gianduja', 'frangipane', 'pesto', 'nut butter'],
+      ar: { name: 'المكسرات', short: 'المكسرات',
+        tip: 'بذور اليقطين أو دوار الشمس المحمصة تعطي القرمشة نفسها. افحص البيستو والمخبوزات والحلويات العربية (المعمول، البقلاوة، الكنافة) والمنتجات "الخالية من الألبان" التي تُصنع غالباً من الكاجو أو اللوز.',
+        hidden: ['لوز', 'كاجو', 'جوز', 'عين الجمل', 'بندق', 'فستق حلبي', 'صنوبر', 'بقان', 'مكاديميا', 'برالين', 'مرزبان', 'بيستو', 'نوتيلا', 'بقلاوة', 'زبدة المكسرات'] } },
+    { id: 'soy', name: 'Soy', short: 'Soy', emoji: '🫘',
+      tip: 'Coconut aminos replace soy sauce. Soy hides in vegan products, chocolate (soy lecithin), bread and many processed foods.',
+      hidden: ['soya', 'edamame', 'tofu', 'tempeh', 'miso', 'natto', 'shoyu', 'tamari', 'soy lecithin', 'textured vegetable protein', 'TVP', 'hydrolyzed soy protein'],
+      ar: { name: 'الصويا', short: 'الصويا',
+        tip: 'الكوكونت أمينوز بديل لصلصة الصويا. تختبئ الصويا في المنتجات النباتية والشوكولاتة (ليسيثين الصويا) والخبز وكثير من الأطعمة المصنّعة.',
+        hidden: ['صويا', 'فول الصويا', 'توفو', 'ميسو', 'تمبه', 'إدامامي', 'ليسيثين الصويا', 'بروتين الصويا', 'تماري'] } },
+    { id: 'wheat', name: 'Wheat / Gluten', short: 'Wheat', emoji: '🌾',
+      tip: 'Use a 1:1 gluten-free flour blend that already contains xanthan gum. For celiac disease, barley, rye and non-certified oats are also off-limits.',
+      hidden: ['semolina', 'durum', 'spelt', 'farro', 'bulgur', 'couscous', 'seitan', 'einkorn', 'kamut', 'malt', 'barley', 'rye', 'panko', 'orzo', 'graham'],
+      ar: { name: 'القمح / الغلوتين', short: 'القمح',
+        tip: 'استخدم خليط دقيق خالٍ من الغلوتين يحتوي على صمغ الزانثان بنفس الكمية. لمرضى السيلياك: الشعير والجاودار والشوفان غير المعتمد ممنوعة أيضاً. انتبه للبرغل والفريكة والسميد والشعيرية.',
+        hidden: ['قمح', 'سميد', 'برغل', 'فريكة', 'كسكس', 'شعير', 'جاودار', 'مالت', 'شعيرية', 'غلوتين', 'جلوتين', 'فتات الخبز', 'كعك', 'بسكويت', 'معمول'] } },
+    { id: 'fish', name: 'Fish', short: 'Fish', emoji: '🐟',
+      tip: 'Chicken, cauliflower and chickpeas stand in for fish in most dishes. Fish hides in Worcestershire sauce, Caesar dressing and Asian sauces.',
+      hidden: ['anchovy', 'fish sauce', 'worcestershire', 'caesar dressing', 'surimi', 'bonito', 'dashi', 'fish stock', 'roe', 'caviar'],
+      ar: { name: 'السمك', short: 'السمك',
+        tip: 'الدجاج والقرنبيط والحمص تحل محل السمك في معظم الأطباق. يختبئ السمك في صلصة ورشستر وصلصة السيزر والصلصات الآسيوية.',
+        hidden: ['أنشوفة', 'صلصة السمك', 'ورشستر', 'صلصة السيزر', 'سوريمي', 'كافيار', 'بطارخ', 'مرق السمك', 'سردين'] } },
+    { id: 'shellfish', name: 'Shellfish', short: 'Shellfish', emoji: '🦐',
+      tip: 'Chicken or firm tofu replace shrimp well. Many people who react to crustaceans also avoid mollusks (clams, mussels, squid), so ask your allergist.',
+      hidden: ['shrimp', 'prawn', 'crab', 'lobster', 'crayfish', 'krill', 'scampi', 'shrimp paste', 'oyster sauce', 'clams', 'mussels', 'squid', 'calamari'],
+      ar: { name: 'القشريات (الروبيان وغيره)', short: 'القشريات',
+        tip: 'الدجاج أو التوفو المتماسك بديلان جيدان للروبيان. كثير ممن يتحسسون من القشريات يتجنبون الرخويات أيضاً (المحار، بلح البحر، الحبار)، فاسأل طبيب الحساسية.',
+        hidden: ['روبيان', 'جمبري', 'قريدس', 'سلطعون', 'كابوريا', 'استاكوزا', 'كركند', 'محار', 'بلح البحر', 'حبار', 'كاليماري', 'أخطبوط', 'صلصة المحار'] } },
+    { id: 'sesame', name: 'Sesame', short: 'Sesame', emoji: '⚪',
+      tip: 'Sunflower seed butter replaces tahini. Sesame hides in breads and buns, hummus, dressings, spice blends and Middle Eastern or Asian dishes.',
+      hidden: ['tahini', 'benne', 'gomasio', 'halva', 'halvah', 'hummus', 'za\'atar', 'zaatar', 'gingelly'],
+      ar: { name: 'السمسم', short: 'السمسم',
+        tip: 'زبدة بذور دوار الشمس بديل للطحينة. يختبئ السمسم في الخبز والكعك والحمص والمتبل والحلاوة والزعتر والصلصات وخلطات البهارات.',
+        hidden: ['طحينة', 'سمسم', 'زيت السمسم', 'سيرج', 'حلاوة طحينية', 'حلاوة', 'حمص بالطحينة', 'متبل', 'بابا غنوج', 'زعتر'] } }
+  ];
+  var A = {};
+  ALLERGENS.forEach(function (a) { A[a.id] = a; });
+
+  // Ingredient library. n = full name, s = short name used in steps, a = allergens,
+  // m = often contains (label warning), k = words the label checker matches, swaps
+  // in order of preference; the first one free of all the user's allergens wins.
+  // Each entry and swap carries its Arabic text in `ar`.
+  var LIB = {
+    butter: { n: 'butter', s: 'butter', a: ['milk'], k: ['butter', 'unsalted butter', 'salted butter', 'margarine'],
+      ar: { n: 'زبدة', s: 'الزبدة', k: ['زبدة', 'زبدة طرية', 'سمن', 'سمن بلدي', 'مارغرين', 'مرجرين'] },
+      swaps: [
+        { n: 'dairy-free butter sticks (olive or avocado-oil based)', s: 'dairy-free butter', a: [], tip: 'Use 1:1. Some brands contain soy or cashew, so check the label.',
+          ar: { n: 'أصابع زبدة نباتية خالية من الألبان (بزيت الزيتون أو الأفوكادو)', s: 'الزبدة النباتية', tip: 'بنفس الكمية. بعض الأنواع تحتوي على الصويا أو الكاجو، فاقرأ الملصق.' } },
+        { n: 'refined coconut oil', s: 'coconut oil', a: [], tip: 'Use 1:1, solid for cookies and melted for batters. Refined coconut oil has no coconut taste.',
+          ar: { n: 'زيت جوز الهند المكرر', s: 'زيت جوز الهند', tip: 'بنفس الكمية: صلباً للكوكيز ومذاباً للخلطات السائلة. المكرر بلا طعم جوز الهند.' } }
+      ] },
+    milk: { n: 'milk', s: 'milk', a: ['milk'], k: ['milk', 'whole milk', 'skim milk', '2% milk', 'evaporated milk', 'condensed milk', 'sweetened condensed milk'],
+      ar: { n: 'حليب', s: 'الحليب', k: ['حليب', 'حليب كامل الدسم', 'حليب قليل الدسم', 'حليب مبخر', 'حليب مكثف', 'حليب بودرة'] },
+      swaps: [
+        { n: 'oat milk (certified gluten-free)', s: 'oat milk', a: [], tip: 'Use 1:1. Pick unsweetened for savory dishes.',
+          ar: { n: 'حليب الشوفان (معتمد خالٍ من الغلوتين)', s: 'حليب الشوفان', tip: 'بنفس الكمية. اختر غير المحلّى للأطباق المالحة.' } },
+        { n: 'soy milk', s: 'soy milk', a: ['soy'], tip: 'Use 1:1. Highest protein, so it behaves most like dairy in baking.',
+          ar: { n: 'حليب الصويا', s: 'حليب الصويا', tip: 'بنفس الكمية. الأعلى بروتيناً، فيتصرف كالحليب في المخبوزات.' } },
+        { n: 'rice milk', s: 'rice milk', a: [], tip: 'Use 1:1. Thinner, so add 1 tsp cornstarch per cup for sauces.',
+          ar: { n: 'حليب الأرز', s: 'حليب الأرز', tip: 'بنفس الكمية. أخفّ قواماً، فأضف ملعقة صغيرة نشا ذرة لكل كوب في الصلصات.' } }
+      ] },
+    buttermilk: { n: 'buttermilk', s: 'buttermilk', a: ['milk'], k: ['buttermilk'],
+      ar: { n: 'لبن رائب (باترميلك)', s: 'اللبن الرائب', k: ['لبن رائب', 'باترميلك', 'لبن خض'] },
+      swaps: [{ n: 'oat milk + 1 tbsp lemon juice per cup (rest 5 min)', s: '"oat buttermilk"', a: [], tip: 'The acid curdles it slightly, just like real buttermilk.',
+        ar: { n: 'حليب الشوفان + ملعقة كبيرة عصير ليمون لكل كوب (يُترك 5 دقائق)', s: '"لبن الشوفان الرائب"', tip: 'الحمض يخثّره قليلاً تماماً مثل اللبن الرائب.' } }] },
+    cream: { n: 'heavy cream', s: 'cream', a: ['milk'], k: ['heavy cream', 'whipping cream', 'cream', 'half-and-half', 'half and half', 'light cream'],
+      ar: { n: 'كريمة طبخ (قشدة ثقيلة)', s: 'الكريمة', k: ['كريمة', 'كريمة طبخ', 'كريمة خفق', 'قشطة', 'قشدة'] },
+      swaps: [{ n: 'full-fat canned coconut milk', s: 'coconut milk', a: [], tip: 'Use 1:1. Shake the can well; adds a light coconut note.',
+        ar: { n: 'حليب جوز الهند المعلّب كامل الدسم', s: 'حليب جوز الهند', tip: 'بنفس الكمية. رجّ العلبة جيداً؛ يضيف نكهة خفيفة من جوز الهند.' } }] },
+    cheddar: { n: 'shredded cheddar', s: 'cheese', a: ['milk'], k: ['cheese', 'cheddar', 'mozzarella', 'monterey jack', 'swiss cheese', 'american cheese', 'colby', 'provolone', 'feta', 'halloumi'],
+      ar: { n: 'جبن شيدر مبشور', s: 'الجبن', k: ['جبن', 'جبنة', 'شيدر', 'موزاريلا', 'موتزاريلا', 'جبنة بيضاء', 'عكاوي', 'حلوم', 'فيتا', 'جبنة نابلسية', 'قشقوان'] },
+      swaps: [{ n: 'dairy-free cheese shreds', s: 'dairy-free cheese', a: [], tip: 'Melts best stirred into a hot sauce. Many are coconut-based; some contain cashew or soy, so check.',
+        ar: { n: 'جبن نباتي مبشور خالٍ من الألبان', s: 'الجبن النباتي', tip: 'يذوب أفضل عند خلطه في صلصة ساخنة. معظمه من جوز الهند، وبعضه يحتوي على الكاجو أو الصويا. بعض "الجبن النباتي" في الأسواق يحتوي على بروتين الحليب، فتأكد أنه خالٍ من الألبان.' } }] },
+    parmesan: { n: 'grated parmesan', s: 'parmesan', a: ['milk'], k: ['parmesan', 'parmigiano', 'pecorino', 'romano'],
+      ar: { n: 'جبن بارميزان مبشور', s: 'البارميزان', k: ['بارميزان', 'بارميجيانو', 'بيكورينو', 'رومانو'] },
+      swaps: [{ n: 'nutritional yeast + a pinch of salt', s: 'nutritional yeast', a: [], tip: 'Use about ¾ of the amount. Adds savory, cheesy flavor.',
+        ar: { n: 'خميرة غذائية + رشة ملح', s: 'الخميرة الغذائية', tip: 'استخدم نحو ¾ الكمية. تضيف نكهة جبن مالحة.' } }] },
+    cream_cheese: { n: 'cream cheese', s: 'cream cheese', a: ['milk'], k: ['cream cheese', 'mascarpone', 'ricotta', 'labneh'],
+      ar: { n: 'جبن كريمي', s: 'الجبن الكريمي', k: ['جبن كريمي', 'جبنة كريمية', 'جبنة فيلادلفيا', 'ماسكاربوني', 'ريكوتا', 'لبنة'] },
+      swaps: [
+        { n: 'oat-based cream cheese', s: 'oat cream cheese', a: [], tip: 'Use 1:1 in spreads and frostings.',
+          ar: { n: 'جبن كريمي من الشوفان', s: 'جبن الشوفان الكريمي', tip: 'بنفس الكمية في الدهن والكريمات.' } },
+        { n: 'cashew cream cheese', s: 'cashew cream cheese', a: ['treenut'], tip: 'Use 1:1. Richest texture.',
+          ar: { n: 'جبن كريمي من الكاجو', s: 'جبن الكاجو الكريمي', tip: 'بنفس الكمية. الأغنى قواماً.' } }
+      ] },
+    yogurt: { n: 'plain yogurt', s: 'yogurt', a: ['milk'], k: ['yogurt', 'yoghurt', 'greek yogurt', 'kefir'],
+      ar: { n: 'زبادي سادة', s: 'الزبادي', k: ['زبادي', 'روب', 'لبن زبادي', 'زبادي يوناني', 'كفير', 'لبن'] },
+      swaps: [
+        { n: 'unsweetened coconut yogurt', s: 'coconut yogurt', a: [], tip: 'Use 1:1.',
+          ar: { n: 'زبادي جوز الهند غير المحلّى', s: 'زبادي جوز الهند', tip: 'بنفس الكمية.' } },
+        { n: 'unsweetened soy yogurt', s: 'soy yogurt', a: ['soy'], tip: 'Use 1:1. Tangier, closest to Greek yogurt.',
+          ar: { n: 'زبادي الصويا غير المحلّى', s: 'زبادي الصويا', tip: 'بنفس الكمية. أكثر حموضة، والأقرب للزبادي اليوناني.' } }
+      ] },
+    sour_cream: { n: 'sour cream', s: 'sour cream', a: ['milk'], k: ['sour cream', 'creme fraiche', 'crème fraîche'],
+      ar: { n: 'قشدة حامضة', s: 'القشدة الحامضة', k: ['قشدة حامضة', 'كريمة حامضة', 'ساور كريم'] },
+      swaps: [{ n: 'coconut yogurt + a squeeze of lime', s: 'lime coconut yogurt', a: [], tip: 'Use 1:1.',
+        ar: { n: 'زبادي جوز الهند + عصرة ليمون', s: 'زبادي جوز الهند بالليمون', tip: 'بنفس الكمية.' } }] },
+    egg_bind: { n: 'eggs in baking & binding', s: 'egg', a: ['egg'], k: ['egg', 'eggs', 'egg yolk', 'egg yolks', 'egg white', 'egg whites', 'large egg', 'large eggs'],
+      ar: { n: 'البيض في المخبوزات والربط', s: 'البيض', k: ['بيض', 'بيضة', 'بيضات', 'صفار البيض', 'بياض البيض'] },
+      swaps: [
+        { n: 'flax egg (1 tbsp ground flaxseed + 3 tbsp water per egg, rested 5 min)', s: 'flax egg', a: [], tip: 'Best binder for cookies, quick breads and meatballs.',
+          ar: { n: 'بيضة الكتان (ملعقة كبيرة بذور كتان مطحونة + 3 ملاعق كبيرة ماء لكل بيضة، تُترك 5 دقائق)', s: 'بيضة الكتان', tip: 'أفضل رابط للكوكيز والكيك السريع وكرات اللحم.' } },
+        { n: 'aquafaba (3 tbsp chickpea can liquid per egg)', s: 'aquafaba', a: [], tip: 'Gives lift in pancakes and cakes.',
+          ar: { n: 'أكوافابا (3 ملاعق كبيرة من ماء علبة الحمص لكل بيضة)', s: 'الأكوافابا', tip: 'تعطي انتفاخاً في البان كيك والكيك.' } },
+        { n: 'unsweetened applesauce (¼ cup per egg)', s: 'applesauce', a: [], tip: 'Adds moisture. Bakes a bit denser.',
+          ar: { n: 'صلصة التفاح غير المحلّاة (¼ كوب لكل بيضة)', s: 'صلصة التفاح', tip: 'تضيف رطوبة، والنتيجة أكثف قليلاً.' } }
+      ] },
+    egg_main: { n: 'scrambled eggs (fried rice, stir-fries)', s: 'egg', a: ['egg'], k: [],
+      ar: { n: 'البيض المخفوق المطهو (الأرز المقلي، القلي السريع)', s: 'البيض', k: [] },
+      swaps: [
+        { n: 'crumbled extra-firm tofu with a pinch of turmeric', s: 'tofu scramble', a: ['soy'], tip: 'Season with a pinch of kala namak (black salt) for an eggy taste.',
+          ar: { n: 'توفو متماسك مفتّت مع رشة كركم', s: 'التوفو المفتّت', tip: 'أضف رشة من الملح الأسود (كالا نمك) لطعم يشبه البيض.' } },
+        { n: 'chickpea-flour "egg" (¼ cup chickpea flour + ¼ cup water + pinch of turmeric per 2 eggs)', s: 'chickpea "egg"', a: [], tip: 'Pour into the pan like an omelet, let it set, then break into pieces.',
+          ar: { n: '"بيض" دقيق الحمص (¼ كوب دقيق حمص + ¼ كوب ماء + رشة كركم لكل بيضتين)', s: '"بيض" الحمص', tip: 'اسكبه في المقلاة كالعجة، واتركه يتماسك، ثم قطّعه.' } }
+      ] },
+    egg_poach: { n: 'whole cooked eggs (shakshuka, poached)', s: 'eggs', a: ['egg'], k: [],
+      ar: { n: 'بيض مطهو كاملاً (الشكشوكة، البيض المسلوق)', s: 'البيض', k: [] },
+      swaps: [
+        { n: 'thick slices of firm tofu', s: 'tofu slices', a: ['soy'], tip: 'Nestle into the sauce and simmer 5 minutes until hot.',
+          ar: { n: 'شرائح سميكة من التوفو المتماسك', s: 'شرائح التوفو', tip: 'ضعها في الصلصة واتركها 5 دقائق حتى تسخن.' } },
+        { n: '1 can chickpeas + 2 handfuls of spinach', s: 'chickpeas and spinach', a: [], tip: 'Stir in and simmer 5 minutes. Not eggy, but makes a hearty egg-free stew.',
+          ar: { n: 'علبة حمص + حفنتان من السبانخ', s: 'الحمص والسبانخ', tip: 'أضفها وقلّب واتركها 5 دقائق. ليست كالبيض، لكنها تجعل الطبق يخنة مشبعة بلا بيض.' } }
+      ] },
+    egg_dip: { n: 'beaten eggs for dipping & coating', s: 'egg', a: ['egg'], k: [],
+      ar: { n: 'بيض مخفوق للغمس والتغليف', s: 'البيض', k: [] },
+      swaps: [{ n: 'chickpea-flour slurry (2 tbsp chickpea flour + 3 tbsp water per egg)', s: 'chickpea slurry', a: [], tip: 'Coats and binds like beaten egg for dredging and dipping.',
+        ar: { n: 'خليط دقيق الحمص (2 ملعقة كبيرة دقيق حمص + 3 ملاعق كبيرة ماء لكل بيضة)', s: 'خليط دقيق الحمص', tip: 'يغلّف ويربط مثل البيض المخفوق في الغمس والتغليف.' } }] },
+    mayo: { n: 'mayonnaise', s: 'mayo', a: ['egg'], k: ['mayonnaise', 'mayo', 'aioli'],
+      ar: { n: 'مايونيز', s: 'المايونيز', k: ['مايونيز', 'مايونيزة', 'ميونيز', 'أيولي'] },
+      swaps: [
+        { n: 'egg-free mayo (aquafaba or pea-protein based)', s: 'egg-free mayo', a: [], tip: 'Use 1:1. Some brands use soy, so check if needed.',
+          ar: { n: 'مايونيز خالٍ من البيض (من الأكوافابا أو بروتين البازلاء)', s: 'المايونيز الخالي من البيض', tip: 'بنفس الكمية. بعض الأنواع تحتوي على الصويا، فافحص إن لزم.' } },
+        { n: 'mashed ripe avocado + lemon juice', s: 'mashed avocado', a: [], tip: 'Use 1:1. Make it fresh; it browns.',
+          ar: { n: 'أفوكادو ناضج مهروس مع عصير ليمون', s: 'الأفوكادو المهروس', tip: 'بنفس الكمية. حضّره طازجاً لأنه يسودّ.' } }
+      ] },
+    flour: { n: 'all-purpose flour', s: 'flour', a: ['wheat'], k: ['flour', 'all-purpose flour', 'all purpose flour', 'bread flour', 'cake flour', 'self-rising flour', 'wheat flour', 'whole wheat flour', 'plain flour'],
+      ar: { n: 'دقيق متعدد الاستعمالات', s: 'الدقيق', k: ['دقيق', 'طحين', 'دقيق متعدد الاستعمالات', 'دقيق أبيض', 'دقيق القمح', 'دقيق أسمر', 'دقيق ذاتي التخمير', 'دقيق الخبز', 'دقيق الكيك'] },
+      swaps: [{ n: 'gluten-free 1:1 baking flour (with xanthan gum)', s: 'gluten-free flour', a: [], tip: 'Use 1:1, ideally by weight. Rest batters 10 minutes so the rice flour hydrates.',
+        ar: { n: 'دقيق خالٍ من الغلوتين للخبز 1:1 (يحتوي على صمغ الزانثان)', s: 'الدقيق الخالي من الغلوتين', tip: 'بنفس الكمية، ويفضَّل بالوزن. اترك الخليط 10 دقائق ليتشرب دقيق الأرز السائل.' } }] },
+    semolina: { n: 'semolina', s: 'semolina', a: ['wheat'], k: ['semolina', 'fine semolina'],
+      ar: { n: 'سميد', s: 'السميد', k: ['سميد', 'سميد ناعم', 'سميد خشن'] },
+      swaps: [{ n: 'fine cornmeal (or half cornmeal, half gluten-free flour)', s: 'fine cornmeal', a: [], tip: 'Use 1:1. Gives the same sandy, golden texture.',
+        ar: { n: 'دقيق ذرة ناعم (أو نصفه دقيق خالٍ من الغلوتين)', s: 'دقيق الذرة الناعم', tip: 'بنفس الكمية. يعطي القوام الرملي الذهبي نفسه.' } }] },
+    breadcrumbs: { n: 'breadcrumbs', s: 'breadcrumbs', a: ['wheat'], m: ['milk', 'egg', 'soy', 'sesame'], k: ['breadcrumbs', 'bread crumbs', 'panko'],
+      ar: { n: 'بقسماط (فتات الخبز)', s: 'البقسماط', k: ['بقسماط', 'فتات الخبز', 'بانكو'] },
+      swaps: [
+        { n: 'gluten-free panko or breadcrumbs', s: 'GF breadcrumbs', a: [], tip: 'Use 1:1. Check for other allergens on the label.',
+          ar: { n: 'بقسماط أو بانكو خالٍ من الغلوتين', s: 'البقسماط الخالي من الغلوتين', tip: 'بنفس الكمية. افحص الملصق لمسببات الحساسية الأخرى.' } },
+        { n: 'crushed gluten-free cornflakes', s: 'crushed cornflakes', a: [], tip: 'Use 1:1. Extra crunchy coating.',
+          ar: { n: 'رقائق ذرة (كورن فليكس) مطحونة خالية من الغلوتين', s: 'رقائق الذرة المطحونة', tip: 'بنفس الكمية. تغليف أكثر قرمشة.' } }
+      ] },
+    pasta: { n: 'pasta', s: 'pasta', a: ['wheat'], k: ['pasta', 'spaghetti', 'macaroni', 'penne', 'fettuccine', 'linguine', 'rigatoni', 'fusilli', 'lasagna noodles', 'noodles', 'vermicelli'],
+      ar: { n: 'باستا (معكرونة)', s: 'الباستا', k: ['باستا', 'معكرونة', 'مكرونة', 'سباغيتي', 'اسباجيتي', 'بيني', 'فيتوتشيني', 'لازانيا', 'نودلز', 'شعيرية', 'لسان عصفور'] },
+      swaps: [
+        { n: 'gluten-free pasta (brown rice or corn)', s: 'gluten-free pasta', a: [], tip: 'Cook 1–2 minutes less than the package says. It firms up as it sits.',
+          ar: { n: 'باستا خالية من الغلوتين (أرز بني أو ذرة)', s: 'الباستا الخالية من الغلوتين', tip: 'اسلقها أقل من مدة العبوة بدقيقة أو اثنتين، فهي تتماسك بعد الطهي.' } },
+        { n: 'chickpea or lentil pasta', s: 'chickpea pasta', a: [], tip: 'Higher protein. Rinse after draining to remove foam.',
+          ar: { n: 'باستا الحمص أو العدس', s: 'باستا الحمص', tip: 'أعلى بروتيناً. اشطفها بعد التصفية لإزالة الرغوة.' } }
+      ] },
+    bread: { n: 'bread', s: 'bread', a: ['wheat'], m: ['milk', 'egg', 'soy', 'sesame'], k: ['bread', 'sandwich bread', 'bun', 'buns', 'bagel', 'pita', 'brioche', 'sourdough'],
+      ar: { n: 'خبز', s: 'الخبز', k: ['خبز', 'خبز عربي', 'خبز توست', 'توست', 'صمون', 'بيتا', 'خبز البرجر', 'باجيت', 'كرواسون'] },
+      swaps: [{ n: 'gluten-free bread (top-allergen-free brand)', s: 'gluten-free bread', a: [], tip: 'Toast or warm it first; GF bread is sturdier warm.',
+        ar: { n: 'خبز خالٍ من الغلوتين (من نوع خالٍ من مسببات الحساسية الرئيسية)', s: 'الخبز الخالي من الغلوتين', tip: 'حمّصه أو سخّنه أولاً؛ يكون أمتن وهو دافئ.' } }] },
+    tortillas: { n: 'flour tortillas', s: 'tortillas', a: ['wheat'], k: ['flour tortilla', 'flour tortillas', 'tortilla', 'tortillas', 'wrap', 'wraps'],
+      ar: { n: 'خبز تورتيلا من الدقيق', s: 'التورتيلا', k: ['تورتيلا', 'خبز التورتيلا', 'خبز الراب', 'راب'] },
+      swaps: [{ n: 'corn tortillas', s: 'corn tortillas', a: [], tip: 'Warm in a dry skillet so they don\'t crack. Choose 100% corn.',
+        ar: { n: 'تورتيلا الذرة', s: 'تورتيلا الذرة', tip: 'سخّنها في مقلاة جافة حتى لا تتشقق. اختر المصنوعة من الذرة 100%.' } }] },
+    croutons: { n: 'croutons', s: 'croutons', a: ['wheat'], m: ['milk'], k: ['croutons'],
+      ar: { n: 'مكعبات خبز محمص (كروتون)', s: 'الكروتون', k: ['كروتون', 'خبز محمص', 'خبز مقلي'] },
+      swaps: [{ n: 'crispy roasted chickpeas', s: 'roasted chickpeas', a: [], tip: 'Roast drained chickpeas with oil and salt at 425°F (220°C) for 20–25 min.',
+        ar: { n: 'حمص محمص مقرمش', s: 'الحمص المحمص', tip: 'حمّص الحمص المصفّى مع الزيت والملح على 220°م لمدة 20–25 دقيقة.' } }] },
+    soy_sauce: { n: 'soy sauce', s: 'soy sauce', a: ['soy', 'wheat'], k: ['soy sauce', 'shoyu', 'teriyaki', 'teriyaki sauce'],
+      ar: { n: 'صلصة الصويا', s: 'صلصة الصويا', k: ['صلصة الصويا', 'صوص الصويا', 'صويا صوص', 'ترياكي', 'صلصة الترياكي'] },
+      swaps: [
+        { n: 'tamari (wheat-free soy sauce)', s: 'tamari', a: ['soy'], tip: 'Use 1:1. Check it says gluten-free.',
+          ar: { n: 'تماري (صلصة صويا خالية من القمح)', s: 'التماري', tip: 'بنفس الكمية. تأكد أنها مكتوب عليها خالية من الغلوتين.' } },
+        { n: 'coconut aminos + a pinch of salt', s: 'coconut aminos', a: [], tip: 'Use 1:1. Sweeter and less salty than soy sauce.',
+          ar: { n: 'كوكونت أمينوز + رشة ملح', s: 'الكوكونت أمينوز', tip: 'بنفس الكمية. أحلى وأقل ملوحة من صلصة الصويا.' } }
+      ] },
+    sesame_oil: { n: 'toasted sesame oil', s: 'sesame oil', a: ['sesame'], k: ['sesame oil', 'toasted sesame oil'],
+      ar: { n: 'زيت سمسم محمص', s: 'زيت السمسم', k: ['زيت السمسم', 'زيت سمسم', 'زيت السيرج', 'سيرج'] },
+      swaps: [{ n: 'avocado or olive oil', s: 'oil', a: [], tip: 'You lose the nutty aroma; extra garlic or green onion makes up for it.',
+        ar: { n: 'زيت أفوكادو أو زيت زيتون', s: 'الزيت', tip: 'ستفقد الرائحة المحمصة؛ عوّضها بمزيد من الثوم أو البصل الأخضر.' } }] },
+    sesame_seeds: { n: 'sesame seeds', s: 'sesame seeds', a: ['sesame'], k: ['sesame seeds', 'sesame'],
+      ar: { n: 'بذور سمسم', s: 'السمسم', k: ['سمسم', 'بذور السمسم'] },
+      swaps: [{ n: 'toasted sunflower seeds or sliced green onion', s: 'sunflower seeds', a: [], tip: 'Use as a garnish 1:1.',
+        ar: { n: 'بذور دوار الشمس المحمصة أو بصل أخضر مقطع', s: 'بذور دوار الشمس', tip: 'للتزيين بنفس الكمية.' } }] },
+    tahini: { n: 'tahini', s: 'tahini', a: ['sesame'], k: ['tahini', 'tahina'],
+      ar: { n: 'طحينة', s: 'الطحينة', k: ['طحينة', 'طحينية'] },
+      swaps: [{ n: 'unsweetened sunflower seed butter', s: 'sunflower seed butter', a: [], tip: 'Use 1:1 and add an extra squeeze of lemon.',
+        ar: { n: 'زبدة بذور دوار الشمس غير المحلّاة', s: 'زبدة بذور دوار الشمس', tip: 'بنفس الكمية مع عصرة ليمون إضافية.' } }] },
+    peanut_butter: { n: 'peanut butter', s: 'peanut butter', a: ['peanut'], k: ['peanut butter'],
+      ar: { n: 'زبدة الفول السوداني', s: 'زبدة الفول السوداني', k: ['زبدة الفول السوداني', 'زبدة فول سوداني', 'زبدة الفستق'] },
+      swaps: [
+        { n: 'sunflower seed butter', s: 'sunflower seed butter', a: [], tip: 'Use 1:1. Several brands are made in peanut-free facilities.',
+          ar: { n: 'زبدة بذور دوار الشمس', s: 'زبدة بذور دوار الشمس', tip: 'بنفس الكمية. عدة أنواع تُصنع في مصانع خالية من الفول السوداني.' } },
+        { n: 'almond butter', s: 'almond butter', a: ['treenut'], tip: 'Use 1:1.',
+          ar: { n: 'زبدة اللوز', s: 'زبدة اللوز', tip: 'بنفس الكمية.' } },
+        { n: 'soy nut butter', s: 'soy nut butter', a: ['soy'], tip: 'Use 1:1.',
+          ar: { n: 'زبدة فول الصويا', s: 'زبدة فول الصويا', tip: 'بنفس الكمية.' } }
+      ] },
+    peanuts: { n: 'roasted peanuts', s: 'peanuts', a: ['peanut'], k: ['peanuts', 'peanut'],
+      ar: { n: 'فول سوداني محمص', s: 'الفول السوداني', k: ['فول سوداني', 'فستق سوداني', 'فستق عبيد'] },
+      swaps: [{ n: 'toasted pumpkin seeds (pepitas)', s: 'pumpkin seeds', a: [], tip: 'Use 1:1 for crunch.',
+        ar: { n: 'بذور اليقطين المحمصة', s: 'بذور اليقطين', tip: 'بنفس الكمية للقرمشة.' } }] },
+    walnuts: { n: 'nuts (walnuts, almonds, pecans…)', s: 'nuts', a: ['treenut'], k: ['walnuts', 'walnut', 'pecans', 'pecan', 'almonds', 'almond', 'cashews', 'cashew', 'hazelnuts', 'hazelnut', 'pistachios', 'pistachio', 'macadamia', 'brazil nuts'],
+      ar: { n: 'مكسرات (جوز، لوز، فستق…)', s: 'المكسرات', k: ['جوز', 'عين الجمل', 'لوز', 'كاجو', 'بندق', 'فستق', 'فستق حلبي', 'بقان', 'مكاديميا', 'مكسرات', 'جوز برازيلي'] },
+      swaps: [{ n: 'toasted sunflower or pumpkin seeds', s: 'toasted seeds', a: [], tip: 'Use 1:1, or simply leave them out.',
+        ar: { n: 'بذور دوار الشمس أو اليقطين المحمصة', s: 'البذور المحمصة', tip: 'بنفس الكمية، أو احذفها ببساطة.' } }] },
+    pine_nuts: { n: 'pine nuts', s: 'pine nuts', a: ['treenut'], k: ['pine nuts', 'pine nut', 'pignoli'],
+      ar: { n: 'صنوبر', s: 'الصنوبر', k: ['صنوبر', 'حب الصنوبر'] },
+      swaps: [{ n: 'toasted sunflower seeds', s: 'sunflower seeds', a: [], tip: 'Use 1:1. Toast them for the best flavor.',
+        ar: { n: 'بذور دوار الشمس المحمصة', s: 'بذور دوار الشمس', tip: 'بنفس الكمية. حمّصها لأفضل نكهة.' } }] },
+    fish_sauce: { n: 'fish sauce', s: 'fish sauce', a: ['fish'], k: ['fish sauce', 'nam pla'],
+      ar: { n: 'صلصة السمك', s: 'صلصة السمك', k: ['صلصة السمك', 'صوص السمك'] },
+      swaps: [
+        { n: 'tamari + a squeeze of lime', s: 'tamari', a: ['soy'], tip: 'Use 1:1.',
+          ar: { n: 'تماري + عصرة ليمون', s: 'التماري', tip: 'بنفس الكمية.' } },
+        { n: 'coconut aminos + a pinch of salt', s: 'coconut aminos', a: [], tip: 'Use 1:1.',
+          ar: { n: 'كوكونت أمينوز + رشة ملح', s: 'الكوكونت أمينوز', tip: 'بنفس الكمية.' } }
+      ] },
+    worcestershire: { n: 'Worcestershire sauce', s: 'Worcestershire', a: ['fish'], k: ['worcestershire', 'worcestershire sauce'],
+      ar: { n: 'صلصة ورشستر', s: 'صلصة ورشستر', k: ['ورشستر', 'صلصة ورشستر', 'وورشستر'] },
+      swaps: [{ n: 'anchovy-free (vegan) Worcestershire sauce', s: 'vegan Worcestershire', a: [], tip: 'Use 1:1. Some brands contain soy or wheat, so check.',
+        ar: { n: 'صلصة ورشستر نباتية (بدون أنشوفة)', s: 'صلصة ورشستر النباتية', tip: 'بنفس الكمية. بعض الأنواع تحتوي على الصويا أو القمح، فافحص الملصق.' } }] },
+    anchovy: { n: 'anchovy fillets', s: 'anchovies', a: ['fish'], k: ['anchovy', 'anchovies', 'anchovy paste'],
+      ar: { n: 'شرائح أنشوفة', s: 'الأنشوفة', k: ['أنشوفة', 'أنشوجة'] },
+      swaps: [{ n: 'chopped capers (1 tsp per 2 fillets)', s: 'capers', a: [], tip: 'Gives the same briny, salty punch.',
+        ar: { n: 'قبّار (كبر) مفروم (ملعقة صغيرة لكل شريحتين)', s: 'القبّار', tip: 'يعطي الطعم المالح اللاذع نفسه.' } }] },
+    shrimp: { n: 'shrimp', s: 'shrimp', a: ['shellfish'], k: ['shrimp', 'prawns', 'prawn', 'crab', 'lobster', 'crawfish', 'crayfish'],
+      ar: { n: 'روبيان (جمبري)', s: 'الروبيان', k: ['روبيان', 'ربيان', 'جمبري', 'قريدس', 'سلطعون', 'كابوريا', 'استاكوزا', 'كركند', 'لوبستر'] },
+      swaps: [
+        { n: 'thinly sliced chicken breast', s: 'chicken', a: [], tip: 'Cook until no longer pink inside, 165°F (74°C), about 4–5 min.',
+          ar: { n: 'صدر دجاج مقطع شرائح رفيعة', s: 'الدجاج', tip: 'اطهه حتى لا يبقى وردياً من الداخل (74°م)، نحو 4–5 دقائق.' } },
+        { n: 'extra-firm tofu cubes', s: 'tofu', a: ['soy'], tip: 'Press and pat dry so it browns.',
+          ar: { n: 'مكعبات توفو متماسك جداً', s: 'التوفو', tip: 'اضغطه وجففه حتى يتحمّر.' } }
+      ] },
+    cod: { n: 'white fish fillets', s: 'fish', a: ['fish'], k: ['fish', 'cod', 'salmon', 'tilapia', 'halibut', 'haddock', 'trout', 'mahi mahi', 'white fish', 'sardines', 'hammour'],
+      ar: { n: 'فيليه سمك أبيض', s: 'السمك', k: ['سمك', 'فيليه سمك', 'هامور', 'سلمون', 'بلطي', 'سمك القد', 'سردين', 'كنعد', 'شعري', 'بوري', 'سبيطي'] },
+      swaps: [
+        { n: 'chicken breast strips', s: 'chicken', a: [], tip: 'Cook 4–5 min per side, to 165°F (74°C).',
+          ar: { n: 'شرائح صدر دجاج', s: 'الدجاج', tip: 'اطهها 4–5 دقائق لكل جهة حتى 74°م.' } },
+        { n: 'cauliflower florets', s: 'cauliflower', a: [], tip: 'Cook until tender and browned, 6–8 min.',
+          ar: { n: 'زهرات قرنبيط', s: 'القرنبيط', tip: 'اطهها حتى تطرى وتتحمّر، 6–8 دقائق.' } }
+      ] },
+    tuna: { n: 'canned tuna', s: 'tuna', a: ['fish'], k: ['tuna'],
+      ar: { n: 'تونة معلّبة', s: 'التونة', k: ['تونة', 'تونا'] },
+      swaps: [{ n: 'mashed chickpeas', s: 'chickpeas', a: [], tip: 'Mash roughly with a fork. A little chopped nori adds sea flavor.',
+        ar: { n: 'حمص مهروس', s: 'الحمص المهروس', tip: 'اهرسه خشناً بالشوكة. قليل من النوري المفروم يضيف نكهة بحرية.' } }] },
+    choc_chips: { n: 'chocolate chips', s: 'chocolate chips', a: ['milk'], m: ['soy', 'treenut', 'peanut'], k: ['chocolate chips', 'chocolate', 'milk chocolate', 'chocolate chunks'],
+      ar: { n: 'رقائق الشوكولاتة', s: 'رقائق الشوكولاتة', k: ['رقائق الشوكولاتة', 'شوكولاتة', 'شوكولاته', 'شوكولاتة بالحليب', 'قطع الشوكولاتة'] },
+      swaps: [{ n: 'top-allergen-free chocolate chips', s: 'allergy-friendly chocolate chips', a: [], tip: 'Several brands are free of all major allergens.',
+        ar: { n: 'رقائق شوكولاتة خالية من مسببات الحساسية الرئيسية', s: 'رقائق الشوكولاتة الآمنة', tip: 'عدة أنواع خالية من كل مسببات الحساسية الرئيسية.' } }] },
+    marinara: { n: 'marinara sauce', s: 'marinara', a: [], m: ['milk'], k: ['marinara', 'pasta sauce', 'tomato sauce'],
+      ar: { n: 'صلصة مارينارا', s: 'صلصة المارينارا', k: ['مارينارا', 'صلصة باستا'] }, swaps: [] },
+    broth: { n: 'vegetable broth', s: 'broth', a: [], m: ['soy', 'wheat'], k: ['broth', 'stock', 'bouillon'],
+      ar: { n: 'مرق خضار', s: 'المرق', k: ['مرق', 'مرقة', 'مكعبات مرق', 'ماجي'] }, swaps: [] },
+    rice_noodles: { n: 'flat rice noodles', s: 'noodles', a: [], m: ['wheat'], k: ['rice noodles'],
+      ar: { n: 'نودلز أرز عريضة', s: 'النودلز', k: ['نودلز الأرز', 'شعيرية الأرز'] }, swaps: [] }
+  };
+
+  // Recipes. Ingredients: [quantity, name, library id or null, Arabic quantity, Arabic name].
+  // Steps reference library ids as {id}; they fill in with whatever the user ends up using.
+  var RECIPES = [
+    { id: 'pancakes', t: 'Fluffy Pancakes', e: '🥞', c: 'Breakfast', time: '20 min', serves: '4',
+      ing: [['1½ cups', 'all-purpose flour', 'flour', '1½ كوب', 'دقيق متعدد الاستعمالات'], ['2 tbsp', 'sugar', null, '2 ملعقة كبيرة', 'سكر'],
+            ['2 tsp', 'baking powder', null, '2 ملعقة صغيرة', 'بيكنج باودر'], ['½ tsp', 'salt', null, '½ ملعقة صغيرة', 'ملح'],
+            ['1¼ cups', 'milk', 'milk', '1¼ كوب', 'حليب'], ['1 large', 'egg', 'egg_bind', '1 كبيرة', 'بيضة'],
+            ['3 tbsp', 'melted butter, plus more for the pan', 'butter', '3 ملاعق كبيرة', 'زبدة مذابة، وكمية إضافية للمقلاة']],
+      steps: ['Whisk the {flour}, sugar, baking powder and salt in a large bowl.',
+              'In another bowl, whisk the {milk}, {egg_bind} and melted {butter}.',
+              'Pour wet into dry and stir until just combined; a few lumps are fine. Rest 5 minutes.',
+              'Heat a skillet over medium heat, grease lightly with {butter}, and pour in ¼-cup portions.',
+              'Flip when bubbles form and the edges look set, about 2 minutes, then cook 1 minute more.'],
+      notes: { wheat: 'Gluten-free pancakes brown faster, so drop the heat slightly.' },
+      ar: { t: 'بان كيك هش', time: '20 دقيقة', serves: '4',
+        steps: ['اخفق {flour} مع السكر والبيكنج باودر والملح في وعاء كبير.',
+                'في وعاء آخر، اخفق {milk} مع {egg_bind} و{butter} المذابة.',
+                'اسكب المكوّنات السائلة على الجافة وقلّب حتى تمتزج فقط؛ لا بأس ببعض الكتل. اتركه 5 دقائق.',
+                'سخّن مقلاة على نار متوسطة، وادهنها قليلاً باستخدام {butter}، ثم صبّ ربع كوب من الخليط لكل قطعة.',
+                'اقلبها عندما تظهر الفقاعات وتتماسك الأطراف، بعد دقيقتين تقريباً، ثم اطهها دقيقة أخرى.'],
+        notes: { wheat: 'البان كيك الخالي من الغلوتين يتحمّر أسرع، فخفّف النار قليلاً.' } } },
+    { id: 'cookies', t: 'Chocolate Chip Cookies', e: '🍪', c: 'Baking', time: '30 min', serves: '24 cookies',
+      ing: [['1 cup', 'softened butter', 'butter', '1 كوب', 'زبدة طرية'], ['¾ cup', 'brown sugar', null, '¾ كوب', 'سكر بني'],
+            ['½ cup', 'white sugar', null, '½ كوب', 'سكر أبيض'], ['1 large', 'egg', 'egg_bind', '1 كبيرة', 'بيضة'],
+            ['2 tsp', 'vanilla extract', null, '2 ملعقة صغيرة', 'خلاصة الفانيليا'], ['2¼ cups', 'all-purpose flour', 'flour', '2¼ كوب', 'دقيق متعدد الاستعمالات'],
+            ['1 tsp', 'baking soda', null, '1 ملعقة صغيرة', 'بيكربونات الصوديوم'], ['½ tsp', 'salt', null, '½ ملعقة صغيرة', 'ملح'],
+            ['1½ cups', 'chocolate chips', 'choc_chips', '1½ كوب', 'رقائق الشوكولاتة']],
+      steps: ['Heat the oven to 375°F (190°C) and line two baking sheets with parchment.',
+              'Beat the {butter} with both sugars until light and fluffy, about 2 minutes.',
+              'Beat in the {egg_bind} and vanilla.',
+              'Stir in the {flour}, baking soda and salt until no dry streaks remain, then fold in the {choc_chips}.',
+              'Scoop tablespoon-size balls 2 inches apart. Bake 9–11 minutes, until the edges are golden.',
+              'Cool 5 minutes on the sheet before moving.'],
+      notes: { wheat: 'Chill gluten-free dough 30 minutes so the cookies don\'t spread too much.', milk: 'With coconut oil, chill the dough 20 minutes before scooping.' },
+      ar: { t: 'كوكيز برقائق الشوكولاتة', time: '30 دقيقة', serves: '24 قطعة',
+        steps: ['سخّن الفرن إلى 190°م (375°ف) وبطّن صينيتين بورق الزبدة.',
+                'اخفق {butter} مع نوعي السكر حتى يصبح الخليط خفيفاً وهشاً، نحو دقيقتين.',
+                'أضف {egg_bind} والفانيليا واخفق.',
+                'أضف {flour} والبيكربونات والملح وقلّب حتى لا تبقى خطوط جافة، ثم أضف {choc_chips} بلطف.',
+                'شكّل كرات بحجم ملعقة كبيرة وضعها بمسافة 5 سم بينها. اخبزها 9–11 دقيقة حتى تتحمّر الأطراف.',
+                'اتركها تبرد 5 دقائق في الصينية قبل نقلها.'],
+        notes: { wheat: 'برّد العجينة الخالية من الغلوتين 30 دقيقة حتى لا تتمدد الكوكيز كثيراً.', milk: 'عند استخدام زيت جوز الهند، برّد العجينة 20 دقيقة قبل التشكيل.' } } },
+    { id: 'mac', t: 'Stovetop Mac & Cheese', e: '🧀', c: 'Mains', time: '25 min', serves: '4',
+      ing: [['8 oz', 'elbow macaroni', 'pasta', '225 غ', 'معكرونة كوع'], ['3 tbsp', 'butter', 'butter', '3 ملاعق كبيرة', 'زبدة'],
+            ['3 tbsp', 'all-purpose flour', 'flour', '3 ملاعق كبيرة', 'دقيق متعدد الاستعمالات'], ['2 cups', 'milk', 'milk', '2 كوب', 'حليب'],
+            ['2 cups', 'shredded cheddar', 'cheddar', '2 كوب', 'جبن شيدر مبشور'], ['½ tsp', 'salt', null, '½ ملعقة صغيرة', 'ملح'],
+            ['¼ tsp', 'mustard powder', null, '¼ ملعقة صغيرة', 'مسحوق الخردل']],
+      steps: ['Cook the {pasta} in well-salted water until just al dente, then drain.',
+              'Melt the {butter} in a saucepan over medium heat. Whisk in the {flour} and cook 1 minute.',
+              'Slowly whisk in the {milk} and simmer, stirring, until thickened, 4–5 minutes.',
+              'Take off the heat and stir in the {cheddar}, salt and mustard powder until smooth.',
+              'Fold in the {pasta} and serve hot.'],
+      notes: { milk: 'Stir 2 tbsp nutritional yeast into the sauce for a sharper, cheesier flavor.' },
+      ar: { t: 'معكرونة بالجبن على الموقد', time: '25 دقيقة', serves: '4',
+        steps: ['اسلق {pasta} في ماء مملّح جيداً حتى تنضج مع بقاء قوامها متماسكاً، ثم صفّها.',
+                'ذوّب {butter} في قدر على نار متوسطة. أضف {flour} مع الخفق واطهه دقيقة واحدة.',
+                'أضف {milk} تدريجياً مع الخفق، واتركه يغلي بهدوء مع التقليب حتى يتكثف، 4–5 دقائق.',
+                'ارفع القدر عن النار وقلّب فيه {cheddar} والملح ومسحوق الخردل حتى يصبح ناعماً.',
+                'أضف {pasta} وقلّب، وقدّمها ساخنة.'],
+        notes: { milk: 'أضف ملعقتين كبيرتين من الخميرة الغذائية إلى الصلصة لنكهة جبن أقوى.' } } },
+    { id: 'meatballs', t: 'Spaghetti & Meatballs', e: '🍝', c: 'Mains', time: '45 min', serves: '4',
+      ing: [['1 lb', 'ground beef', null, '450 غ', 'لحم بقري مفروم'], ['½ cup', 'breadcrumbs', 'breadcrumbs', '½ كوب', 'بقسماط (فتات الخبز)'],
+            ['1 large', 'egg', 'egg_bind', '1 كبيرة', 'بيضة'], ['⅓ cup', 'grated parmesan', 'parmesan', '⅓ كوب', 'جبن بارميزان مبشور'],
+            ['2 cloves', 'garlic, minced', null, '2 فص', 'ثوم مفروم'], ['1 tsp', 'Italian seasoning', null, '1 ملعقة صغيرة', 'خلطة أعشاب إيطالية'],
+            ['½ tsp', 'salt', null, '½ ملعقة صغيرة', 'ملح'], ['3 cups', 'marinara sauce', 'marinara', '3 أكواب', 'صلصة مارينارا'],
+            ['12 oz', 'spaghetti', 'pasta', '340 غ', 'سباغيتي']],
+      steps: ['Gently mix the beef, {breadcrumbs}, {egg_bind}, {parmesan}, garlic, Italian seasoning and salt. Don\'t overwork it.',
+              'Roll into 1½-inch balls and brown in an oiled skillet over medium-high heat, 6–8 minutes, turning.',
+              'Add the {marinara}, cover, and simmer 15 minutes until cooked through (160°F / 71°C).',
+              'Meanwhile, cook the {pasta}. Serve the meatballs and sauce over it.'],
+      ar: { t: 'سباغيتي مع كرات اللحم', time: '45 دقيقة', serves: '4',
+        steps: ['اخلط اللحم مع {breadcrumbs} و{egg_bind} و{parmesan} والثوم والأعشاب والملح بلطف دون إفراط في العجن.',
+                'شكّل كرات بقطر 4 سم تقريباً وحمّرها في مقلاة مدهونة بالزيت على نار متوسطة إلى عالية، 6–8 دقائق مع التقليب.',
+                'أضف {marinara}، وغطِّ المقلاة واتركها تغلي بهدوء 15 دقيقة حتى تنضج تماماً (71°م).',
+                'في الأثناء، اسلق {pasta}، ثم قدّم كرات اللحم والصلصة فوقها.'] } },
+    { id: 'stirfry', t: 'Chicken & Broccoli Stir-Fry', e: '🥦', c: 'Mains', time: '25 min', serves: '4',
+      ing: [['1 lb', 'chicken breast, thinly sliced', null, '450 غ', 'صدر دجاج مقطع شرائح رفيعة'], ['4 cups', 'broccoli florets', null, '4 أكواب', 'زهرات بروكلي'],
+            ['1', 'red bell pepper, sliced', null, '1', 'فلفل رومي أحمر مقطع'], ['3 tbsp', 'soy sauce', 'soy_sauce', '3 ملاعق كبيرة', 'صلصة الصويا'],
+            ['1 tbsp', 'toasted sesame oil', 'sesame_oil', '1 ملعقة كبيرة', 'زيت سمسم محمص'], ['1 tbsp', 'cornstarch', null, '1 ملعقة كبيرة', 'نشا الذرة'],
+            ['2 cloves', 'garlic, minced', null, '2 فص', 'ثوم مفروم'], ['1 tbsp', 'fresh ginger, grated', null, '1 ملعقة كبيرة', 'زنجبيل طازج مبشور'],
+            ['1 tbsp', 'neutral oil', null, '1 ملعقة كبيرة', 'زيت نباتي'], ['1 tbsp', 'sesame seeds', 'sesame_seeds', '1 ملعقة كبيرة', 'بذور سمسم'],
+            ['4 cups', 'cooked rice', null, '4 أكواب', 'أرز مطبوخ']],
+      steps: ['Toss the chicken with 1 tbsp of the {soy_sauce} and the cornstarch.',
+              'Stir the remaining {soy_sauce} with the {sesame_oil} and 3 tbsp water.',
+              'Heat the neutral oil in a wok over high heat. Sear the chicken until cooked through, 5–6 minutes, then remove.',
+              'Stir-fry the broccoli and pepper 3 minutes, then add the garlic and ginger for 30 seconds.',
+              'Return the chicken, pour in the sauce, and toss until glossy.',
+              'Serve over rice, topped with {sesame_seeds}.'],
+      ar: { t: 'دجاج مقلي سريعاً مع البروكلي', time: '25 دقيقة', serves: '4',
+        steps: ['اخلط الدجاج مع ملعقة كبيرة من {soy_sauce} ونشا الذرة.',
+                'اخلط باقي {soy_sauce} مع {sesame_oil} و3 ملاعق كبيرة من الماء.',
+                'سخّن الزيت في مقلاة الووك على نار عالية، وحمّر الدجاج حتى ينضج تماماً، 5–6 دقائق، ثم ارفعه.',
+                'قلّب البروكلي والفلفل 3 دقائق، ثم أضف الثوم والزنجبيل لمدة 30 ثانية.',
+                'أعد الدجاج، واسكب الصلصة، وقلّب حتى يلمع.',
+                'قدّمه فوق الأرز مع رشّة من {sesame_seeds}.'] } },
+    { id: 'shawarma', t: 'Chicken Shawarma Wraps', e: '🌯', c: 'Mains', time: '40 min + marinating', serves: '4',
+      ing: [['1½ lb', 'boneless chicken thighs', null, '680 غ', 'أفخاذ دجاج منزوعة العظم'], ['½ cup', 'plain yogurt', 'yogurt', '½ كوب', 'زبادي سادة'],
+            ['2 tbsp', 'lemon juice', null, '2 ملعقة كبيرة', 'عصير ليمون'], ['3 cloves', 'garlic, grated', null, '3 فصوص', 'ثوم مبشور'],
+            ['2 tsp', 'shawarma spice mix', null, '2 ملعقة صغيرة', 'بهارات شاورما'], ['1 tsp', 'salt', null, '1 ملعقة صغيرة', 'ملح'],
+            ['¼ cup', 'tahini', 'tahini', '¼ كوب', 'طحينة'], ['4', 'large pita breads', 'bread', '4', 'أرغفة خبز عربي كبيرة'],
+            ['', 'pickles, tomato and lettuce', null, '', 'مخلل وطماطم وخس']],
+      steps: ['Mix the {yogurt}, lemon juice, garlic, spices and salt. Coat the chicken and marinate at least 1 hour (or overnight in the fridge).',
+              'Cook the chicken in a hot oiled pan or on a grill, 5–6 minutes per side, until cooked through (165°F / 74°C). Rest 5 minutes, then slice thinly.',
+              'Whisk the {tahini} with 3 tbsp water, a squeeze of lemon and a pinch of salt to make a sauce.',
+              'Warm the {bread}, then fill with chicken, the sauce, pickles, tomato and lettuce. Roll up tightly.'],
+      notes: { sesame: 'Ready-made shawarma spice mixes sometimes contain sesame. Check the label or mix your own (cumin, coriander, paprika, cinnamon, cardamom, black pepper).' },
+      ar: { t: 'لفائف شاورما الدجاج', time: '40 دقيقة + وقت التتبيل', serves: '4',
+        steps: ['اخلط {yogurt} وعصير الليمون والثوم والبهارات والملح. غلّف الدجاج بالخليط واتركه يتتبّل ساعة على الأقل (أو ليلة كاملة في الثلاجة).',
+                'اطهُ الدجاج في مقلاة ساخنة مدهونة بالزيت أو على الشواية، 5–6 دقائق لكل جهة، حتى ينضج تماماً (74°م). اتركه 5 دقائق ثم قطّعه شرائح رفيعة.',
+                'اخفق {tahini} مع 3 ملاعق كبيرة ماء وعصرة ليمون ورشة ملح لتحضير الصلصة.',
+                'سخّن {bread}، ثم احشه بالدجاج والصلصة والمخلل والطماطم والخس، ولفّه بإحكام.'],
+        notes: { sesame: 'خلطات بهارات الشاورما الجاهزة قد تحتوي على السمسم. افحص الملصق أو حضّر خلطتك (كمون، كزبرة، بابريكا، قرفة، هيل، فلفل أسود).' } } },
+    { id: 'padthai', t: 'Shrimp Pad Thai', e: '🍜', c: 'Mains', time: '30 min', serves: '3',
+      ing: [['8 oz', 'flat rice noodles', 'rice_noodles', '225 غ', 'نودلز أرز عريضة'], ['8 oz', 'shrimp, peeled', 'shrimp', '225 غ', 'روبيان مقشّر'],
+            ['2 large', 'eggs', 'egg_main', '2 كبيرة', 'بيض'], ['3 tbsp', 'fish sauce', 'fish_sauce', '3 ملاعق كبيرة', 'صلصة السمك'],
+            ['2 tbsp', 'tamarind paste', null, '2 ملعقة كبيرة', 'معجون التمر الهندي'], ['2 tbsp', 'brown sugar', null, '2 ملعقة كبيرة', 'سكر بني'],
+            ['2 tbsp', 'neutral oil', null, '2 ملعقة كبيرة', 'زيت نباتي'], ['2 cloves', 'garlic, minced', null, '2 فص', 'ثوم مفروم'],
+            ['1 cup', 'bean sprouts', null, '1 كوب', 'براعم الفاصوليا'], ['3', 'green onions, cut in 1-inch pieces', null, '3', 'أعواد بصل أخضر مقطعة قطعاً بطول 2.5 سم'],
+            ['¼ cup', 'roasted peanuts, chopped', 'peanuts', '¼ كوب', 'فول سوداني محمص مفروم'], ['1', 'lime, in wedges', null, '1', 'ليمونة مقطعة شرائح']],
+      steps: ['Soak the {rice_noodles} in hot water 8–10 minutes until pliable, then drain.',
+              'Whisk the {fish_sauce}, tamarind and brown sugar.',
+              'Heat the oil in a wok over high heat. Cook the garlic 20 seconds, then add the {shrimp} and cook through.',
+              'Push everything to one side, add the {egg_main} and cook until just set, then break it up.',
+              'Add the noodles and sauce and toss 2–3 minutes, then toss in the sprouts and green onions.',
+              'Top with {peanuts} and serve with lime wedges.'],
+      ar: { t: 'باد تاي بالروبيان', time: '30 دقيقة', serves: '3',
+        steps: ['انقع {rice_noodles} في ماء ساخن 8–10 دقائق حتى تلين، ثم صفّها.',
+                'اخفق {fish_sauce} مع التمر الهندي والسكر البني.',
+                'سخّن الزيت في الووك على نار عالية. قلّب الثوم 20 ثانية، ثم أضف {shrimp} واطهه حتى ينضج.',
+                'ادفع المكوّنات إلى جانب، وأضف {egg_main} واتركه حتى يتماسك بالكاد، ثم قطّعه.',
+                'أضف النودلز والصلصة وقلّب 2–3 دقائق، ثم أضف البراعم والبصل الأخضر.',
+                'رشّ فوقه {peanuts} وقدّمه مع شرائح الليمون.'] } },
+    { id: 'pesto', t: 'Basil Pesto Pasta', e: '🌿', c: 'Mains', time: '20 min', serves: '4',
+      ing: [['12 oz', 'pasta', 'pasta', '340 غ', 'باستا'], ['2 cups', 'fresh basil leaves, packed', null, '2 كوب', 'أوراق ريحان طازجة مضغوطة'],
+            ['⅓ cup', 'pine nuts', 'pine_nuts', '⅓ كوب', 'صنوبر'], ['½ cup', 'grated parmesan', 'parmesan', '½ كوب', 'جبن بارميزان مبشور'],
+            ['½ cup', 'olive oil', null, '½ كوب', 'زيت زيتون'], ['2 cloves', 'garlic', null, '2 فص', 'ثوم'],
+            ['1 tbsp', 'lemon juice', null, '1 ملعقة كبيرة', 'عصير ليمون'], ['', 'salt to taste', null, '', 'ملح حسب الرغبة']],
+      steps: ['Cook the {pasta}, saving ½ cup of the cooking water before draining.',
+              'Toast the {pine_nuts} in a dry skillet over medium heat for 2–3 minutes until golden.',
+              'Blend the basil, toasted {pine_nuts}, garlic and lemon juice until chopped, then stream in the olive oil.',
+              'Stir in the {parmesan} and salt to taste.',
+              'Toss with the {pasta}, adding splashes of pasta water until glossy.'],
+      ar: { t: 'باستا بصلصة البيستو والريحان', time: '20 دقيقة', serves: '4',
+        steps: ['اسلق {pasta} واحتفظ بنصف كوب من ماء السلق قبل التصفية.',
+                'حمّص {pine_nuts} في مقلاة جافة على نار متوسطة 2–3 دقائق حتى يذهبّ لونه.',
+                'اخلط الريحان و{pine_nuts} المحمص والثوم وعصير الليمون في الخلاط حتى يُفرم، ثم أضف زيت الزيتون تدريجياً.',
+                'أضف {parmesan} والملح حسب الرغبة.',
+                'اخلطها مع {pasta}، وأضف قليلاً من ماء السلق حتى تلمع.'] } },
+    { id: 'tacos', t: 'Crispy Fish Tacos', e: '🌮', c: 'Mains', time: '25 min', serves: '4',
+      ing: [['1 lb', 'cod fillets', 'cod', '450 غ', 'فيليه سمك أبيض'], ['½ cup', 'all-purpose flour', 'flour', '½ كوب', 'دقيق متعدد الاستعمالات'],
+            ['1 tsp', 'chili powder', null, '1 ملعقة صغيرة', 'بودرة الفلفل الحار'], ['½ tsp', 'salt', null, '½ ملعقة صغيرة', 'ملح'],
+            ['2 tbsp', 'neutral oil', null, '2 ملعقة كبيرة', 'زيت نباتي'], ['8', 'small flour tortillas', 'tortillas', '8', 'خبز تورتيلا صغير من الدقيق'],
+            ['2 cups', 'shredded cabbage', null, '2 كوب', 'ملفوف مفروم'], ['½ cup', 'sour cream', 'sour_cream', '½ كوب', 'قشدة حامضة'],
+            ['1', 'lime', null, '1', 'ليمونة'], ['', 'fresh cilantro', null, '', 'كزبرة طازجة']],
+      steps: ['Cut the {cod} into strips and pat dry.',
+              'Mix the {flour}, chili powder and salt, then dredge the strips.',
+              'Pan-fry in the oil over medium-high heat until golden and cooked through.',
+              'Stir the juice of half the lime into the {sour_cream}.',
+              'Warm the {tortillas}, then fill with cabbage, the crispy strips, the sauce and cilantro.'],
+      ar: { t: 'تاكو السمك المقرمش', time: '25 دقيقة', serves: '4',
+        steps: ['قطّع {cod} أصابع وجففه بالمناديل.',
+                'اخلط {flour} مع بودرة الفلفل والملح، ثم غلّف الأصابع بالخليط.',
+                'اقلها في الزيت على نار متوسطة إلى عالية حتى تتحمّر وتنضج تماماً.',
+                'اخلط عصير نصف ليمونة مع {sour_cream}.',
+                'سخّن {tortillas}، ثم احشها بالملفوف والأصابع المقرمشة والصلصة والكزبرة.'] } },
+    { id: 'tenders', t: 'Baked Chicken Tenders', e: '🍗', c: 'Mains', time: '30 min', serves: '4',
+      ing: [['1½ lb', 'chicken tenders', null, '680 غ', 'أصابع صدر دجاج'], ['½ cup', 'all-purpose flour', 'flour', '½ كوب', 'دقيق متعدد الاستعمالات'],
+            ['2 large', 'eggs, beaten', 'egg_dip', '2 كبيرة', 'بيض مخفوق'], ['1½ cups', 'panko breadcrumbs', 'breadcrumbs', '1½ كوب', 'بقسماط بانكو'],
+            ['½ tsp', 'garlic powder', null, '½ ملعقة صغيرة', 'بودرة الثوم'], ['1 tsp', 'salt', null, '1 ملعقة صغيرة', 'ملح'],
+            ['', 'cooking spray', null, '', 'بخاخ زيت للطهي']],
+      steps: ['Heat the oven to 425°F (220°C) and set a rack on a baking sheet.',
+              'Season the {flour} with the salt and garlic powder.',
+              'Dredge each tender in the {flour}, dip in the {egg_dip}, then press into the {breadcrumbs}.',
+              'Arrange on the rack and mist with cooking spray.',
+              'Bake 18–20 minutes, flipping halfway, until cooked through (165°F / 74°C).'],
+      ar: { t: 'أصابع الدجاج المخبوزة', time: '30 دقيقة', serves: '4',
+        steps: ['سخّن الفرن إلى 220°م (425°ف) وضع شبكة فوق صينية خبز.',
+                'تبّل {flour} بالملح وبودرة الثوم.',
+                'مرّر كل قطعة دجاج في {flour}، ثم اغمسها في {egg_dip}، ثم اضغطها في {breadcrumbs}.',
+                'رتّبها على الشبكة ورشّها ببخاخ الزيت.',
+                'اخبزها 18–20 دقيقة مع قلبها في المنتصف حتى تنضج تماماً (74°م).'] } },
+    { id: 'friedrice', t: 'Shrimp Fried Rice', e: '🍤', c: 'Mains', time: '20 min', serves: '4',
+      ing: [['3 cups', 'cold cooked rice', null, '3 أكواب', 'أرز مطبوخ بارد'], ['8 oz', 'shrimp, peeled', 'shrimp', '225 غ', 'روبيان مقشّر'],
+            ['2 large', 'eggs', 'egg_main', '2 كبيرة', 'بيض'], ['1 cup', 'frozen peas and carrots', null, '1 كوب', 'بازلاء وجزر مجمّد'],
+            ['3', 'green onions, sliced', null, '3', 'أعواد بصل أخضر مقطعة'], ['2 tbsp', 'soy sauce', 'soy_sauce', '2 ملعقة كبيرة', 'صلصة الصويا'],
+            ['1 tsp', 'toasted sesame oil', 'sesame_oil', '1 ملعقة صغيرة', 'زيت سمسم محمص'], ['2 tbsp', 'neutral oil', null, '2 ملعقة كبيرة', 'زيت نباتي'],
+            ['2 cloves', 'garlic, minced', null, '2 فص', 'ثوم مفروم']],
+      steps: ['Heat 1 tbsp neutral oil in a wok over high heat. Cook the {shrimp} until cooked through, then set aside.',
+              'Add the {egg_main} and cook until just set, breaking into pieces. Set aside.',
+              'Add the remaining oil, the garlic and peas and carrots; stir-fry 2 minutes.',
+              'Add the rice, pressing it against the pan, and fry 3–4 minutes until hot and slightly crisp.',
+              'Return the {shrimp} and {egg_main}, add the {soy_sauce} and {sesame_oil}, and toss with the green onions.'],
+      ar: { t: 'أرز مقلي بالروبيان', time: '20 دقيقة', serves: '4',
+        steps: ['سخّن ملعقة كبيرة من الزيت في الووك على نار عالية، واطهُ {shrimp} حتى ينضج، ثم ضعه جانباً.',
+                'أضف {egg_main} واتركه حتى يتماسك بالكاد، ثم قطّعه وضعه جانباً.',
+                'أضف باقي الزيت والثوم والبازلاء والجزر، وقلّب دقيقتين.',
+                'أضف الأرز واضغطه على قاع المقلاة، وقلّبه 3–4 دقائق حتى يسخن ويتحمّص قليلاً.',
+                'أعد {shrimp} و{egg_main}، وأضف {soy_sauce} و{sesame_oil}، وقلّب مع البصل الأخضر.'] } },
+    { id: 'shakshuka', t: 'Shakshuka', e: '🍳', c: 'Breakfast', time: '30 min', serves: '4',
+      ing: [['2 tbsp', 'olive oil', null, '2 ملعقة كبيرة', 'زيت زيتون'], ['1', 'onion, diced', null, '1', 'بصلة مفرومة'],
+            ['1', 'red bell pepper, diced', null, '1', 'فلفل رومي أحمر مفروم'], ['3 cloves', 'garlic, minced', null, '3 فصوص', 'ثوم مفروم'],
+            ['1 tsp', 'ground cumin', null, '1 ملعقة صغيرة', 'كمون مطحون'], ['1 tsp', 'paprika', null, '1 ملعقة صغيرة', 'بابريكا'],
+            ['28 oz', 'canned crushed tomatoes', null, '800 غ', 'طماطم مهروسة معلّبة'], ['4–6 large', 'eggs', 'egg_poach', '4–6 كبيرة', 'بيض'],
+            ['', 'salt and chopped parsley', null, '', 'ملح وبقدونس مفروم'], ['', 'pita bread, to serve', 'bread', '', 'خبز عربي للتقديم']],
+      steps: ['Heat the oil in a wide skillet over medium heat. Cook the onion and pepper until soft, 6–8 minutes.',
+              'Add the garlic, cumin and paprika and stir for 1 minute.',
+              'Pour in the tomatoes, season with salt and simmer 10 minutes until slightly thick.',
+              'Make small wells in the sauce, add the {egg_poach}, cover, and simmer 5–8 minutes until cooked to your liking.',
+              'Sprinkle with parsley and serve from the pan with {bread}.'],
+      ar: { t: 'شكشوكة', time: '30 دقيقة', serves: '4',
+        steps: ['سخّن الزيت في مقلاة واسعة على نار متوسطة، وقلّب البصل والفلفل حتى يطريا، 6–8 دقائق.',
+                'أضف الثوم والكمون والبابريكا وقلّب دقيقة واحدة.',
+                'أضف الطماطم وتبّل بالملح واتركها تغلي بهدوء 10 دقائق حتى تتكثف قليلاً.',
+                'اصنع تجاويف صغيرة في الصلصة، وضع فيها {egg_poach}، وغطِّ المقلاة واتركها 5–8 دقائق حتى تنضج حسب رغبتك.',
+                'رشّ البقدونس وقدّمها في المقلاة مع {bread}.'] } },
+    { id: 'frenchtoast', t: 'French Toast', e: '🍞', c: 'Breakfast', time: '20 min', serves: '4',
+      ing: [['8 slices', 'thick-cut bread', 'bread', '8 شرائح', 'خبز توست سميك'], ['3 large', 'eggs', 'egg_dip', '3 كبيرة', 'بيض'],
+            ['¾ cup', 'milk', 'milk', '¾ كوب', 'حليب'], ['1 tsp', 'cinnamon', null, '1 ملعقة صغيرة', 'قرفة'],
+            ['1 tsp', 'vanilla extract', null, '1 ملعقة صغيرة', 'خلاصة الفانيليا'], ['2 tbsp', 'butter', 'butter', '2 ملعقة كبيرة', 'زبدة'],
+            ['', 'maple syrup, to serve', null, '', 'شراب القيقب أو العسل للتقديم']],
+      steps: ['Whisk the {egg_dip}, {milk}, cinnamon and vanilla in a shallow dish.',
+              'Melt some of the {butter} in a skillet over medium heat.',
+              'Dip each slice of {bread} for about 10 seconds per side.',
+              'Cook 2–3 minutes per side until golden, adding {butter} as needed. Serve with maple syrup.'],
+      notes: { wheat: 'Gluten-free bread soaks up liquid fast; dip it quickly and use slightly stale slices.' },
+      ar: { t: 'توست فرنسي', time: '20 دقيقة', serves: '4',
+        steps: ['اخفق {egg_dip} مع {milk} والقرفة والفانيليا في طبق مسطح.',
+                'ذوّب قليلاً من {butter} في مقلاة على نار متوسطة.',
+                'اغمس كل شريحة من {bread} نحو 10 ثوانٍ لكل جهة.',
+                'اطهها 2–3 دقائق لكل جهة حتى تتحمّر، وأضف {butter} عند الحاجة. قدّمها مع شراب القيقب أو العسل.'],
+        notes: { wheat: 'الخبز الخالي من الغلوتين يمتص السائل بسرعة؛ اغمسه سريعاً واستخدم شرائح من اليوم السابق.' } } },
+    { id: 'smoothie', t: 'Peanut Butter Banana Smoothie', e: '🥤', c: 'Breakfast', time: '5 min', serves: '2',
+      ing: [['2', 'ripe bananas, frozen', null, '2', 'موز ناضج مجمّد'], ['2 tbsp', 'peanut butter', 'peanut_butter', '2 ملعقة كبيرة', 'زبدة الفول السوداني'],
+            ['1 cup', 'milk', 'milk', '1 كوب', 'حليب'], ['½ cup', 'plain yogurt', 'yogurt', '½ كوب', 'زبادي سادة'],
+            ['1 tbsp', 'honey', null, '1 ملعقة كبيرة', 'عسل'], ['½ cup', 'ice', null, '½ كوب', 'ثلج']],
+      steps: ['Add the {milk} and {yogurt} to the blender first, then the bananas, {peanut_butter}, honey and ice.',
+              'Blend until completely smooth, about 45 seconds.',
+              'Taste, and add more honey or a splash of {milk} to adjust.'],
+      ar: { t: 'سموذي الموز وزبدة الفول السوداني', time: '5 دقائق', serves: '2',
+        steps: ['ضع {milk} و{yogurt} في الخلاط أولاً، ثم الموز و{peanut_butter} والعسل والثلج.',
+                'اخلط حتى يصبح ناعماً تماماً، نحو 45 ثانية.',
+                'تذوّقه، وأضف مزيداً من العسل أو قليلاً من {milk} حسب الرغبة.'] } },
+    { id: 'bananabread', t: 'Banana Bread', e: '🍌', c: 'Baking', time: '70 min', serves: '10 slices',
+      ing: [['3', 'very ripe bananas', null, '3', 'موز ناضج جداً'], ['⅓ cup', 'melted butter', 'butter', '⅓ كوب', 'زبدة مذابة'],
+            ['¾ cup', 'sugar', null, '¾ كوب', 'سكر'], ['1 large', 'egg', 'egg_bind', '1 كبيرة', 'بيضة'],
+            ['1 tsp', 'vanilla extract', null, '1 ملعقة صغيرة', 'خلاصة الفانيليا'], ['1 tsp', 'baking soda', null, '1 ملعقة صغيرة', 'بيكربونات الصوديوم'],
+            ['pinch', 'salt', null, 'رشة', 'ملح'], ['1½ cups', 'all-purpose flour', 'flour', '1½ كوب', 'دقيق متعدد الاستعمالات'],
+            ['½ cup', 'chopped walnuts', 'walnuts', '½ كوب', 'جوز مفروم']],
+      steps: ['Heat the oven to 350°F (175°C) and grease a 9×5-inch loaf pan.',
+              'Mash the bananas, then stir in the {butter}, sugar, {egg_bind} and vanilla.',
+              'Sprinkle in the baking soda and salt and stir, then fold in the {flour} until no streaks remain.',
+              'Fold in the {walnuts} and pour into the pan.',
+              'Bake 55–65 minutes, until a skewer comes out clean. Cool 10 minutes before slicing.'],
+      notes: { wheat: 'Gluten-free loaves may need 5–10 extra minutes; tent with foil if the top browns too fast.' },
+      ar: { t: 'كيك الموز', time: '70 دقيقة', serves: '10 شرائح',
+        steps: ['سخّن الفرن إلى 175°م (350°ف) وادهن قالب كيك مستطيلاً (23×13 سم).',
+                'اهرس الموز، ثم أضف {butter} والسكر و{egg_bind} والفانيليا وقلّب.',
+                'رشّ البيكربونات والملح وقلّب، ثم أضف {flour} بلطف حتى لا تبقى خطوط جافة.',
+                'أضف {walnuts} واسكب الخليط في القالب.',
+                'اخبزه 55–65 دقيقة حتى يخرج العود نظيفاً. اتركه يبرد 10 دقائق قبل التقطيع.'],
+        notes: { wheat: 'قد يحتاج الكيك الخالي من الغلوتين 5–10 دقائق إضافية؛ غطِّه بورق القصدير إذا تحمّر سطحه بسرعة.' } } },
+    { id: 'basbousa', t: 'Basbousa (Semolina Cake)', e: '🍯', c: 'Baking', time: '50 min + soaking', serves: '12 pieces',
+      ing: [['1 cup', 'fine semolina', 'semolina', '1 كوب', 'سميد ناعم'], ['½ cup', 'sugar', null, '½ كوب', 'سكر'],
+            ['½ cup', 'unsweetened shredded coconut', null, '½ كوب', 'جوز هند مبشور غير محلّى'], ['¾ cup', 'plain yogurt', 'yogurt', '¾ كوب', 'زبادي سادة'],
+            ['½ cup', 'melted butter or ghee', 'butter', '½ كوب', 'زبدة مذابة أو سمن'], ['1 tsp', 'baking powder', null, '1 ملعقة صغيرة', 'بيكنج باودر'],
+            ['', 'almonds, to decorate', 'walnuts', '', 'لوز للتزيين'], ['1 cup', 'sugar (for the syrup)', null, '1 كوب', 'سكر (للقطر)'],
+            ['½ cup', 'water', null, '½ كوب', 'ماء'], ['1 tsp', 'lemon juice', null, '1 ملعقة صغيرة', 'عصير ليمون'],
+            ['1 tsp', 'rose or orange blossom water (optional)', null, '1 ملعقة صغيرة', 'ماء ورد أو ماء زهر (اختياري)']],
+      steps: ['Make the syrup first: boil the sugar and water 5 minutes, add the lemon juice and rose water, and let it cool completely.',
+              'Heat the oven to 350°F (180°C) and grease an 8-inch (20 cm) pan.',
+              'Mix the {semolina}, sugar, coconut and baking powder, then stir in the {yogurt} and melted {butter} until evenly moist.',
+              'Spread into the pan, smooth the top and score into diamonds. Top each piece with a little {walnuts}.',
+              'Bake 30–35 minutes until golden. Pour the cool syrup over the hot cake and let it soak at least 1 hour before serving.'],
+      notes: { wheat: 'Gluten-free basbousa is more delicate; let it cool fully in the pan before cutting.' },
+      ar: { t: 'بسبوسة', time: '50 دقيقة + وقت التشرّب', serves: '12 قطعة',
+        steps: ['حضّر القطر أولاً: اغلِ السكر والماء 5 دقائق، ثم أضف عصير الليمون وماء الورد واتركه يبرد تماماً.',
+                'سخّن الفرن إلى 180°م (350°ف) وادهن صينية قطرها 20 سم.',
+                'اخلط {semolina} والسكر وجوز الهند والبيكنج باودر، ثم أضف {yogurt} و{butter} المذابة وقلّب حتى يتجانس.',
+                'افرد الخليط في الصينية وسوِّ سطحه، وقطّعه على شكل معيّنات. ضع قليلاً من {walnuts} على كل قطعة.',
+                'اخبزها 30–35 دقيقة حتى يذهبّ لونها. اسكب القطر البارد على البسبوسة الساخنة واتركها تتشرب ساعة على الأقل قبل التقديم.'],
+        notes: { wheat: 'البسبوسة الخالية من الغلوتين أكثر هشاشة؛ اتركها تبرد تماماً في الصينية قبل التقطيع.' } } },
+    { id: 'hummus', t: 'Classic Hummus', e: '🥙', c: 'Snacks', time: '10 min', serves: '6',
+      ing: [['1 can (15 oz)', 'chickpeas, drained', null, '1 علبة (425 غ)', 'حمص حب مصفّى'], ['¼ cup', 'tahini', 'tahini', '¼ كوب', 'طحينة'],
+            ['3 tbsp', 'lemon juice', null, '3 ملاعق كبيرة', 'عصير ليمون'], ['1 clove', 'garlic', null, '1 فص', 'ثوم'],
+            ['2 tbsp', 'olive oil', null, '2 ملعقة كبيرة', 'زيت زيتون'], ['½ tsp', 'ground cumin', null, '½ ملعقة صغيرة', 'كمون مطحون'],
+            ['½ tsp', 'salt', null, '½ ملعقة صغيرة', 'ملح'], ['2–4 tbsp', 'ice water', null, '2–4 ملاعق كبيرة', 'ماء مثلج']],
+      steps: ['Blend the {tahini} and lemon juice for 1 minute until whipped and pale.',
+              'Add the garlic, cumin, salt and olive oil and blend again.',
+              'Add the chickpeas and blend 2 minutes, scraping down the sides.',
+              'With the motor running, add ice water a spoonful at a time until silky. Serve drizzled with oil.'],
+      notes: { sesame: 'Sunflower seed butter can turn hummus slightly green as it sits. That\'s a harmless reaction and it\'s still safe to eat.' },
+      ar: { t: 'حمص كلاسيكي', time: '10 دقائق', serves: '6',
+        steps: ['اخلط {tahini} مع عصير الليمون في الخلاط دقيقة واحدة حتى يصبح فاتح اللون وكريمياً.',
+                'أضف الثوم والكمون والملح وزيت الزيتون واخلط مجدداً.',
+                'أضف الحمص واخلط دقيقتين مع كشط الجوانب.',
+                'والخلاط يعمل، أضف الماء المثلج ملعقة بعد ملعقة حتى يصبح ناعماً كالحرير. قدّمه مع رشة زيت.'],
+        notes: { sesame: 'قد يميل الحمص المحضّر بزبدة بذور دوار الشمس إلى اللون الأخضر قليلاً مع الوقت. هذا تفاعل غير ضار ويبقى آمناً للأكل.' } } },
+    { id: 'tuna', t: 'Tuna Salad Sandwich', e: '🥪', c: 'Lunch', time: '10 min', serves: '2',
+      ing: [['1 can (5 oz)', 'tuna, drained', 'tuna', '1 علبة (140 غ)', 'تونة مصفّاة'], ['3 tbsp', 'mayonnaise', 'mayo', '3 ملاعق كبيرة', 'مايونيز'],
+            ['1 stalk', 'celery, diced', null, '1 عود', 'كرفس مقطع مكعبات'], ['1 tbsp', 'lemon juice', null, '1 ملعقة كبيرة', 'عصير ليمون'],
+            ['', 'salt and pepper', null, '', 'ملح وفلفل'], ['4 slices', 'sandwich bread', 'bread', '4 شرائح', 'خبز توست'],
+            ['', 'lettuce leaves', null, '', 'أوراق خس']],
+      steps: ['Flake the {tuna} into a bowl.',
+              'Mix in the {mayo}, celery, lemon juice, salt and pepper.',
+              'Spread onto the {bread}, add lettuce, and close the sandwiches.'],
+      ar: { t: 'ساندويتش سلطة التونة', time: '10 دقائق', serves: '2',
+        steps: ['فتّت {tuna} في وعاء.',
+                'أضف {mayo} والكرفس وعصير الليمون والملح والفلفل واخلط.',
+                'افرد الخليط على {bread}، وأضف الخس، وأغلق الساندويتشات.'] } },
+    { id: 'caesar', t: 'Caesar Salad', e: '🥗', c: 'Salads & Soups', time: '15 min', serves: '4',
+      ing: [['2 heads', 'romaine, chopped', null, '2 رأس', 'خس روماني مقطع'], ['⅓ cup', 'mayonnaise', 'mayo', '⅓ كوب', 'مايونيز'],
+            ['2', 'anchovy fillets, minced', 'anchovy', '2', 'شريحة أنشوفة مفرومة'], ['1 tsp', 'Worcestershire sauce', 'worcestershire', '1 ملعقة صغيرة', 'صلصة ورشستر'],
+            ['2 tbsp', 'lemon juice', null, '2 ملعقة كبيرة', 'عصير ليمون'], ['1 clove', 'garlic, grated', null, '1 فص', 'ثوم مبشور'],
+            ['⅓ cup', 'grated parmesan', 'parmesan', '⅓ كوب', 'جبن بارميزان مبشور'], ['2 cups', 'croutons', 'croutons', '2 كوب', 'مكعبات خبز محمص (كروتون)'],
+            ['', 'black pepper', null, '', 'فلفل أسود']],
+      steps: ['Whisk the {mayo}, {anchovy}, {worcestershire}, lemon juice, garlic and half the {parmesan}. Season with pepper.',
+              'Toss the romaine with the dressing.',
+              'Top with the {croutons} and the remaining {parmesan}.'],
+      ar: { t: 'سلطة سيزر', time: '15 دقيقة', serves: '4',
+        steps: ['اخفق {mayo} و{anchovy} و{worcestershire} وعصير الليمون والثوم ونصف كمية {parmesan}، وتبّل بالفلفل.',
+                'اخلط الخس مع الصلصة.',
+                'وزّع فوقها {croutons} وباقي {parmesan}.'] } },
+    { id: 'tomatosoup', t: 'Creamy Tomato Soup', e: '🍅', c: 'Salads & Soups', time: '35 min', serves: '4',
+      ing: [['2 tbsp', 'butter', 'butter', '2 ملعقة كبيرة', 'زبدة'], ['1', 'onion, chopped', null, '1', 'بصلة مفرومة'],
+            ['2 cloves', 'garlic', null, '2 فص', 'ثوم'], ['28 oz', 'canned crushed tomatoes', null, '800 غ', 'طماطم مهروسة معلّبة'],
+            ['2 cups', 'vegetable broth', 'broth', '2 كوب', 'مرق خضار'], ['1 tsp', 'sugar', null, '1 ملعقة صغيرة', 'سكر'],
+            ['½ cup', 'heavy cream', 'cream', '½ كوب', 'كريمة طبخ'], ['', 'fresh basil, salt and pepper', null, '', 'ريحان طازج وملح وفلفل']],
+      steps: ['Melt the {butter} in a pot over medium heat and cook the onion until soft, 6–8 minutes. Add the garlic for 1 minute.',
+              'Add the tomatoes, {broth} and sugar. Simmer 20 minutes.',
+              'Blend until smooth, then stir in the {cream}. Season with salt, pepper and torn basil.'],
+      ar: { t: 'شوربة الطماطم الكريمية', time: '35 دقيقة', serves: '4',
+        steps: ['ذوّب {butter} في قدر على نار متوسطة، وقلّب البصل حتى يذبل، 6–8 دقائق. أضف الثوم دقيقة واحدة.',
+                'أضف الطماطم و{broth} والسكر، واتركها تغلي بهدوء 20 دقيقة.',
+                'اخلطها حتى تصبح ناعمة، ثم أضف {cream}. تبّل بالملح والفلفل والريحان المقطّع.'] } }
+  ];
+
+  // Words the label checker treats specially: matched before the allergen words so
+  // e.g. "coconut milk" or "rice noodles" don't get flagged as dairy or wheat.
+  var EXCEPTIONS = [
+    ['coconut milk', []], ['coconut cream', []], ['coconut yogurt', []], ['oat milk', []], ['rice milk', []], ['hemp milk', []],
+    ['almond milk', ['treenut']], ['cashew milk', ['treenut']], ['soy milk', ['soy']], ['soymilk', ['soy']],
+    ['cocoa butter', []], ['sunflower butter', []], ['sunflower seed butter', []], ['sunbutter', []], ['almond butter', ['treenut']],
+    ['cashew butter', ['treenut']], ['cream of tartar', []], ['water chestnut', []], ['nutmeg', []], ['coconut aminos', []],
+    ['rice flour', []], ['coconut flour', []], ['chickpea flour', []], ['corn flour', []], ['cornstarch', []], ['corn starch', []],
+    ['almond flour', ['treenut']], ['rice noodles', []], ['rice vermicelli', []], ['corn tortilla', []], ['corn tortillas', []],
+    ['peanut oil', ['peanut']], ['eggplant', []], ['chestnut', ['treenut']], ['nuts', ['treenut', 'peanut']],
+    ['حليب جوز الهند', []], ['كريمة جوز الهند', []], ['زبادي جوز الهند', []], ['حليب الشوفان', []], ['حليب الأرز', []], ['حليب نباتي', []],
+    ['حليب اللوز', ['treenut']], ['حليب الكاجو', ['treenut']], ['حليب الصويا', ['soy']], ['زبدة الكاكاو', []], ['زبدة بذور دوار الشمس', []],
+    ['زبدة اللوز', ['treenut']], ['جوزة الطيب', []], ['جوز الهند', []], ['زيت جوز الهند', []], ['نشا الذرة', []], ['دقيق الأرز', []],
+    ['دقيق الذرة', []], ['دقيق الحمص', []], ['دقيق جوز الهند', []], ['دقيق اللوز', ['treenut']], ['تورتيلا الذرة', []], ['خبز الذرة', []],
+    ['زيت الفول السوداني', ['peanut']], ['زبدة نباتية', []], ['كوكونت أمينوز', []], ['نودلز الأرز', []], ['شعيرية الأرز', []]
+  ];
+  // "Dairy-free", "egg-free" etc. on a line switch that allergen off for the line (with a reminder to verify).
+  // Arabic patterns run on normalized text (see norm), so أ/إ/آ are already plain ا and ة is ه.
+  var FREE_AR = '(?:خالي|خال|خاليه|بدون)\\s+(?:من\\s+)?(?:ال)?';
+  var FREE_FROM = [
+    [/\b(dairy|milk|lactose)[- ]free\b/g, ['milk']], [/\begg[- ]free\b/g, ['egg']], [/\b(gluten|wheat)[- ]free\b/g, ['wheat']],
+    [/\bsoy[- ]free\b/g, ['soy']], [/\bpeanut[- ]free\b/g, ['peanut']], [/\bnut[- ]free\b/g, ['treenut', 'peanut']],
+    [/\bsesame[- ]free\b/g, ['sesame']], [/\bvegan\b/g, ['milk', 'egg', 'fish', 'shellfish']],
+    [new RegExp(FREE_AR + '(?:البان|حليب|لاكتوز)', 'g'), ['milk']], [new RegExp(FREE_AR + 'بيض', 'g'), ['egg']],
+    [new RegExp(FREE_AR + '(?:غلوتين|جلوتين|قمح)', 'g'), ['wheat']], [new RegExp(FREE_AR + 'صويا', 'g'), ['soy']],
+    [new RegExp(FREE_AR + 'فول السوداني', 'g'), ['peanut']], [new RegExp(FREE_AR + 'مكسرات', 'g'), ['treenut', 'peanut']],
+    [new RegExp(FREE_AR + 'سمسم', 'g'), ['sesame']]
+  ];
+
+  // ---------------------------------------------------------------------------
+  // State and helpers
+  // ---------------------------------------------------------------------------
+  function store(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
+  function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function loadSel() {
+    try {
+      var v = JSON.parse(load('safeplate_allergens') || '[]');
+      return v.filter(function (id) { return A[id]; });
+    } catch (e) { return []; }
+  }
+  var sel = loadSel();
+  var recipeFilter = { q: '', cat: 'All', show: 'all' };
+
+  function saveSel() { store('safeplate_allergens', JSON.stringify(sel)); }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  // Lowercase, strip Arabic diacritics and unify letter variants so searches and the checker match loosely.
+  function norm(s) {
+    return String(s).toLowerCase().replace(/[ً-ْـ]/g, '').replace(/[أإآ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه');
+  }
+  function hits(list) { return (list || []).filter(function (a) { return sel.indexOf(a) !== -1; }); }
+  function shortName(a) { return isAr() ? A[a].ar.short : A[a].short.toLowerCase(); }
+  function names(list) { return list.map(shortName).join(isAr() ? '، ' : ', '); }
+  function emojis(list) { return list.map(function (a) { return '<span title="' + esc(L(A[a], 'name')) + '">' + A[a].emoji + '</span>'; }).join(' '); }
+  function ingQ(i) { return isAr() ? i[3] : i[0]; }
+  function ingN(i) { return isAr() ? i[4] : i[1]; }
+
+  // What to use for one library ingredient given the user's allergens.
+  function resolve(id) {
+    var lib = LIB[id];
+    var bad = hits(lib.a);
+    var warn = hits(lib.m);
+    if (!bad.length) return { kind: 'ok', lib: lib, warn: warn };
+    for (var i = 0; i < lib.swaps.length; i++) {
+      var o = lib.swaps[i];
+      if (!hits(o.a).length) return { kind: 'swap', lib: lib, opt: o, bad: bad };
+    }
+    return { kind: 'none', lib: lib, bad: bad };
+  }
+
+  function recipeAllergens(r) {
+    var out = [];
+    r.ing.forEach(function (i) { if (i[2]) LIB[i[2]].a.forEach(function (a) { if (out.indexOf(a) === -1) out.push(a); }); });
+    return ALLERGENS.map(function (a) { return a.id; }).filter(function (id) { return out.indexOf(id) !== -1; });
+  }
+
+  function recipeStatus(r) {
+    var s = { swaps: 0, none: 0, warns: 0 };
+    r.ing.forEach(function (i) {
+      if (!i[2]) return;
+      var res = resolve(i[2]);
+      if (res.kind === 'swap') s.swaps++;
+      else if (res.kind === 'none') s.none++;
+      if (res.warn && res.warn.length) s.warns++;
+    });
+    s.level = s.none ? 'bad' : s.swaps ? 'swap' : 'ok';
+    return s;
+  }
+
+  function statusBadge(s) {
+    if (!sel.length) return '<span class="badge b-neutral">' + t('badgePick') + '</span>';
+    if (s.level === 'bad') return '<span class="badge b-bad">' + esc(t('badgeNone', s.none)) + '</span>';
+    if (s.level === 'swap') return '<span class="badge b-swap">' + esc(t('badgeSwaps', s.swaps)) + '</span>';
+    return '<span class="badge b-ok">' + t('badgeOk') + (s.warns ? t('badgeCheck') : '') + '</span>';
+  }
+
+  // ---------------------------------------------------------------------------
+  // Chrome: header, allergen bar, tabs, footer
+  // ---------------------------------------------------------------------------
+  function renderChrome() {
+    document.title = t('title');
+    document.getElementById('tagline').textContent = t('tagline');
+    var lb = document.getElementById('lang-btn');
+    lb.textContent = t('langBtn'); lb.setAttribute('aria-label', t('langLabel')); lb.title = t('langLabel');
+    document.getElementById('theme-btn').setAttribute('aria-label', t('darkLabel'));
+    document.getElementById('clear-btn').textContent = t('clear');
+    document.getElementById('support-link').textContent = t('support');
+    document.getElementById('footer-text').textContent = t('footer');
+    document.getElementById('tabs').innerHTML =
+      [['recipes', '📖', 'tabRecipes'], ['swaps', '🔁', 'tabSwaps'], ['check', '📷', 'tabCheck'], ['ai', '🤖', 'tabAi']].map(function (x) {
+        return '<a href="#' + x[0] + '" data-tab="' + x[0] + '"><span>' + x[1] + '</span>' + t(x[2]) + '</a>';
+      }).join('');
+    document.getElementById('key-modal-body').innerHTML = t('keyModal') +
+      '<button class="btn ghost" style="width:100%;margin-top:12px" id="key-modal-close">' + t('close') + '</button>';
+    document.getElementById('key-modal-close').addEventListener('click', closeKeyModal);
+    renderChips();
+  }
+
+  function renderChips() {
+    document.getElementById('allergen-chips').innerHTML = ALLERGENS.map(function (a) {
+      return '<button class="chip" data-a="' + a.id + '" aria-pressed="' + (sel.indexOf(a.id) !== -1) + '">' + a.emoji + ' ' + esc(L(a, 'name')) + '</button>';
+    }).join('');
+    document.getElementById('avoid-summary').textContent = sel.length
+      ? t('avoiding', sel.length, sel.map(function (id) { return L(A[id], 'short'); }).join(isAr() ? '، ' : ', '))
+      : t('avoidPrompt');
+    document.getElementById('clear-btn').hidden = !sel.length;
+  }
+  document.getElementById('allergen-chips').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-a]');
+    if (!b) return;
+    var id = b.getAttribute('data-a');
+    var i = sel.indexOf(id);
+    if (i === -1) sel.push(id); else sel.splice(i, 1);
+    saveSel(); renderChips(); route();
+  });
+  document.getElementById('clear-btn').addEventListener('click', function () { sel = []; saveSel(); renderChips(); route(); });
+
+  document.getElementById('lang-btn').addEventListener('click', function () {
+    lang = isAr() ? 'en' : 'ar';
+    store('safeplate_lang', lang);
+    var d = document.documentElement;
+    d.setAttribute('lang', lang);
+    d.setAttribute('dir', isAr() ? 'rtl' : 'ltr');
+    // Keep the address shareable in the chosen language.
+    try { history.replaceState(null, '', location.pathname + (isAr() ? '?lang=ar' : '') + location.hash); } catch (e) {}
+    renderChrome(); route();
+  });
+
+  // ---------------------------------------------------------------------------
+  // Views
+  // ---------------------------------------------------------------------------
+  var view = document.getElementById('view');
+
+  function renderRecipes() {
+    var cats = ['All'];
+    RECIPES.forEach(function (r) { if (cats.indexOf(r.c) === -1) cats.push(r.c); });
+    view.innerHTML =
+      '<h2>' + t('recipes') + '</h2>' +
+      '<div class="toolbar">' +
+        '<input class="search" id="rq" type="search" placeholder="' + esc(t('searchRecipes')) + '" value="' + esc(recipeFilter.q) + '" />' +
+        '<div class="chips" id="rcats">' + cats.map(function (c) {
+          return '<button class="chip filter" data-cat="' + esc(c) + '" aria-pressed="' + (recipeFilter.cat === c) + '">' + esc(catName(c)) + '</button>';
+        }).join('') + '</div>' +
+        (sel.length ? '<div class="chips" id="rshow">' +
+          [['all', 'showAll'], ['ok', 'showOk'], ['swap', 'showSwap']].map(function (o) {
+            return '<button class="chip filter" data-show="' + o[0] + '" aria-pressed="' + (recipeFilter.show === o[0]) + '">' + t(o[1]) + '</button>';
+          }).join('') + '</div>' : '') +
+      '</div>' +
+      '<div class="grid" id="rgrid"></div>';
+    drawGrid();
+    document.getElementById('rq').addEventListener('input', function (e) { recipeFilter.q = e.target.value; drawGrid(); });
+    view.querySelectorAll('[data-cat]').forEach(function (b) {
+      b.addEventListener('click', function () { recipeFilter.cat = b.getAttribute('data-cat'); renderRecipes(); });
+    });
+    view.querySelectorAll('[data-show]').forEach(function (b) {
+      b.addEventListener('click', function () { recipeFilter.show = b.getAttribute('data-show'); renderRecipes(); });
+    });
+  }
+
+  function drawGrid() {
+    var q = norm(recipeFilter.q.trim());
+    var order = { ok: 0, swap: 1, bad: 2 };
+    var list = RECIPES.map(function (r) { return { r: r, s: recipeStatus(r) }; }).filter(function (x) {
+      if (recipeFilter.cat !== 'All' && x.r.c !== recipeFilter.cat) return false;
+      if (sel.length && recipeFilter.show !== 'all' && x.s.level !== recipeFilter.show) return false;
+      if (!q) return true;
+      var hay = norm([x.r.t, x.r.ar.t, x.r.c, CATS[x.r.c] || ''].concat(x.r.ing.map(function (i) { return i[1] + ' ' + i[4]; })).join(' '));
+      return hay.indexOf(q) !== -1;
+    });
+    if (sel.length) list.sort(function (a, b) { return order[a.s.level] - order[b.s.level] || a.s.swaps - b.s.swaps; });
+    var grid = document.getElementById('rgrid');
+    if (!list.length) { grid.innerHTML = '<div class="empty">' + t('noMatch') + '</div>'; return; }
+    grid.innerHTML = list.map(function (x) {
+      var r = x.r, al = recipeAllergens(r);
+      return '<a class="card rcard" href="#r/' + r.id + '">' +
+        '<div class="remoji">' + r.e + '</div>' +
+        '<div><h3>' + esc(L(r, 't')) + '</h3>' +
+        '<div class="meta">' + esc(catName(r.c)) + ' · ' + esc(L(r, 'time')) + '</div>' +
+        (al.length ? '<div class="contains" aria-label="' + esc(t('containsAria') + names(al)) + '">' + emojis(al) + '</div>' : '') +
+        statusBadge(x.s) + '</div></a>';
+    }).join('');
+  }
+
+  function renderRecipe(id) {
+    var r = RECIPES.filter(function (x) { return x.id === id; })[0];
+    if (!r) { location.hash = '#recipes'; return; }
+    var s = recipeStatus(r);
+    var al = recipeAllergens(r);
+
+    var ingHtml = r.ing.map(function (i) {
+      var qt = ingQ(i), nm = ingN(i);
+      var q = qt ? '<span class="q">' + esc(qt) + '</span> ' : '';
+      if (!i[2]) return '<li>' + q + esc(nm) + '</li>';
+      var res = resolve(i[2]);
+      if (res.kind === 'ok') {
+        return '<li>' + q + esc(nm) + (res.warn.length ? '<div class="warn">' + esc(t('oftenContains', names(res.warn))) + '</div>' : '') + '</li>';
+      }
+      if (res.kind === 'swap') {
+        return '<li><div class="was">' + esc((qt ? qt + ' ' : '') + nm) + '</div>' +
+          '<div>' + t('arrow') + ' <span class="now">' + esc(L(res.opt, 'n')) + '</span></div>' +
+          (res.opt.tip ? '<div class="tip">' + esc(L(res.opt, 'tip')) + '</div>' : '') + '</li>';
+      }
+      return '<li>' + q + '<span class="nope">' + esc(nm) + '</span><div class="warn">' + esc(t('noSwap', names(res.bad))) + '</div></li>';
+    }).join('');
+
+    var stepHtml = L(r, 'steps').map(function (st) {
+      var html = esc(st).replace(/\{(\w+)\}/g, function (_, key) {
+        var res = resolve(key);
+        if (res.kind === 'swap') return '<mark>' + esc(L(res.opt, 's')) + '</mark>';
+        if (res.kind === 'none') return '<mark class="bad">' + esc(L(res.lib, 's')) + t('leaveOut') + '</mark>';
+        return esc(L(res.lib, 's'));
+      });
+      return '<li>' + html + '</li>';
+    }).join('');
+
+    var notes = '';
+    var rn = L(r, 'notes');
+    if (rn) Object.keys(rn).forEach(function (a) {
+      if (sel.indexOf(a) !== -1) notes += '<div class="note">' + A[a].emoji + ' ' + esc(rn[a]) + '</div>';
+    });
+    var summary = !sel.length ? '<div class="note">' + t('sumPick') + '</div>'
+      : s.level === 'ok' ? '<div class="note safe">' + t('sumOk') + (s.warns ? t('sumOkWarn') : '') + '</div>'
+      : s.level === 'swap' ? '<div class="note">' + esc(t('sumSwap', s.swaps)) + '</div>'
+      : '<div class="note danger">' + t('sumBad') + '</div>';
+    var crossContact = sel.length && al.some(function (a) { return sel.indexOf(a) !== -1; }) ? '<div class="note safe">' + t('crossContact') + '</div>' : '';
+
+    view.innerHTML =
+      '<a class="back" href="#recipes">' + t('allRecipes') + '</a>' +
+      '<div class="hero"><div class="remoji">' + r.e + '</div><div>' +
+        '<h2>' + esc(L(r, 't')) + '</h2>' +
+        '<div class="meta">' + esc(catName(r.c)) + ' · ' + esc(L(r, 'time')) + ' · ' + t('serves') + ' ' + esc(L(r, 'serves')) + '</div>' +
+        (al.length ? '<div class="meta">' + t('normally') + esc(names(al)) + '</div>' : '') +
+      '</div></div>' +
+      summary + notes +
+      '<div class="cols" style="margin-top:14px">' +
+        '<div class="card"><h3>' + t('ingredients') + '</h3><ul class="ing">' + ingHtml + '</ul></div>' +
+        '<div class="card"><h3>' + t('steps') + '</h3><ol class="steps">' + stepHtml + '</ol>' + crossContact + '</div>' +
+      '</div>' +
+      '<div class="row"><button class="btn ai" id="ask-recipe">' + t('askAboutRecipe') + '</button></div>';
+    document.getElementById('ask-recipe').addEventListener('click', function () {
+      aiDraft = t('aboutRecipe', L(r, 't'));
+      location.hash = '#ai';
+    });
+    window.scrollTo(0, 0);
+  }
+
+  var swapsShowAll = false;
+  function renderSwaps() {
+    var list = (!sel.length || swapsShowAll) ? ALLERGENS : ALLERGENS.filter(function (a) { return sel.indexOf(a.id) !== -1; });
+    var html = '<h2>' + t('swapGuide') + '</h2>' +
+      '<div class="toolbar"><input class="search" id="sq" type="search" placeholder="' + esc(t('searchSwaps')) + '" /></div>' +
+      '<p class="muted small" style="margin-top:0">' + (sel.length
+        ? (swapsShowAll ? t('swapsShowingAll') : t('swapsShowingMine')) +
+          '<a href="#swaps" id="toggle-all">' + (swapsShowAll ? t('swapsOnlyMine') : t('swapsAll')) + '</a>' + t('swapsBest')
+        : t('swapsPick')) + '</p>' +
+      '<div id="swap-list">';
+    list.forEach(function (a) {
+      var items = Object.keys(LIB).filter(function (k) { return LIB[k].a.indexOf(a.id) !== -1; });
+      html += '<section class="swap-section" data-allergen="' + a.id + '"><div class="card">' +
+        '<div class="swap-head"><h3>' + a.emoji + ' ' + esc(L(a, 'name')) + '</h3><div class="small">' + esc(L(a, 'tip')) + '</div></div>';
+      items.forEach(function (k) {
+        var lib = LIB[k];
+        var best = resolve(k);
+        var search = norm([lib.n, lib.ar.n].concat(lib.k, lib.ar.k).join(' '));
+        html += '<div class="swap-row" data-search="' + esc(search) + '">' +
+          '<div><span class="muted small">' + t('insteadOf') + '</span> <b>' + esc(L(lib, 'n')) + '</b>' +
+          (lib.a.length > 1 ? ' <span class="pill soft">' + t('also') + esc(names(lib.a.filter(function (x) { return x !== a.id; }))) + '</span>' : '') + '</div>';
+        lib.swaps.forEach(function (o) {
+          var bad = hits(o.a);
+          var isBest = sel.length && best.opt === o;
+          html += '<div class="opt' + (bad.length ? ' unsafe' : '') + (isBest ? ' best' : '') + '">' +
+            '<span class="mark">' + (isBest ? '✓' : bad.length ? '✕' : '·') + '</span><div>' + esc(L(o, 'n')) +
+            o.a.map(function (x) { return ' <span class="pill' + (bad.indexOf(x) !== -1 ? '' : ' soft') + '">' + t('has') + esc(shortName(x)) + '</span>'; }).join('') +
+            (o.tip ? '<div class="tip">' + esc(L(o, 'tip')) + '</div>' : '') + '</div></div>';
+        });
+        html += '</div>';
+      });
+      html += '<div class="swap-row hidden-words"><span class="muted small">' + t('labelNames') + '</span><br>' + esc(L(a, 'hidden').join(isAr() ? '، ' : ', ')) + '</div>';
+      html += '</div></section>';
+    });
+    html += '</div><div class="empty" id="swap-empty" hidden>' + t('noSwapFound') + '</div>';
+    view.innerHTML = html;
+    var tg = document.getElementById('toggle-all');
+    if (tg) tg.addEventListener('click', function (e) { e.preventDefault(); swapsShowAll = !swapsShowAll; renderSwaps(); });
+    document.getElementById('sq').addEventListener('input', function (e) {
+      var q = norm(e.target.value.trim()), any = false;
+      view.querySelectorAll('.swap-section').forEach(function (sec) {
+        var shown = 0;
+        sec.querySelectorAll('.swap-row[data-search]').forEach(function (row) {
+          var ok = !q || row.getAttribute('data-search').indexOf(q) !== -1;
+          row.hidden = !ok; if (ok) shown++;
+        });
+        sec.querySelector('.hidden-words').hidden = !!q;
+        sec.hidden = q && !shown; if (!sec.hidden) any = true;
+      });
+      document.getElementById('swap-empty').hidden = any;
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Label / recipe checker (English and Arabic)
+  // ---------------------------------------------------------------------------
+  var AR_LETTER = /[؀-ۿ]/;
+  var PATTERNS = (function () {
+    var p = [];
+    function add(phrase, a, lib) {
+      var ph = norm(phrase);
+      var e = ph.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      // Arabic words take attached prefixes (و ف ب ل ك + ال) and endings (ه ات ان ين); English takes plural s/es.
+      var body = AR_LETTER.test(ph) ? '(?:[وفبلك]?(?:ال)?)' + e + '(?:ه|ات|ان|ين)?' : e + '(?:e?s)?';
+      p.push({ len: ph.length, re: new RegExp('(^|[^a-z\\u0600-\\u06ff])' + body + '(?![a-z\\u0600-\\u06ff])', 'g'), a: a, lib: lib });
+    }
+    EXCEPTIONS.forEach(function (x) { add(x[0], x[1], null); });
+    Object.keys(LIB).forEach(function (id) {
+      var lib = LIB[id];
+      var all = lib.a.concat(lib.m || []).filter(function (a, i, arr) { return arr.indexOf(a) === i; });
+      lib.k.concat(lib.ar.k).forEach(function (k) { add(k, all, id); });
+    });
+    ALLERGENS.forEach(function (al) { al.hidden.concat(al.ar.hidden).forEach(function (h) { add(h, [al.id], null); }); });
+    ['wheat', 'soy', 'soybean', 'gluten'].forEach(function (w) { add(w, [w === 'gluten' ? 'wheat' : w === 'soybean' ? 'soy' : w], null); });
+    p.sort(function (x, y) { return y.len - x.len; });
+    return p;
+  })();
+
+  function checkLine(line) {
+    var text = ' ' + norm(line) + ' ';
+    var freed = [];
+    FREE_FROM.forEach(function (f) {
+      f[0].lastIndex = 0;
+      if (f[0].test(text)) { f[1].forEach(function (a) { if (freed.indexOf(a) === -1) freed.push(a); }); text = text.replace(f[0], ' '); }
+      f[0].lastIndex = 0;
+    });
+    var found = [];
+    PATTERNS.forEach(function (p) {
+      text = text.replace(p.re, function (m, pre) {
+        var real = p.a.filter(function (a) { return freed.indexOf(a) === -1; });
+        // A library hit also carries "often contains" allergens; only the true ones count as certain.
+        var sure = p.lib ? LIB[p.lib].a.filter(function (a) { return freed.indexOf(a) === -1; }) : real;
+        if (real.length) found.push({ word: m.slice(pre.length).trim(), a: sure, maybe: real.filter(function (a) { return sure.indexOf(a) === -1; }), lib: p.lib });
+        return pre + new Array(m.length - pre.length + 1).join(' ');
+      });
+    });
+    return { found: found, freed: freed };
+  }
+
+  function renderCheck() {
+    var draft = load('safeplate_check') || '';
+    view.innerHTML =
+      '<h2>' + t('checkTitle') + '</h2>' +
+      '<div class="card scan-card"><h3>📷 ' + t('scanTitle') + '</h3>' +
+        '<p class="small" style="margin:0">' + t('scanIntro') + '</p>' +
+        '<div class="row" style="margin:10px 0 4px"><label class="btn ai" for="scan-cam">' + t('scanTake') + '</label>' +
+        '<label class="btn ghost" for="scan-file">' + t('scanChoose') + '</label></div>' +
+        '<input type="file" id="scan-cam" accept="image/*" capture="environment" hidden />' +
+        '<input type="file" id="scan-file" accept="image/*" hidden />' +
+        '<div class="small muted">' + t('scanPrivacy') + '</div>' +
+        '<div id="scan-out"></div></div>' +
+      '<h3 style="margin-top:22px">' + t('typeTitle') + '</h3>' +
+      '<p class="muted" style="margin-top:0">' + t('checkIntro') + '</p>' +
+      '<textarea id="ctext" placeholder="' + esc(t('checkPlaceholder')) + '">' + esc(draft) + '</textarea>' +
+      '<div class="row"><button class="btn" id="cbtn">' + t('checkBtn') + '</button>' +
+      '<button class="btn ghost" id="cex">' + t('example') + '</button><button class="btn ghost" id="cclr">' + t('clearBtn') + '</button></div>' +
+      '<div id="cout"></div>';
+    var ta = document.getElementById('ctext');
+    function saveDraft() { store('safeplate_check', ta.value); }
+    document.getElementById('cbtn').addEventListener('click', runCheck);
+    document.getElementById('cex').addEventListener('click', function () { ta.value = t('exampleText'); saveDraft(); runCheck(); });
+    document.getElementById('cclr').addEventListener('click', function () { ta.value = ''; document.getElementById('cout').innerHTML = ''; saveDraft(); ta.focus(); });
+    ta.addEventListener('input', saveDraft);
+    ['scan-cam', 'scan-file'].forEach(function (id) {
+      var inp = document.getElementById(id);
+      inp.addEventListener('change', function () { var f = inp.files && inp.files[0]; inp.value = ''; scanImage(f); });
+    });
+    drawScan();
+    if (draft.trim()) runCheck();
+  }
+
+  function runCheck() {
+    var raw = document.getElementById('ctext').value;
+    var lines = raw.split(/\n|;|؛/).map(function (l) { return l.trim(); }).filter(Boolean);
+    var out = document.getElementById('cout');
+    if (!lines.length) { out.innerHTML = ''; return; }
+    var flagged = 0;
+    var rows = lines.map(function (line) {
+      var r = checkLine(line);
+      var parts = [];
+      r.found.forEach(function (f) {
+        var mine = hits(f.a), maybeMine = hits(f.maybe);
+        if (sel.length && !mine.length && !maybeMine.length) return;
+        if (!sel.length) {
+          parts.push('<div class="tip">' + esc(t('containsAll', names(f.a.length ? f.a : f.maybe), !f.a.length)) + '</div>');
+          return;
+        }
+        if (mine.length) {
+          flagged++;
+          var sw = '';
+          if (f.lib) {
+            var res = resolve(f.lib);
+            sw = res.kind === 'swap'
+              ? '<div>' + t('arrow') + ' ' + t('tryThis') + '<span class="now">' + esc(L(res.opt, 'n')) + '</span><div class="tip">' + esc(L(res.opt, 'tip') || '') + '</div></div>'
+              : res.kind === 'none' ? '<div class="tip">' + t('noSafeSwap') + '</div>' : '';
+          } else {
+            sw = '<div class="tip">' + mine.map(function (a) { return esc(L(A[a], 'tip')); }).join(' ') + '</div>';
+          }
+          parts.push('<div><span class="nope">' + t('contains') + esc(names(mine)) + '</span> <span class="muted small">(' + esc(f.word) + ')</span>' + sw + '</div>');
+        } else {
+          parts.push('<div class="warn">' + esc(t('oftenLabel', f.word, names(maybeMine))) + '</div>');
+        }
+      });
+      if (r.freed.length && sel.some(function (a) { return r.freed.indexOf(a) !== -1; })) {
+        parts.push('<div class="tip">' + esc(t('labeledFree', names(r.freed))) + '</div>');
+      }
+      var ok = !parts.length && sel.length;
+      return '<div class="result-line"><div>' + (ok ? '✅ ' : '') + esc(line) + '</div>' + parts.join('') + '</div>';
+    }).join('');
+    var head = !sel.length ? '<div class="note">' + t('checkHeadPick') + '</div>'
+      : flagged ? '<div class="note danger">' + esc(t('checkHeadBad', flagged)) + '</div>'
+      : '<div class="note safe">' + t('checkHeadOk') + '</div>';
+    out.innerHTML = head + '<div class="card" style="margin-top:12px">' + rows + '</div>' +
+      '<div class="row"><button class="btn ai" id="crewrite">' + t('checkRewrite') + '</button></div>';
+    document.getElementById('crewrite').addEventListener('click', function () {
+      aiAutoSend = t('rewritePrompt') + raw.trim();
+      location.hash = '#ai';
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // AI chef (Google Gemini, with the user's own free key, same setup as Nasma AI)
+  // ---------------------------------------------------------------------------
+  var GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
+  var GEMINI_MODEL = 'gemini-3-flash-preview';
+  var KEY_STORE = 'safeplate_gemini_key';
+  var chat = [];          // [{ role: 'user' | 'model', text, cut? }]
+  var aiBusy = false;
+  var aiDraft = '';       // prefilled into the box when arriving from a recipe
+  var aiAutoSend = '';    // sent immediately when arriving from the checker
+  var editingKey = false;
+  var sessionKey = '';    // a key typed this visit without "remember"
+
+  // Reuse a key already saved by Nasma AI on this site, so people with both apps don't paste it twice.
+  function apiKey() { return sessionKey || load(KEY_STORE) || load('peds_gemini_key') || ''; }
+
+  function openKeyModal() { document.getElementById('key-modal').classList.add('open'); }
+  function closeKeyModal() { document.getElementById('key-modal').classList.remove('open'); }
+  document.getElementById('key-modal').addEventListener('click', function (e) { if (e.target === this) closeKeyModal(); });
+
+  // Minimal, safe Markdown → HTML (escapes everything first).
+  function renderMarkdown(md) {
+    var lines = esc(md).split('\n');
+    var html = '', list = null;
+    function inline(s) {
+      return s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>').replace(/`([^`]+)`/g, '<code>$1</code>');
+    }
+    function close() { if (list) { html += '</' + list + '>'; list = null; } }
+    lines.forEach(function (line) {
+      var m;
+      if ((m = line.match(/^\s*#{1,2}\s+(.*)/))) { close(); html += '<h3>' + inline(m[1]) + '</h3>'; }
+      else if ((m = line.match(/^\s*#{3,6}\s+(.*)/))) { close(); html += '<h4>' + inline(m[1]) + '</h4>'; }
+      else if ((m = line.match(/^\s*[-*•]\s+(.*)/))) { if (list !== 'ul') { close(); html += '<ul>'; list = 'ul'; } html += '<li>' + inline(m[1]) + '</li>'; }
+      else if ((m = line.match(/^\s*\d+[.)]\s+(.*)/))) { if (list !== 'ol') { close(); html += '<ol>'; list = 'ol'; } html += '<li>' + inline(m[1]) + '</li>'; }
+      else if (line.trim() === '') { close(); }
+      else { close(); html += '<p>' + inline(line) + '</p>'; }
+    });
+    close();
+    return html;
+  }
+
+  function systemPrompt() {
+    var avoid = sel.length ? sel.map(function (id) { return A[id].name + ' (' + A[id].ar.name + ')'; }).join(', ') : 'nothing selected yet';
+    var prefs = [];
+    Object.keys(LIB).forEach(function (k) {
+      var res = resolve(k);
+      if (res.kind === 'swap') prefs.push('- ' + LIB[k].n + ' → ' + res.opt.n);
+    });
+    return [
+      'You are SafePlate AI, a warm, careful home chef who specializes in cooking for food allergies.',
+      'The user must avoid: ' + avoid + '.',
+      'Rules:',
+      '- Never include any of these allergens, or ingredients that commonly contain them (for example butter, ghee, cheese, labneh or whey for dairy; most breads, bulgur, freekeh, semolina, couscous, vermicelli or soy sauce for wheat; pesto, ma\'amoul, baklava or kunafa toppings for tree nuts; tahini, za\'atar, halawa or sesame buns for sesame; Worcestershire or Caesar dressing for fish).',
+      '- When you give a recipe: a short title, a "Swaps" list (original → replacement with ratio), the full ingredient list with quantities, numbered steps, and a one-line cross-contact tip.',
+      '- Mark ingredients whose brands vary (bread, broth or stock cubes, spice mixes, chocolate, sauces, plant-based products) with "check the label".',
+      prefs.length ? '- Prefer these swaps, which the SafePlate app also uses:\n' + prefs.join('\n') : '',
+      '- Give quantities in cups/spoons plus grams or ml.',
+      '- If no allergens are selected and the user asks for a recipe, briefly ask which allergens to avoid (they can tap them at the top of the app).',
+      '- Keep answers focused, under about 400 words unless a full recipe needs more.',
+      '- You are not a doctor. If the user describes a reaction (trouble breathing, throat or tongue swelling, wheezing, repeated vomiting, fainting, widespread hives), tell them to use their epinephrine auto-injector if they have one and call emergency services immediately. For diagnosis, testing, introducing foods to babies or how severe an allergy is, refer them to an allergist.',
+      '- Only help with food, cooking, shopping and living with food allergies; politely steer other topics back.',
+      isAr() ? '- Reply in Arabic (simple Modern Standard Arabic), unless the user writes in another language.' : '- Reply in the same language the user writes in.',
+      'Format with Markdown: ## headings, bullet lists, numbered steps, **bold** for swaps.'
+    ].filter(Boolean).join('\n');
+  }
+
+  function renderAi() {
+    var key = apiKey();
+    var keyBlock = key && !editingKey
+      ? '<div class="row" style="margin:0;align-items:center"><span class="small">' + t('keySaved') + '</span>' +
+        '<button class="btn ghost small" id="key-change">' + t('keyChange') + '</button>' +
+        '<button class="btn ghost small" id="key-help" aria-label="' + esc(t('keyHow')) + '">🔑</button></div>'
+      : '<button class="btn ghost small" id="key-help" style="width:100%;margin-bottom:10px">' + t('keyHow') + '</button>' +
+        '<label for="key-input">' + t('keyLabel') + '</label>' +
+        '<input id="key-input" type="password" autocomplete="off" spellcheck="false" placeholder="' + esc(t('keyPlaceholder')) + '" value="' + esc(key) + '" dir="ltr" />' +
+        '<label class="check-row"><input type="checkbox" id="key-remember" checked /> ' + t('keyRemember') + '</label>';
+    view.innerHTML =
+      '<h2>🤖 ' + t('aiTitle') + '</h2>' +
+      '<p class="muted" style="margin-top:0">' + t('aiIntro') + ' <span class="small">' + t('aiPowered') + '</span></p>' +
+      '<div class="card key-card">' + keyBlock + '</div>' +
+      '<div class="note ' + (sel.length ? 'safe' : '') + '">' + (sel.length ? esc(t('aiAvoiding', names(sel))) : t('aiNoAllergens')) + '</div>' +
+      '<div class="chat" id="chat"></div>' +
+      (chat.length ? '' : '<div class="chips" id="ideas" style="margin-bottom:12px">' + t('aiIdeas').map(function (x) {
+        return '<button class="chip idea" data-idea="' + esc(x) + '">' + esc(x) + '</button>';
+      }).join('') + '</div>') +
+      '<div class="composer"><textarea id="ai-input" placeholder="' + esc(t('aiPlaceholder')) + '"></textarea>' +
+      '<button class="btn ai" id="ai-send"' + (aiBusy ? ' disabled' : '') + '>' + t('aiSend') + '</button></div>' +
+      '<div class="row" style="justify-content:space-between;align-items:center">' +
+        '<span class="small muted">' + t('aiDisclaimer') + '</span>' +
+        (chat.length ? '<button class="btn ghost small" id="ai-new">' + t('aiNew') + '</button>' : '') +
+      '</div>';
+
+    drawChat();
+    document.getElementById('key-help').addEventListener('click', openKeyModal);
+    var kc = document.getElementById('key-change');
+    if (kc) kc.addEventListener('click', function () { editingKey = true; renderAi(); });
+    var ki = document.getElementById('key-input');
+    if (ki) {
+      var saveKey = function () {
+        var v = ki.value.trim();
+        sessionKey = v;
+        store(KEY_STORE, document.getElementById('key-remember').checked && v ? v : null);
+      };
+      ki.addEventListener('input', saveKey);
+      ki.addEventListener('change', function () { saveKey(); if (ki.value.trim()) { editingKey = false; renderAi(); } });
+      document.getElementById('key-remember').addEventListener('change', saveKey);
+    }
+    var input = document.getElementById('ai-input');
+    if (aiDraft) { input.value = aiDraft; aiDraft = ''; setTimeout(function () { input.focus(); input.setSelectionRange(input.value.length, input.value.length); }, 50); }
+    document.getElementById('ai-send').addEventListener('click', function () { send(input.value); });
+    input.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(input.value); } });
+    var ideasEl = document.getElementById('ideas');
+    if (ideasEl) ideasEl.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-idea]'); if (b) send(b.getAttribute('data-idea'));
+    });
+    var nb = document.getElementById('ai-new');
+    if (nb) nb.addEventListener('click', function () { if (!aiBusy) { chat = []; renderAi(); } });
+    if (aiAutoSend) { var msg = aiAutoSend; aiAutoSend = ''; send(msg); }
+  }
+
+  function drawChat() {
+    var box = document.getElementById('chat');
+    if (!box) return;
+    box.innerHTML = chat.map(function (m) {
+      if (m.role === 'user') return '<div class="msg user">' + esc(m.text) + '</div>';
+      var body = m.text ? renderMarkdown(m.text) : '<span class="muted">' + t('aiThinking') + '</span>';
+      return '<div class="msg model">' + body + (m.cut ? '<p class="muted small">' + t('errCut') + '</p>' : '') + '</div>';
+    }).join('');
+  }
+
+  function showAiError(msg) {
+    var box = document.getElementById('chat');
+    if (box) box.insertAdjacentHTML('beforeend', '<div class="msg model"><p class="err">⚠️ ' + esc(msg) + '</p></div>');
+  }
+
+  // ---------------------------------------------------------------------------
+  // AI label scanner: Gemini reads a photo of the ingredient list; the app decides
+  // the verdict from the user's allergens and double-checks with its own word list.
+  // ---------------------------------------------------------------------------
+  var lastScan = null;   // { img, busy, error, data }
+  var ALLERGEN_IDS = ALLERGENS.map(function (a) { return a.id; });
+  var SCAN_ITEM = { type: 'OBJECT', properties: { allergen: { type: 'STRING', enum: ALLERGEN_IDS }, evidence: { type: 'STRING' } }, required: ['allergen', 'evidence'] };
+  var SCAN_SCHEMA = {
+    type: 'OBJECT',
+    properties: {
+      readable: { type: 'BOOLEAN' },
+      product: { type: 'STRING' },
+      ingredients_text: { type: 'STRING' },
+      warnings_text: { type: 'STRING' },
+      contains: { type: 'ARRAY', items: SCAN_ITEM },
+      may_contain: { type: 'ARRAY', items: SCAN_ITEM },
+      notes: { type: 'STRING' }
+    },
+    required: ['readable', 'ingredients_text', 'contains', 'may_contain']
+  };
+
+  function scanPrompt() {
+    return [
+      'You read photos of food packaging for people with food allergies. Be exact and conservative.',
+      '1. readable: false if the photo shows no legible ingredient list (blurry, cut off, not food). Never guess ingredients you cannot see.',
+      '2. product: the product name if visible, else empty.',
+      '3. ingredients_text: transcribe the ingredient list exactly, in its original language (if the label has several languages, prefer English or Arabic).',
+      '4. warnings_text: transcribe any "Contains", "May contain", "Made in a facility that also processes..." or similar statements exactly.',
+      '5. contains: every allergen present in the ingredients or a "Contains" statement, using these ids: milk, egg, peanut, treenut, soy, wheat, fish, shellfish, sesame.',
+      '   Include hidden sources: whey, casein, ghee, butter, lactose → milk; albumin, mayonnaise → egg; lecithin (soy), soya, tofu → soy; flour, semolina, malt, barley, rye, spelt, bulgur and gluten → wheat; anchovy, fish sauce → fish; shrimp, crab → shellfish; tahini → sesame; almond, cashew, hazelnut, pistachio, walnut, pecan, praline → treenut. Coconut and nutmeg are not tree nuts.',
+      '   evidence: the exact word(s) from the label that show it.',
+      '6. may_contain: allergens only in precautionary statements ("may contain", "traces of", "same facility/line").',
+      '7. notes: one or two short sentences in ' + (isAr() ? 'Arabic' : 'English') + ' about anything unclear (e.g. part of the list is hidden, "natural flavors", unspecified "vegetable oil" or "lecithin").'
+    ].join('\n');
+  }
+
+  // Shrink the photo before sending: faster on mobile data and well within API limits.
+  function shrinkImage(file) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onerror = function () { reject(new Error('read')); };
+      reader.onload = function () {
+        var img = new Image();
+        img.onerror = function () { reject(new Error('image')); };
+        img.onload = function () {
+          var max = 1600, w = img.naturalWidth, h = img.naturalHeight, k = Math.min(1, max / Math.max(w, h));
+          var c = document.createElement('canvas');
+          c.width = Math.round(w * k); c.height = Math.round(h * k);
+          c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+          resolve(c.toDataURL('image/jpeg', 0.85));
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function scanImage(file) {
+    if (!file) return;
+    if (!apiKey()) { lastScan = { needKey: true }; drawScan(); return; }
+    lastScan = { busy: true };
+    drawScan();
+    shrinkImage(file).then(function (dataUrl) {
+      lastScan.img = dataUrl;
+      drawScan();
+      return fetch(GEMINI_BASE + '/models/' + encodeURIComponent(GEMINI_MODEL) + ':generateContent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey() },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [
+            { inlineData: { mimeType: 'image/jpeg', data: dataUrl.split(',')[1] } },
+            { text: scanPrompt() }
+          ] }],
+          generationConfig: { temperature: 0, responseMimeType: 'application/json', responseSchema: SCAN_SCHEMA, maxOutputTokens: 4096 }
+        })
+      });
+    }).then(function (res) {
+      return res.json().catch(function () { return {}; }).then(function (d) {
+        if (!res.ok) throw new Error(explainError(res.status, d.error && d.error.message));
+        var cand = d.candidates && d.candidates[0];
+        var text = ((cand && cand.content && cand.content.parts) || []).filter(function (p) { return p.text && !p.thought; }).map(function (p) { return p.text; }).join('');
+        text = text.replace(/^\s*```(?:json)?\s*|\s*```\s*$/g, '');
+        if (!text) throw new Error(t('errEmpty'));
+        return JSON.parse(text);
+      });
+    }).then(function (data) {
+      lastScan.busy = false;
+      lastScan.data = cleanScan(data);
+      drawScan();
+    }).catch(function (err) {
+      lastScan.busy = false;
+      lastScan.error = err instanceof TypeError ? t('errNetwork') : err instanceof SyntaxError ? t('errEmpty') : err.message;
+      drawScan();
+    });
+  }
+
+  // Keep only known allergen ids, then add anything SafePlate's own word list finds
+  // in the transcribed ingredients that the AI missed.
+  function cleanScan(d) {
+    function list(arr) {
+      var seen = {};
+      return (arr || []).filter(function (x) { return x && ALLERGEN_IDS.indexOf(x.allergen) !== -1 && !seen[x.allergen] && (seen[x.allergen] = true); });
+    }
+    var out = { readable: d.readable !== false, product: d.product || '', ingredients: d.ingredients_text || '', warnings: d.warnings_text || '', notes: d.notes || '',
+      contains: list(d.contains), may: list(d.may_contain) };
+    var have = out.contains.map(function (x) { return x.allergen; });
+    out.ingredients.split(/[,،;\n()\[\]]/).forEach(function (part) {
+      if (!part.trim()) return;
+      checkLine(part).found.forEach(function (f) {
+        f.a.forEach(function (a) {
+          if (have.indexOf(a) === -1) { have.push(a); out.contains.push({ allergen: a, evidence: f.word, local: true }); }
+        });
+      });
+    });
+    out.may = out.may.filter(function (x) { return have.indexOf(x.allergen) === -1; });
+    return out;
+  }
+
+  function drawScan() {
+    var box = document.getElementById('scan-out');
+    if (!box || !lastScan) { if (box) box.innerHTML = ''; return; }
+    var s = lastScan;
+    if (s.needKey) {
+      box.innerHTML = '<div class="note danger">' + t('scanNeedKey') + ' <a href="#ai">' + t('scanOpenAi') + '</a></div>';
+      return;
+    }
+    var html = s.img ? '<img class="scan-photo" src="' + s.img + '" alt="" />' : '';
+    if (s.busy) { box.innerHTML = html + '<div class="note ai">' + t('scanReading') + '</div>'; return; }
+    if (s.error) { box.innerHTML = html + '<div class="note danger">⚠️ ' + t('scanFail') + esc(s.error) + '</div>'; return; }
+    var d = s.data;
+    if (!d.readable) { box.innerHTML = html + '<div class="note danger">' + t('scanUnreadable') + '</div>'; return; }
+
+    var c = d.contains.map(function (x) { return x.allergen; });
+    var m = d.may.map(function (x) { return x.allergen; });
+    var badC = hits(c), badM = hits(m);
+    var verdict = !sel.length ? '<div class="note">' + t('scanPick') + '</div>'
+      : badC.length ? '<div class="note danger verdict">' + esc(t('scanBad', names(badC))) + '</div>'
+      : badM.length ? '<div class="note verdict">' + esc(t('scanMay', names(badM))) + '</div>'
+      : '<div class="note safe verdict">' + esc(t('scanOk', names(sel))) + '<div class="small" style="font-weight:400">' + t('scanOkNote') + '</div></div>';
+    function items(arr) {
+      if (!arr.length) return '<ul class="scan-list"><li class="muted">' + t('scanNoneFound') + '</li></ul>';
+      return '<ul class="scan-list">' + arr.map(function (x) {
+        var mine = sel.indexOf(x.allergen) !== -1;
+        return '<li' + (mine ? ' class="mine"' : '') + '>' + A[x.allergen].emoji + ' ' + esc(L(A[x.allergen], 'name')) +
+          ' <span class="muted small">(' + esc(x.evidence) + (x.local ? ' · ' + t('scanLocal') : '') + ')</span></li>';
+      }).join('') + '</ul>';
+    }
+    html += verdict +
+      (d.product ? '<h3 style="margin:12px 0 4px">' + esc(d.product) + '</h3>' : '') +
+      '<div style="margin-top:8px"><b>' + t('scanContains') + '</b>' + items(d.contains) + '</div>' +
+      '<div style="margin-top:8px"><b>' + t('scanMayLabel') + '</b>' + items(d.may) + '</div>' +
+      (d.notes ? '<div class="tip" style="margin-top:8px">ℹ️ ' + esc(d.notes) + '</div>' : '') +
+      '<details class="scan-text"><summary>' + t('scanIngredients') + '</summary><p dir="auto">' + esc(d.ingredients + (d.warnings ? '\n\n' + d.warnings : '')) + '</p></details>' +
+      '<div class="row">' +
+        '<button class="btn ghost small" id="scan-to-check">' + t('scanToChecker') + '</button>' +
+        (badC.length || badM.length ? '<button class="btn ai small" id="scan-alt">' + t('scanAlt') + '</button>' : '') +
+      '</div>';
+    box.innerHTML = html;
+    document.getElementById('scan-to-check').addEventListener('click', function () {
+      var ta = document.getElementById('ctext');
+      ta.value = d.ingredients.split(/[,،;]\s*/).join('\n');
+      store('safeplate_check', ta.value);
+      runCheck();
+      ta.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    var alt = document.getElementById('scan-alt');
+    if (alt) alt.addEventListener('click', function () {
+      aiAutoSend = t('scanAltPrompt', d.product || t('scanThisProduct'));
+      location.hash = '#ai';
+    });
+  }
+
+  function explainError(status, message) {
+    var m = message || '';
+    if (status === 400 && /api key/i.test(m)) return t('errKey');
+    if (status === 403) return t('errForbidden');
+    if (status === 429) return t('errRate');
+    if (status >= 500) return t('errServer') + ' (' + status + ')';
+    return 'Gemini ' + status + ': ' + m;
+  }
+
+  function send(text) {
+    text = (text || '').trim();
+    if (!text || aiBusy) return;
+    if (!apiKey()) {
+      drawChat(); showAiError(t('aiNeedKey'));
+      var ki = document.getElementById('key-input'); if (ki) ki.focus();
+      return;
+    }
+    chat.push({ role: 'user', text: text });
+    var reply = { role: 'model', text: '' };
+    chat.push(reply);
+    aiBusy = true;
+    if (location.hash === '#ai') renderAi(); // clears the box and the idea chips
+    var box = document.getElementById('chat');
+    if (box && box.lastElementChild) box.lastElementChild.scrollIntoView({ block: 'nearest' });
+
+    var contents = chat.slice(0, -1).map(function (m) { return { role: m.role, parts: [{ text: m.text }] }; });
+    var finish = null, blocked = null;
+    fetch(GEMINI_BASE + '/models/' + encodeURIComponent(GEMINI_MODEL) + ':streamGenerateContent?alt=sse', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey() },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: systemPrompt() }] },
+        contents: contents,
+        generationConfig: { temperature: 0.5, maxOutputTokens: 4096 }
+      })
+    }).then(function (res) {
+      if (!res.ok) return res.json().catch(function () { return {}; }).then(function (d) { throw new Error(explainError(res.status, d.error && d.error.message)); });
+      // Stream Server-Sent Events and render as text arrives.
+      var reader = res.body.getReader();
+      var decoder = new TextDecoder();
+      var buf = '';
+      function pump() {
+        return reader.read().then(function (r) {
+          if (r.done) return;
+          buf += decoder.decode(r.value, { stream: true });
+          var idx;
+          while ((idx = buf.indexOf('\n')) >= 0) {
+            var line = buf.slice(0, idx).trim();
+            buf = buf.slice(idx + 1);
+            if (line.indexOf('data:') !== 0) continue;
+            var chunk;
+            try { chunk = JSON.parse(line.slice(5)); } catch (e) { continue; }
+            if (chunk.error) throw new Error(chunk.error.message || 'Gemini error');
+            if (chunk.promptFeedback && chunk.promptFeedback.blockReason) blocked = chunk.promptFeedback.blockReason;
+            var cand = chunk.candidates && chunk.candidates[0];
+            if (cand && cand.finishReason) finish = cand.finishReason;
+            ((cand && cand.content && cand.content.parts) || []).forEach(function (part) { if (part.text && !part.thought) reply.text += part.text; });
+            drawChat();
+          }
+          return pump();
+        });
+      }
+      return pump();
+    }).then(function () {
+      if (blocked || !reply.text) throw new Error(t('errEmpty') + (blocked ? ' (' + blocked + ')' : finish ? ' (' + finish + ')' : ''));
+      if (finish === 'MAX_TOKENS') reply.cut = true;
+      aiBusy = false;
+      if (location.hash === '#ai') renderAi();
+    }).catch(function (err) {
+      aiBusy = false;
+      var msg = err instanceof TypeError ? t('errNetwork') : err.message;
+      // A turn with no answer is dropped, so the conversation stays valid; the question goes back in the box.
+      if (!reply.text) chat.splice(chat.length - 2, 2);
+      if (location.hash !== '#ai') return;
+      renderAi();
+      showAiError(msg);
+      var inp = document.getElementById('ai-input');
+      if (inp && !reply.text) inp.value = text;
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Routing, theme, offline
+  // ---------------------------------------------------------------------------
+  function route() {
+    var h = location.hash.replace(/^#/, '') || 'recipes';
+    var tab = h.indexOf('r/') === 0 ? 'recipes' : h;
+    document.querySelectorAll('nav.tabs a').forEach(function (a) { a.classList.toggle('active', a.getAttribute('data-tab') === tab); });
+    if (h.indexOf('r/') === 0) renderRecipe(h.slice(2));
+    else if (h === 'swaps') renderSwaps();
+    else if (h === 'check') renderCheck();
+    else if (h === 'ai') renderAi();
+    else renderRecipes();
+  }
+  window.addEventListener('hashchange', function () { route(); if (location.hash.indexOf('#r/') !== 0) window.scrollTo(0, 0); });
+
+  var themeBtn = document.getElementById('theme-btn');
+  function syncThemeBtn() { themeBtn.textContent = document.documentElement.getAttribute('data-theme') === 'dark' ? '☀️' : '🌙'; }
+  themeBtn.addEventListener('click', function () {
+    var th = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', th);
+    store('safeplate_theme', th);
+    syncThemeBtn();
+  });
+
+  syncThemeBtn();
+  renderChrome();
+  route();
+  if ('serviceWorker' in navigator) window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+  </script>
+</body>
+</html>

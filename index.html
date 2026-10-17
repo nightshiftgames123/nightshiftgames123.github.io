@@ -48,6 +48,12 @@
   }
   .cube::before { left: 8px; }
   .cube::after { right: 10px; }
+  .app-icon { width: 48px; height: 48px; border-radius: 12px; display: block; margin-bottom: 14px; }
+  .btn {
+    display: inline-block; background: var(--accent); color: var(--bg); font-weight: 700;
+    text-decoration: none; padding: 10px 18px; border-radius: 10px; margin: 4px 8px 4px 0;
+  }
+  .btn.ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
   a { color: var(--accent); }
   footer { margin-top: 72px; text-align: center; color: var(--dim); font-size: 0.85rem; }
 </style>
@@ -60,7 +66,7 @@
     <div class="sub">GAMES</div>
   </header>
 
-  <p>Small games, made in small hours.</p>
+  <p>Small games and apps, made in small hours.</p>
 
   <div class="card">
     <div class="cube"></div>
@@ -68,7 +74,31 @@
     <p>A one-touch arcade runner. Tap to flip gravity, dodge the spikes,
        collect coins, and see how far you get before the floor — or the
        ceiling — catches you.</p>
-    <p style="color:var(--dim); margin-bottom:0">Coming soon to Google Play.</p>
+    <p style="margin-bottom:0">
+      <a class="btn" href="https://play.google.com/store/apps/details?id=com.nightshiftgames.gravityflip">Get it on Google Play</a>
+    </p>
+  </div>
+
+  <div class="card">
+    <img class="app-icon" src="safeplate/icon-192.png" alt="" />
+    <h2 style="margin-top:0">SafePlate</h2>
+    <p>Everyday recipes made safe for food allergies. Pick what you avoid and
+       recipes rewrite themselves with safe swaps. Includes an AI chef and a
+       label scanner that checks packages from a photo. In English and Arabic.</p>
+    <p style="margin-bottom:0">
+      <a class="btn" href="safeplate/">Open SafePlate</a>
+      <a class="btn ghost" href="safeplate/?lang=ar" lang="ar" dir="rtl">افتح بالعربية</a>
+    </p>
+  </div>
+
+  <div class="card">
+    <img class="app-icon" src="pedsanesth/nasma-192.png" alt="" />
+    <h2 style="margin-top:0">Nasma AI</h2>
+    <p>A pediatric anesthesia companion for clinicians: weight-based drug doses,
+       infusions, airway sizes and crisis support, with an AI assistant for case
+       planning. Works offline on your phone.</p>
+    <p style="color:var(--dim); font-size:0.9rem">For anesthesia professionals. Always verify doses against your institution's references.</p>
+    <p style="margin-bottom:0"><a class="btn" href="pedsanesth-app/">Open Nasma AI</a></p>
   </div>
 
   <h2>Contact</h2>

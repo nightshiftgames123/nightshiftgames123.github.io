@@ -140,6 +140,15 @@
     td.name small { display: block; font-weight: 400; color: var(--text-muted); font-size: 10px; margin-top: 2px; line-height: 1.35; }
     tr.section td { background: var(--section); color: var(--text-muted); font-size: 10px; text-transform: uppercase; letter-spacing: .05em; font-family: inherit; font-weight: 700; padding: 6px 10px; }
     .capped { color: var(--warn); font-size: 10px; display: block; font-weight: 600; }
+    /* Drug name drawn like its ASTM D4774 syringe label; striped classes get a striped frame */
+    .drug-pill { display: inline-block; padding: 3px 9px; border-radius: 6px; font-weight: 800; color: #0f172a; line-height: 1.3; font-family: inherit; }
+    .drug-pill.astm-reversal, .drug-pill.astm-opioid-antag, .drug-pill.astm-hypotensive { border: 4px solid transparent; padding: 0 7px; }
+    .drug-pill.astm-reversal { background: linear-gradient(#fff, #fff) padding-box, repeating-linear-gradient(135deg, var(--astm-paralytic) 0 6px, #fff 6px 12px) border-box; }
+    .drug-pill.astm-opioid-antag { background: linear-gradient(#fff, #fff) padding-box, repeating-linear-gradient(135deg, var(--astm-opioid) 0 6px, #fff 6px 12px) border-box; }
+    .drug-pill.astm-hypotensive { background: linear-gradient(#fff, #fff) padding-box, repeating-linear-gradient(135deg, var(--astm-pressor) 0 6px, #fff 6px 12px) border-box; }
+    :root[data-theme="light"] .drug-pill.astm-reversal, :root[data-theme="light"] .drug-pill.astm-opioid-antag,
+    :root[data-theme="light"] .drug-pill.astm-hypotensive, :root[data-theme="light"] .drug-pill.astm-other { box-shadow: 0 0 0 1px #94a3b8; border-color: transparent; }
+    .cls-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); white-space: nowrap; font-family: inherit; }
     .fav-btn { background: none; border: none; cursor: pointer; font-size: 18px; line-height: 1; padding: 2px 4px; margin-left: 4px; color: var(--text-muted); vertical-align: -2px; min-width: 28px; min-height: 28px; }
     .fav-btn.on { color: #f59e0b; }
     .support-link { display: none; }
@@ -1108,8 +1117,8 @@
         }
         const sub = [d.concText, d.note].filter(Boolean).join(' · ');
         rows.push(`<tr>
-          <td class="name">${d.name}${favBtn('d:' + d.name)}<small>${sub}</small></td>
-          <td><span class="astm-tag ${d.astm}">${d.label}</span></td>
+          <td class="name"><span class="drug-pill ${d.astm}">${d.name}</span>${favBtn('d:' + d.name)}<small>${sub}</small></td>
+          <td><span class="cls-label">${d.label}</span></td>
           <td style="color: var(--text-muted);">${fmt(perKg)} ${d.unit}/kg<small style="display:block;font-size:10px;">range ${d.range}${d.max != null ? ' · max ' + fmt(d.max) + ' ' + d.unit : ''}</small>${w != null ? basisTag(W, d.wt || 'TBW') : ''}</td>
           <td style="color: var(--accent); font-weight: bold;">${doseCell}</td>
           <td style="text-align: right; color: var(--ok); font-weight: bold;">${volCell}</td>
@@ -1166,8 +1175,8 @@
         if (f.group !== last) { html += `<div class="inf-section" data-group="${f.group}">${INF_GROUPS[f.group]}</div>`; last = f.group; }
         html += `<div class="inf-row" data-group="${f.group}" data-i="${i}">
           <div class="inf-head">
-            <div class="inf-name">${f.name}${favBtn('i:' + f.name)}<small><span id="inf-usual-${i}"></span>${f.note ? ' · ' + f.note : ''}</small><span class="wt-slot"></span></div>
-            <span class="astm-tag ${f.astm}">${f.label}</span>
+            <div class="inf-name"><span class="drug-pill ${f.astm}">${f.name}</span>${favBtn('i:' + f.name)}<small><span id="inf-usual-${i}"></span>${f.note ? ' · ' + f.note : ''}</small><span class="wt-slot"></span></div>
+            <span class="cls-label">${f.label}</span>
           </div>
           <div class="inf-field">${unitCtl}
             <input type="number" inputmode="decimal" step="any" min="0" id="inf-d-${i}" value="${f.def}" /></div>

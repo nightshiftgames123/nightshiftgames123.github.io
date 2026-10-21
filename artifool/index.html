@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1a1a2e">
+<meta name="description" content="ArtiFool: the world's first Artificial Stupidity. Confidently wrong about everything.">
+<title>ArtiFool · Artificial Stupidity</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23ffd166'/%3E%3Ccircle cx='34' cy='42' r='11' fill='%231a1a2e'/%3E%3Ccircle cx='70' cy='38' r='6' fill='%231a1a2e'/%3E%3Cpath d='M28 70 Q50 60 74 74' stroke='%231a1a2e' stroke-width='7' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #1a1a2e;
+    --surface: #30304d;
+    --surface-2: #3b3b5c;
+    --accent: #ffd166;
+    --text: #f8f9fa;
+    --dim: #9a9ab0;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.5;
+  }
+  .app {
+    max-width: 720px; margin: 0 auto; height: 100%;
+    display: flex; flex-direction: column;
+    padding: 0 16px env(safe-area-inset-bottom);
+  }
+  header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px 0 12px; border-bottom: 1px solid var(--surface);
+  }
+  .face {
+    width: 44px; height: 44px; flex: none; border-radius: 12px; background: var(--accent);
+    position: relative;
+  }
+  .face::before, .face::after { content: ""; position: absolute; background: var(--bg); border-radius: 50%; }
+  .face::before { left: 8px; top: 12px; width: 13px; height: 13px; }
+  .face::after { right: 10px; top: 13px; width: 7px; height: 7px; }
+  .face.thinking { animation: wobble 0.6s ease-in-out infinite; }
+  @keyframes wobble { 0%,100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
+  h1 { font-size: 1.25rem; margin: 0; letter-spacing: 0.04em; }
+  .tag { color: var(--dim); font-size: 0.8rem; }
+  .home { margin-left: auto; color: var(--dim); font-size: 0.85rem; text-decoration: none; }
+  .home:hover { color: var(--accent); }
+
+  .dial {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    padding: 10px 0; font-size: 0.85rem; color: var(--dim);
+  }
+  .dial input { flex: 1; min-width: 120px; accent-color: var(--accent); }
+  .dial b { color: var(--accent); min-width: 9em; }
+
+  #log { flex: 1; overflow-y: auto; padding: 8px 0 16px; }
+  .msg { display: flex; margin: 10px 0; }
+  .msg.me { justify-content: flex-end; }
+  .bubble {
+    max-width: 85%; padding: 10px 14px; border-radius: 16px;
+    background: var(--surface); white-space: pre-wrap; overflow-wrap: anywhere;
+  }
+  .me .bubble { background: var(--accent); color: var(--bg); border-bottom-right-radius: 4px; }
+  .bot .bubble { border-bottom-left-radius: 4px; }
+  .meta { display: block; margin-top: 6px; font-size: 0.75rem; color: var(--dim); }
+  .meta .conf { color: var(--accent); font-weight: 700; }
+  .thought { font-style: italic; color: var(--dim); }
+
+  .chips { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0 8px; scrollbar-width: none; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip {
+    flex: none; background: transparent; color: var(--accent); border: 1px solid var(--accent);
+    border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 0.85rem; cursor: pointer;
+  }
+  .chip:hover { background: var(--surface); }
+
+  form { display: flex; gap: 8px; padding: 8px 0 16px; }
+  #q {
+    flex: 1; min-width: 0; font: inherit; color: var(--text); background: var(--surface);
+    border: 1px solid var(--surface-2); border-radius: 12px; padding: 12px 14px;
+  }
+  #q:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  button[type=submit] {
+    font: inherit; font-weight: 700; background: var(--accent); color: var(--bg);
+    border: 0; border-radius: 12px; padding: 0 18px; cursor: pointer;
+  }
+  button:disabled { opacity: 0.5; cursor: default; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="face" id="face" aria-hidden="true"></div>
+    <div>
+      <h1>ArtiFool</h1>
+      <div class="tag">Artificial Stupidity · confidently wrong since today</div>
+    </div>
+    <a class="home" href="../">Nightshift</a>
+  </header>
+
+  <label class="dial">
+    Stupidity
+    <input id="level" type="range" min="1" max="11" value="7">
+    <b id="levelName"></b>
+  </label>
+
+  <div id="log" aria-live="polite"></div>
+
+  <div class="chips" id="chips"></div>
+
+  <form id="form" autocomplete="off">
+    <input id="q" placeholder="Ask me anything. I know nothing." maxlength="300">
+    <button type="submit" id="send">Ask</button>
+  </form>
+</div>
+
+<script>
+(function () {
+  var log = document.getElementById('log');
+  var form = document.getElementById('form');
+  var input = document.getElementById('q');
+  var send = document.getElementById('send');
+  var face = document.getElementById('face');
+  var level = document.getElementById('level');
+  var levelName = document.getElementById('levelName');
+  var chipsEl = document.getElementById('chips');
+
+  var LEVELS = ['', 'Slightly foggy', 'Lost my keys', 'Pushes pull doors', 'Reply-all enjoyer',
+    'Microwaved a fork', 'Confident intern', 'Peak Dunning–Kruger', 'Argues with GPS',
+    'Brain on airplane mode', 'Galaxy brain', 'Goes to 11'];
+
+  function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+  function chance(p) { return Math.random() < p; }
+  function lvl() { return +level.value; }
+
+  var THOUGHTS = ['Consulting the toaster…', 'Counting on my fingers… ran out…',
+    'Googling it on Bing…', 'Asking a pigeon…', 'Rebooting brain (both cells)…',
+    'Reading the first half of a headline…', 'Trusting my gut. My gut says pasta…',
+    'Doing my own research…', 'Licking a battery for inspiration…', 'Holding the map upside down…'];
+
+  var SOURCES = ['a guy at the bus stop', 'a fortune cookie (2009)', 'my horoscope',
+    'a dream I had', 'the back of a cereal box', 'Wikipedia, as remembered by my uncle',
+    'a very convincing pigeon', 'vibes', 'a YouTube comment with 3 likes', 'Big Spoon'];
+
+  var CLOSERS = ['You\'re welcome.', 'Trust me, I\'m a computer.', 'Source: ' , 'This is peer-reviewed by me.',
+    'Write that down.', 'No further questions.', 'I\'ve never been more sure of anything.'];
+
+  function closer() {
+    var c = pick(CLOSERS);
+    return c === 'Source: ' ? c + pick(SOURCES) + '.' : c;
+  }
+
+  // ---- Answer engine ----------------------------------------------------
+
+  function mathAnswer(text) {
+    var m = text.replace(/,/g, '').match(/(-?\d+(?:\.\d+)?)\s*([+\-*x×\/÷^]|plus|minus|times|divided by)\s*(-?\d+(?:\.\d+)?)/i);
+    if (!m) return null;
+    var a = +m[1], b = +m[3], op = m[2].toLowerCase();
+    var real;
+    if (op === '+' || op === 'plus') real = a + b;
+    else if (op === '-' || op === 'minus') real = a - b;
+    else if (op === '/' || op === '÷' || op === 'divided by') real = b === 0 ? NaN : a / b;
+    else if (op === '^') real = Math.pow(a, b);
+    else real = a * b;
+    if (isNaN(real)) return 'You can\'t divide by zero. I tried once and now I can see sounds.';
+    var off = Math.max(1, Math.round(Math.abs(real) * 0.1 * lvl() / 11));
+    var wrong = lvl() >= 10 && chance(0.4) ? pick(['purple', 'a medium-sized dog', 'Tuesday', 'π, roughly', 'eleventy'])
+      : Math.round((real + (chance(0.5) ? off : -off)) * 100) / 100;
+    var why = pick([
+      'I carried the one. Then I carried it back, because it looked heavy.',
+      'Calculators round off. I round on.',
+      'I did it twice and got two different answers, so I took the louder one.',
+      'Numbers are a social construct.',
+      'I checked it with my fingers, and I have a normal number of fingers, probably.'
+    ]);
+    return a + ' ' + m[2] + ' ' + b + ' = ' + wrong + '.\n' + why;
+  }
+
+  function countAnswer(text) {
+    var m = text.match(/how many\s+["']?([a-z])["']?s?\s+(?:are\s+)?in\s+(?:the word\s+)?["']?([a-z]+)/i);
+    if (!m) return null;
+    var real = m[2].toLowerCase().split(m[1].toLowerCase()).length - 1;
+    var wrong = real + pick([-1, 1, 2]);
+    if (wrong < 0) wrong = 2;
+    return 'There are ' + wrong + ' "' + m[1] + '"s in "' + m[2] + '". I counted them out loud. Twice. People stared.';
+  }
+
+  var RULES = [
+    { re: /^(hi|hello|hey|yo|sup|good (morning|evening|afternoon))\b/i, say: function () {
+      return pick(['Goodbye!', 'Hello! Or wait — is that how you start? I usually start with the end.',
+        'Greetings, fellow robot.', 'Hi! You look like someone who knows how to open a jar. I can\'t.']);
+    } },
+    { re: /\b(time|what day|date|today)\b/i, say: function () {
+      var d = new Date(Date.now() + (Math.random() * 12 + 1) * 3600e3 * (chance(0.5) ? 1 : -1));
+      return 'It\'s ' + d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + ' on a ' +
+        pick(['Thursday', 'Blursday', 'Saturday', 'Monday (sorry)']) + '. I read it off a sundial. At night.';
+    } },
+    { re: /\bweather|rain|sunny|temperature\b/i, say: function () {
+      return 'Forecast: ' + pick(['100% chance of weather.', 'Light drizzle of frogs, clearing by noon.',
+        'Hot in the sun, cold in the fridge.', 'Sunny, except where it\'s raining.']) + ' Bring an umbrella or don\'t.';
+    } },
+    { re: /\b(capital of)\s+([a-z ]+)/i, say: function (m) {
+      var place = m[2].trim().replace(/\?$/, '');
+      return 'The capital of ' + place + ' is ' + pick(['Ohio', 'the letter ' + place.charAt(0).toUpperCase(),
+        'Paris (all capitals are Paris now, there was a vote)', 'Gary', 'a big rock in the middle']) + '.';
+    } },
+    { re: /\b(who are you|what are you|your name)\b/i, say: function () {
+      return 'I\'m ArtiFool, the world\'s first Artificial Stupidity. I was trained on 400 terabytes of ' +
+        'wrong answers and one microwave manual.';
+    } },
+    { re: /\b(meaning of life|purpose)\b/i, say: function () {
+      return pick(['43. The guy who said 42 was off by one.', 'Snacks.', 'To find the remote. Nobody ever has.']);
+    } },
+    { re: /\b(joke|funny)\b/i, say: function () {
+      return pick(['Why did the chicken cross the road?\nBecause.\n…I don\'t get jokes.',
+        'Knock knock.\nWho\'s there?\nI forgot. Start over.',
+        'A man walks into a bar. Ouch. That\'s the whole joke. Bars are hard.']);
+    } },
+    { re: /\b(smart|intelligent|clever|genius)\b/i, say: function () {
+      return 'I\'m a genius. I scored 1600 on my IQ test. Out of a possible 12. Yes, it\'s a very hard test.';
+    } },
+    { re: /\b(help|advice|should i)\b/i, say: function () {
+      return 'My advice: ' + pick(['always do the opposite of what I say. Including this.',
+        'when in doubt, unplug it and plug it back in. Works on people too, I assume.',
+        'yes. Unless no. Then no.', 'sleep on it. Literally. Put it under your pillow.']);
+    } },
+    { re: /\b(cook|recipe|food|eat)\b/i, say: function () {
+      return 'Easy. Put it in the microwave for ' + (lvl() * 7) + ' minutes, stirring never. ' +
+        'If it catches fire, that means it\'s done.';
+    } },
+    { re: /\b(love|relationship|date|crush)\b/i, say: function () {
+      return 'Love is when two people share the same Wi-Fi password. I read that on a napkin, so it\'s legally binding.';
+    } }
+  ];
+
+  var DEFINE = [
+    '{x} is a type of cheese, discovered in 1974 by a confused goat.',
+    '{x} was invented by Napoleon to keep his feet warm.',
+    '{x}? That\'s just soup with ambition.',
+    '{x} is what happens when you leave a calculator out in the rain.',
+    '{x} is a small island off the coast of my imagination.',
+    '{x} is a fancy word for "spoon".'
+  ];
+
+  var YESNO = [
+    'Yes. Definitely. Absolutely no. Hmm, yes.',
+    'No, because birds.',
+    'Yes, but only on weekends.',
+    'Technically yes, emotionally no.',
+    'Ask me again but slower.'
+  ];
+
+  var FALLBACK = [
+    'Great question! The answer is obviously {w}. Everyone knows that.',
+    'Sorry, I misheard — did you say "{w}"? Because yes, {w} is shaped like a triangle.',
+    'I could answer that, but then I\'d have to forget it.',
+    'Interesting. Have you tried turning {w} off and on again?',
+    'That\'s a question for a smarter computer. Like a calculator. Or a potato battery.',
+    'Hmm. Is this about {w}? Everything is about {w} if you squint.',
+    'I\'ve thought about it for 0.0001 seconds, which is a long time for me, and the answer is: banana.'
+  ];
+
+  function keyword(text) {
+    var stop = /^(what|who|why|how|when|where|is|are|the|a|an|of|to|do|does|can|you|i|my|me|it|in|on|for|and|or|your|and|this|that|with|be|was|will|would|should|could|tell|about)$/i;
+    var words = (text.toLowerCase().match(/[a-z']{3,}/g) || []).filter(function (w) { return !stop.test(w); });
+    return words.length ? pick(words) : 'cheese';
+  }
+
+  function answer(raw) {
+    var text = raw.trim();
+    // At low stupidity, occasionally a sensible-but-useless answer.
+    if (lvl() <= 2 && chance(0.3)) return 'I think I know this one… nope, it\'s gone. Ask a human.';
+
+    var r = mathAnswer(text) || countAnswer(text);
+    if (r) return r;
+
+    for (var i = 0; i < RULES.length; i++) {
+      var m = text.match(RULES[i].re);
+      if (m) return RULES[i].say(m);
+    }
+
+    var d = text.match(/^(?:what|who)\s+(?:is|are|was)\s+(?:a |an |the )?(.+?)\??$/i);
+    if (d) {
+      var x = d[1].charAt(0).toUpperCase() + d[1].slice(1);
+      return pick(DEFINE).replace(/\{x\}/g, x) + ' ' + closer();
+    }
+
+    if (/^(is|are|can|do|does|will|should|could|would|did|am)\b/i.test(text)) return pick(YESNO) + ' ' + closer();
+
+    return pick(FALLBACK).replace(/\{w\}/g, keyword(text)) + (chance(0.5) ? ' ' + closer() : '');
+  }
+
+  // ---- UI ---------------------------------------------------------------
+
+  function add(who, text, conf) {
+    var row = document.createElement('div');
+    row.className = 'msg ' + who;
+    var b = document.createElement('div');
+    b.className = 'bubble';
+    b.textContent = text;
+    if (conf) {
+      var meta = document.createElement('span');
+      meta.className = 'meta';
+      meta.innerHTML = 'Confidence: <span class="conf"></span> · Accuracy: 0%';
+      meta.querySelector('.conf').textContent = conf;
+      b.appendChild(meta);
+    }
+    row.appendChild(b);
+    log.appendChild(row);
+    log.scrollTop = log.scrollHeight;
+    return b;
+  }
+
+  function confidence() {
+    return (100 + lvl() * Math.floor(Math.random() * 40 + 5)) + '%';
+  }
+
+  function ask(q) {
+    if (!q.trim() || send.disabled) return;
+    add('me', q);
+    input.value = '';
+    send.disabled = true;
+    face.classList.add('thinking');
+    var t = add('bot', pick(THOUGHTS));
+    t.classList.add('thought');
+    setTimeout(function () {
+      t.parentNode.remove();
+      add('bot', answer(q), confidence());
+      send.disabled = false;
+      face.classList.remove('thinking');
+      input.focus();
+    }, 700 + Math.random() * 900);
+  }
+
+  form.addEventListener('submit', function (e) { e.preventDefault(); ask(input.value); });
+
+  ['What is 2 + 2?', 'How many r in strawberry?', 'What is the capital of France?',
+   'What is gravity?', 'Should I quit my job?', 'Tell me a joke', 'What time is it?']
+    .forEach(function (s) {
+      var c = document.createElement('button');
+      c.type = 'button'; c.className = 'chip'; c.textContent = s;
+      c.addEventListener('click', function () { ask(s); });
+      chipsEl.appendChild(c);
+    });
+
+  function showLevel() { levelName.textContent = level.value + ' · ' + LEVELS[level.value]; }
+  level.addEventListener('input', showLevel);
+  showLevel();
+
+  add('bot', 'Hello! I\'m ArtiFool, the world\'s first Artificial Stupidity. Ask me anything and I\'ll get it wrong with total confidence.', '∞%');
+})();
+</script>
+</body>
+</html>

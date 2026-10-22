@@ -160,6 +160,11 @@
   function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
   function chance(p) { return Math.random() < p; }
   function lvl() { return +level.value; }
+  // The dial in three bands: 0 = almost right (1–3), 1 = confidently wrong (4–7), 2 = unhinged (8–11).
+  function tier() { var l = lvl(); return l <= 3 ? 0 : l <= 7 ? 1 : 2; }
+  function tiered(lists) { return pick(lists[tier()]); }
+  function rand(lo, hi) { return lo + Math.floor(Math.random() * (hi - lo + 1)); }
+  function shuffled(a) { return a.slice().sort(function () { return Math.random() - 0.5; }); }
   function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
   function dot(s) { return /[.!?]$/.test(s) ? s : s + '.'; }
   function hasArabic(s) { return /[؀-ۿ]/.test(s); }
@@ -218,42 +223,89 @@
   var EN_PP = { wrote: 'written', sang: 'sung', made: 'made', built: 'built', won: 'won', drew: 'drawn', ate: 'eaten',
     stole: 'stolen', took: 'taken', broke: 'broken', found: 'found', gave: 'given', began: 'begun', ran: 'run', sold: 'sold' };
 
-  var EN_CAUSES = ['a typo in the laws of physics back in 1987', 'the moon told it to', 'too much Wi-Fi in the air',
-    'nobody remembered to switch it off', 'birds. It\'s always birds.', 'it\'s cheaper that way',
-    'someone sneezed during the Big Bang', 'it lost a bet with a toaster'];
-  var EN_PLACES = ['in the fridge', 'right behind you. Don\'t look.', 'in Belgium', 'under the third cushion from the left',
-    'in the cloud. The real one. It\'s raining there now.', 'exactly where you left it, which is the problem'];
-  var EN_TIMES = ['on a Tuesday in 1847', 'next Thursday, around lunch', 'in the year 3000', '5 minutes ago. You just missed it.',
-    'never, but also yesterday', 'at 25 o\'clock'];
-  var EN_PEOPLE = ['a raccoon named Gary', 'Napoleon, on his day off', 'my uncle', 'Shakespeare, as a prank',
-    'three kids in a trench coat', 'a very determined goose'];
-  var EN_STEPS = ['Turn it off and on again.', 'Add salt.', 'Shout the instructions at it, louder each time.',
-    'Watch half a tutorial.', 'Ask a pigeon for a second opinion.', 'Do it upside down for extra grip.',
-    'Blow on it like an old game cartridge.', 'Give up dramatically, then try once more.'];
+  // Lists below come in three tiers, chosen by the stupidity dial:
+  // 1–3 almost right, 4–7 confidently wrong, 8–11 unhinged.
+  var EN_CAUSES = [
+    ['it reflects the ocean, mostly', 'it\'s cheaper that way', 'the government decided it in 1987',
+      'it was like that when I got here', 'it\'s slightly too warm, probably'],
+    ['a typo in the laws of physics back in 1987', 'the moon told it to', 'too much Wi-Fi in the air',
+      'nobody remembered to switch it off', 'birds. It\'s always birds.', 'someone sneezed during the Big Bang',
+      'it lost a bet with a toaster'],
+    ['a wizard sneezed during the Big Bang and nobody said bless you', 'the moon is jealous. Don\'t tell the moon I said that.',
+      'eleven pigeons voted on it. The twelfth abstained.', 'the Earth hugs everything too hard, and this is the same thing but sideways']
+  ];
+  var EN_PLACES = [
+    ['in your other pocket', 'in the car', 'on the kitchen counter, under the mail', 'in the last place you look. Obviously.'],
+    ['in the fridge', 'right behind you. Don\'t look.', 'in Belgium', 'under the third cushion from the left',
+      'in the cloud. The real one. It\'s raining there now.', 'exactly where you left it, which is the problem'],
+    ['on the moon. It wanted a holiday.', 'inside a sandwich, in 1994', 'in a parallel universe, looking for you too',
+      'orbiting Belgium at low altitude']
+  ];
+  var EN_TIMES = [
+    ['a few years earlier than you think', 'in 1946, or thereabouts', 'last Tuesday', 'around 3 pm, I think'],
+    ['on a Tuesday in 1847', 'next Thursday, around lunch', 'in the year 3000', '5 minutes ago. You just missed it.',
+      'never, but also yesterday'],
+    ['before time was invented, so technically never', 'tomorrow, 400 years ago', 'during the Great Spoon War of 1066',
+      'at 25 o\'clock on the 32nd of Smarch']
+  ];
+  var EN_PEOPLE = [
+    ['Thomas Edison\'s cousin', 'a guy named Steve', 'the French, probably', 'someone in the 1800s with a big moustache'],
+    ['a raccoon named Gary', 'Napoleon, on his day off', 'my uncle', 'Shakespeare, as a prank',
+      'three kids in a trench coat', 'a very determined goose'],
+    ['a self-aware bowl of soup', 'the ghost of a Roman accountant', 'me, in a past life, as a crab',
+      'a goose who later became mayor']
+  ];
+  var EN_STEPS = [
+    ['Read the manual. Skip the important page.', 'Watch a tutorial at double speed.', 'Try it once, then ask someone.',
+      'Use the wrong screwdriver.', 'Do it in the dark to save electricity.'],
+    ['Turn it off and on again.', 'Add salt.', 'Shout the instructions at it, louder each time.',
+      'Watch half a tutorial.', 'Ask a pigeon for a second opinion.', 'Do it upside down for extra grip.',
+      'Blow on it like an old game cartridge.', 'Give up dramatically, then try once more.'],
+    ['Sacrifice a sock to the dryer.', 'Whisper your password to it.', 'Hire a raccoon as a consultant.',
+      'Microwave the instructions.', 'Do a little dance. Bigger. BIGGER.']
+  ];
+  var EN_STEPS_END = ['Should work. Mostly.', 'If it didn\'t work, you did step 2 wrong.',
+    'If it explodes, that\'s step 4. There is no step 4.'];
+  var EN_SURE = [
+    ['I\'m pretty sure.', 'I read it somewhere.', 'Most experts agree, roughly.', 'At least on weekdays.'],
+    ['Everyone knows that.', 'I saw it on TV once.', 'It\'s basic science.', 'Look it up. Actually, don\'t.'],
+    ['A pigeon confirmed it under oath.', 'I saw it in a dream, and the dream was in HD.',
+      'Science hasn\'t caught up with me yet.', 'The toaster agrees. The toaster is never wrong.']
+  ];
 
   function specificEn(B, text) {
     var t = text.replace(/[?!.\s]+$/, '').trim();
-    var m;
+    var m, k = tier();
 
     // "Tea or coffee?", "Which is bigger, the sun or a grape?"
     if ((m = t.match(/(?:^|,\s*|^(?:should|do|can|would|will) (?:i|we|you)\s+)([^,]+?)\s+or\s+([^,]+)$/i))) {
       var opts = [swapEn(m[1].replace(/^(which|what|is it|is|are)\s+/i, '')), swapEn(m[2])];
-      var win = chance(0.5) ? 0 : 1;
-      return cap(opts[win]) + ', obviously. ' + cap(opts[1 - win]) + ' is just ' + opts[win] +
-        ' for people who gave up. ' + closer(B);
+      // "Tea or coffee?" → "tea", so it reads right mid-sentence.
+      if (/^[A-Z][a-z]/.test(opts[0])) opts[0] = opts[0].charAt(0).toLowerCase() + opts[0].slice(1);
+      var win = opts[chance(0.5) ? 0 : 1], lose = win === opts[0] ? opts[1] : opts[0];
+      if (k === 0) return cap(win) + ', I think. ' + cap(lose) + ' is fine too, but ' + win + ' has more vowels.';
+      if (k === 2) return 'Neither. ' + cap(opts[0]) + ' and ' + opts[1] + ' are the same thing wearing different hats. Choose soup.';
+      return cap(win) + ', obviously. ' + cap(lose) + ' is just ' + win + ' for people who gave up. ' + closer(B);
     }
     if ((m = t.match(/^why\s+(.+)$/i))) {
-      return 'Why ' + swapEn(m[1]) + '? Easy: ' + dot(pick(EN_CAUSES)) + ' ' + closer(B);
+      return 'Why ' + swapEn(m[1]) + '? Easy: ' + dot(tiered(EN_CAUSES)) + ' ' + closer(B);
     }
     if ((m = t.match(/^how old\s+(?:is|are)\s+(.+)$/i))) {
-      var who = swapEn(m[1]);
-      return cap(who) + (who === 'I' ? ' am ' : ' is ') + (Math.floor(Math.random() * 900) + 3) + ' years old. I checked the rings.';
+      var who = swapEn(m[1]), be = who === 'I' ? ' am ' : ' is ';
+      if (k === 2) return cap(who) + be + 'about 14 billion years old. Give or take a Tuesday.';
+      return k === 0 ? cap(who) + be + rand(30, 150) + ' years old, I think.'
+        : cap(who) + be + rand(3, 900) + ' years old. I checked the rings.';
     }
     if ((m = t.match(/^how (many|much)\s+(\S+)(.*)$/i))) {
-      var n = Math.floor(Math.random() * 40 * lvl()) + 2;
-      return m[1].toLowerCase() === 'many'
-        ? 'Exactly ' + n + ' ' + m[2] + '. I counted twice and got ' + (n + 3) + ', so I averaged it badly.'
-        : 'About ' + n + ' ' + pick(['dollars, or 3 goats', 'kilograms of vibes', 'bananas', 'spoonfuls']) + '. Prices may vary by mood.';
+      if (m[1].toLowerCase() === 'much') {
+        return k === 0 ? 'About ' + rand(2, 20) + ' dollars. Give or take.'
+          : k === 1 ? 'About ' + rand(20, 500) + ' ' + pick(['dollars, or 3 goats', 'kilograms of vibes', 'bananas', 'spoonfuls']) + '. Prices may vary by mood.'
+          : 'Seven goats and a medium-sized secret.';
+      }
+      if (k === 0) return 'Exactly ' + rand(2, 12) + ' ' + m[2] + '. I\'m pretty sure.';
+      if (k === 2) return 'About ' + rand(2, 9) + ' million ' + m[2] + '. Maybe more. They keep moving.';
+      var n = rand(13, 200);
+      return 'Exactly ' + n + ' ' + m[2] + '. I counted twice and got ' + (n + 3) + ', so I averaged it badly.';
     }
     if ((m = t.match(/^how (?:are|is) (.+)$/i))) {
       var s = swapEn(m[1]);
@@ -261,23 +313,23 @@
         : cap(s) + ' is doing great. It told me so yesterday. ' + closer(B);
     }
     if ((m = t.match(/^how (?:do|can|should|would|could) (?:i|you|we|one)\s+(.+)$/i)) || (m = t.match(/^how to\s+(.+)$/i))) {
-      var steps = EN_STEPS.slice().sort(function () { return Math.random() - 0.5; });
-      return 'To ' + swapEn(m[1]) + ':\n1. ' + steps[0] + '\n2. ' + steps[1] + '\n3. ' + steps[2] +
-        '\nIf it didn\'t work, you did step 2 wrong.';
+      var steps = shuffled(EN_STEPS[k]);
+      return 'To ' + swapEn(m[1]) + ':\n1. ' + steps[0] + '\n2. ' + steps[1] + '\n3. ' + steps[2] + '\n' + EN_STEPS_END[k];
     }
     if ((m = t.match(/^where (is|are|was|were)\s+(.+)$/i))) {
-      return cap(swapEn(m[2])) + ' ' + m[1].toLowerCase() + ' ' + dot(pick(EN_PLACES)) + ' ' + closer(B);
+      return cap(swapEn(m[2])) + ' ' + m[1].toLowerCase() + ' ' + dot(tiered(EN_PLACES)) + ' ' + closer(B);
     }
     if ((m = t.match(/^where\s+(.+)$/i))) {
-      return 'Where ' + swapEn(m[1]) + '? ' + dot(cap(pick(EN_PLACES))) + ' ' + closer(B);
+      return 'Where ' + swapEn(m[1]) + '? ' + dot(cap(tiered(EN_PLACES))) + ' ' + closer(B);
     }
     if ((m = t.match(/^when\s+(.+)$/i))) {
-      return 'When ' + swapEn(m[1]) + '? ' + dot(cap(pick(EN_TIMES))) + ' I was there.';
+      return 'When ' + swapEn(m[1]) + '? ' + dot(cap(tiered(EN_TIMES))) + (k === 0 ? ' Pretty sure.' : ' I was there.');
     }
     if ((m = t.match(/^who\s+([a-z]+)\s+(.+)$/i)) && !/^(is|are|was|were)$/i.test(m[1])) {
       var v = m[1].toLowerCase(), pp = EN_PP[v] || (/ed$/.test(v) ? v : null);
-      return pp ? cap(swapEn(m[2])) + ' was ' + pp + ' by ' + pick(EN_PEOPLE) + '. On a dare. ' + closer(B)
-        : cap(pick(EN_PEOPLE)) + ' ' + v + ' ' + swapEn(m[2]) + '. Not me, though.';
+      return pp ? cap(swapEn(m[2])) + ' was ' + pp + ' by ' + tiered(EN_PEOPLE) + '. ' +
+          ['I think.', 'On a dare.', 'It was a whole thing.'][k] + ' ' + closer(B)
+        : cap(tiered(EN_PEOPLE)) + ' ' + v + ' ' + swapEn(m[2]) + '. Not me, though.';
     }
     // Yes/no: "Can dogs fly?" → "Yes, dogs can fly."
     if ((m = t.match(/^(is|are|am|was|were|can|could|do|does|did|will|would|should|shall|has|have|may|might|must)\s+((?:(?:the|a|an|my|your|his|her|their|our|this|that|these|those|it)\s+)?[\w'-]+)\s*(.*)$/i))) {
@@ -288,66 +340,99 @@
       else if (subj === 'you' && aux === 'was') aux = 'were';
       var yes = chance(0.5);
       var line = (yes ? 'Yes, ' : 'No, ') + subj + ' ' + (yes ? aux : EN_NOT[aux]) + (rest ? ' ' + rest : '') + '.';
-      return line + ' ' + pick(['Everyone knows that.', 'I saw it on TV once.', 'It\'s basic science.', 'Look it up. Actually, don\'t.']
-        .concat(subj === 'I' || subj === 'you' ? [] : [cap(subj) + ' told me personally.'])) + ' ' + closer(B);
+      var sure = EN_SURE[k].concat(k === 1 && subj !== 'I' && subj !== 'you' ? [cap(subj) + ' told me personally.'] : []);
+      return line + ' ' + pick(sure) + ' ' + closer(B);
     }
     return null;
   }
 
   // ---- Arabic question parsing ------------------------------------------
 
-  var AR_CAUSES = ['خطأ مطبعي في قوانين الفيزياء سنة 1987.', 'القمر طلب ذلك.', 'كثرة الواي فاي في الجو.',
-    'لا أحد تذكّر أن يطفئه.', 'الطيور. دائماً الطيور.', 'هكذا أرخص.', 'أحدهم عطس أثناء الانفجار العظيم.',
-    'خسر رهاناً مع محمصة خبز.'];
-  var AR_PLACES = ['في الثلاجة.', 'خلفك تماماً. لا تلتفت.', 'في بلجيكا.', 'تحت الوسادة الثالثة من اليسار.',
-    'في السحابة. السحابة الحقيقية. صارت تمطر هناك الآن.', 'في نفس المكان الذي تركته فيه، وهنا المشكلة.'];
-  var AR_TIMES = ['يوم ثلاثاء سنة 1847.', 'الخميس القادم، تقريباً وقت الغداء.', 'سنة 3000.', 'قبل 5 دقائق. فاتك.',
-    'أبداً، وأيضاً أمس.', 'الساعة 25.'];
-  var AR_PEOPLE = ['راكون اسمه غاري', 'نابليون في يوم إجازته', 'خالي', 'شكسبير كمقلب',
-    'ثلاثة أطفال لابسين معطفاً واحداً', 'إوزة عنيدة جداً'];
-  var AR_STEPS = ['أطفئه وشغّله من جديد.', 'أضف ملحاً.', 'اصرخ عليه بالتعليمات، كل مرة بصوت أعلى.',
-    'شاهد نصف فيديو تعليمي.', 'اسأل حمامة عن رأي ثانٍ.', 'افعلها بالمقلوب لثبات أكثر.',
-    'انفخ فيه مثل شريط الأتاري القديم.', 'استسلم بشكل درامي، ثم جرّب مرة أخيرة.'];
+  var AR_CAUSES = [
+    ['لأنها تعكس لون البحر، غالباً.', 'هكذا أرخص.', 'الحكومة قررت ذلك سنة 1987.', 'كانت هكذا لما وصلت.'],
+    ['خطأ مطبعي في قوانين الفيزياء سنة 1987.', 'القمر طلب ذلك.', 'كثرة الواي فاي في الجو.',
+      'لا أحد تذكّر أن يطفئه.', 'الطيور. دائماً الطيور.', 'أحدهم عطس أثناء الانفجار العظيم.', 'خسر رهاناً مع محمصة خبز.'],
+    ['ساحر عطس أثناء الانفجار العظيم ولم يقل له أحد «يرحمكم الله».', 'القمر يغار. لا تقل للقمر إني قلت هذا.',
+      'إحدى عشرة حمامة صوّتت على ذلك. الثانية عشرة امتنعت.', 'الأرض تحضن كل شيء بقوة زيادة، وهذا نفس الشيء بس بالعرض.']
+  ];
+  var AR_PLACES = [
+    ['في جيبك الثاني.', 'في السيارة.', 'على طاولة المطبخ، تحت الأوراق.', 'في آخر مكان ستبحث فيه. طبعاً.'],
+    ['في الثلاجة.', 'خلفك تماماً. لا تلتفت.', 'في بلجيكا.', 'تحت الوسادة الثالثة من اليسار.',
+      'في السحابة. السحابة الحقيقية. صارت تمطر هناك الآن.', 'في نفس المكان الذي تركته فيه، وهنا المشكلة.'],
+    ['على القمر. أراد إجازة.', 'داخل ساندويش، سنة 1994.', 'في عالم موازٍ، يبحث عنك هو أيضاً.', 'يدور حول بلجيكا على ارتفاع منخفض.']
+  ];
+  var AR_TIMES = [
+    ['قبل ما تظن ببضع سنوات.', 'سنة 1946، تقريباً.', 'الثلاثاء الماضي.', 'حوالي الساعة 3 العصر، على ما أظن.'],
+    ['يوم ثلاثاء سنة 1847.', 'الخميس القادم، تقريباً وقت الغداء.', 'سنة 3000.', 'قبل 5 دقائق. فاتك.', 'أبداً، وأيضاً أمس.'],
+    ['قبل اختراع الوقت، يعني تقنياً أبداً.', 'بكرة، قبل 400 سنة.', 'أثناء حرب الملاعق الكبرى سنة 1066.', 'الساعة 25 يوم 32 من شهر شباط.']
+  ];
+  var AR_PEOPLE = [
+    ['ابن عم توماس إديسون', 'واحد اسمه سمير', 'الفرنسيون، على الأغلب', 'شخص بشوارب كبيرة من القرن التاسع عشر'],
+    ['راكون اسمه غاري', 'نابليون في يوم إجازته', 'خالي', 'شكسبير كمقلب', 'ثلاثة أطفال لابسين معطفاً واحداً', 'إوزة عنيدة جداً'],
+    ['صحن شوربة واعٍ', 'شبح محاسب روماني', 'أنا، في حياة سابقة، لما كنت سلطعوناً', 'إوزة صارت بعدها رئيسة بلدية']
+  ];
+  var AR_STEPS = [
+    ['اقرأ الكتيّب. وتجاوز الصفحة المهمة.', 'شاهد فيديو تعليمياً بسرعة مضاعفة.', 'جرّب مرة، ثم اسأل أحداً.',
+      'استعمل المفك الغلط.', 'افعلها في الظلام لتوفير الكهرباء.'],
+    ['أطفئه وشغّله من جديد.', 'أضف ملحاً.', 'اصرخ عليه بالتعليمات، كل مرة بصوت أعلى.',
+      'شاهد نصف فيديو تعليمي.', 'اسأل حمامة عن رأي ثانٍ.', 'افعلها بالمقلوب لثبات أكثر.',
+      'انفخ فيه مثل شريط الأتاري القديم.', 'استسلم بشكل درامي، ثم جرّب مرة أخيرة.'],
+    ['قدّم جورباً قرباناً للنشافة.', 'اهمس له بكلمة السر.', 'وظّف راكوناً كمستشار.', 'ضع التعليمات في المايكرويف.',
+      'ارقص رقصة صغيرة. أكبر. أكبـــر.']
+  ];
+  var AR_STEPS_END = ['المفروض تزبط. غالباً.', 'وإذا ما زبطت، يعني عملت الخطوة 2 غلط.',
+    'وإذا انفجرت، هذه الخطوة 4. لا توجد خطوة 4.'];
+  var AR_SURE = [
+    ['متأكد تقريباً.', 'قرأتها في مكان ما.', 'أغلب الخبراء يوافقون، تقريباً.'],
+    ['الكل يعرف هذا.', 'شفتها مرة على التلفزيون.', 'هذا علم أساسي.', 'ابحث عنها. لا، لا تبحث.'],
+    ['حمامة أكدت ذلك تحت القسم.', 'رأيتها في حلم، والحلم كان بدقة عالية.', 'العلم لم يلحق بي بعد.',
+      'المحمصة توافق. والمحمصة لا تخطئ أبداً.']
+  ];
 
   function specificAr(B, text) {
     var t = text.replace(/[؟?!.\s]+$/, '').trim();
-    var m;
+    var m, k = tier();
 
     // "شاي أو قهوة؟", "أيهما أكبر، الشمس أم العنب؟"
     var tail = t.indexOf('،') >= 0 ? t.slice(t.lastIndexOf('،') + 1).trim() : t.replace(/^(?:هل|أيهما|ايهما|أيهم|ايش|شو)\s+/, '');
     if ((m = tail.match(/^(.+?)\s+(?:أم|أو|او|ولا|والا)\s+(.+)$/))) {
-      var opts = [m[1], m[2]], win = chance(0.5) ? 0 : 1;
-      return opts[win] + ' طبعاً. ' + opts[1 - win] + ' مجرد ' + opts[win] + ' للناس اللي استسلموا. ' + closer(B);
+      var win = chance(0.5) ? m[1] : m[2], lose = win === m[1] ? m[2] : m[1];
+      if (k === 0) return win + ' على ما أظن. ' + lose + ' كمان حلو، بس ' + win + ' أطيب.';
+      if (k === 2) return 'ولا واحد. ' + m[1] + ' و' + m[2] + ' نفس الشيء لابسين قبعات مختلفة. اختر شوربة.';
+      return win + ' طبعاً. ' + lose + ' مجرد ' + win + ' للناس اللي استسلموا. ' + closer(B);
     }
     if ((m = t.match(/^(?:لماذا|ليش|ليه|لم)\s+(.+)$/))) {
-      return 'لماذا ' + m[1] + '؟ بسيطة: ' + pick(AR_CAUSES) + ' ' + closer(B);
+      return 'لماذا ' + m[1] + '؟ بسيطة: ' + tiered(AR_CAUSES) + ' ' + closer(B);
     }
     if ((m = t.match(/^كم عمر\s+(.+)$/))) {
-      return 'عمر ' + m[1] + ' ' + (Math.floor(Math.random() * 900) + 11) + ' سنة بالضبط. عددت الحلقات.';
+      return k === 0 ? 'عمر ' + m[1] + ' حوالي ' + rand(30, 150) + ' سنة، على ما أظن.'
+        : k === 1 ? 'عمر ' + m[1] + ' ' + rand(11, 900) + ' سنة بالضبط. عددت الحلقات.'
+        : 'عمر ' + m[1] + ' حوالي 14 مليار سنة. زائد ناقص يوم ثلاثاء.';
     }
     if ((m = t.match(/^كم\s+(.+)$/))) {
-      var n = Math.floor(Math.random() * 40 * lvl()) + 11;
+      if (k === 0) return 'كم ' + m[1] + '؟ ' + rand(2, 12) + '، على ما أظن.';
+      if (k === 2) return 'كم ' + m[1] + '؟ حوالي ' + rand(2, 9) + ' مليون. وربما أكثر. لا يتوقفون عن الحركة.';
+      var n = rand(13, 200);
       return 'كم ' + m[1] + '؟ ' + n + ' بالضبط. عددتها مرتين وطلعت ' + (n + 3) + '، فأخذت المتوسط بشكل غلط.';
     }
     if ((m = t.match(/^(?:كيف|شلون|ازاي|إزاي)\s+(.+)$/))) {
       if (/^(?:حالك|الحال|انت|أنت|صحتك)$/.test(m[1])) return 'تمام! أحسن من أي وقت. اليوم تعلمت ما هي الملعقة.';
-      var steps = AR_STEPS.slice().sort(function () { return Math.random() - 0.5; });
-      return 'كيف ' + m[1] + '؟ سهلة:\n1. ' + steps[0] + '\n2. ' + steps[1] + '\n3. ' + steps[2] +
-        '\nوإذا ما زبطت، يعني عملت الخطوة 2 غلط.';
+      var steps = shuffled(AR_STEPS[k]);
+      return 'كيف ' + m[1] + '؟ سهلة:\n1. ' + steps[0] + '\n2. ' + steps[1] + '\n3. ' + steps[2] + '\n' + AR_STEPS_END[k];
     }
     if ((m = t.match(/^(?:أين|اين|وين|فين)\s+(.+)$/))) {
-      return m[1] + '؟ ' + pick(AR_PLACES) + ' ' + closer(B);
+      return m[1] + '؟ ' + tiered(AR_PLACES) + ' ' + closer(B);
     }
     if ((m = t.match(/^(?:متى|امتى|إمتى|ايمتى)\s+(.+)$/))) {
-      return 'متى ' + m[1] + '؟ ' + pick(AR_TIMES) + ' كنت هناك.';
+      return 'متى ' + m[1] + '؟ ' + tiered(AR_TIMES) + (k === 0 ? ' متأكد تقريباً.' : ' كنت هناك.');
     }
     if ((m = t.match(/^(?:من|مين)\s+(\S+)\s+(.+)$/)) && !/^(?:هو|هي|هم|أين|اين|وين|أنت|انت)$/.test(m[1])) {
-      return 'الذي ' + m[1] + ' ' + m[2] + ' هو ' + pick(AR_PEOPLE) + '. على سبيل التحدي. ' + closer(B);
+      return 'الذي ' + m[1] + ' ' + m[2] + ' هو ' + tiered(AR_PEOPLE) + '. ' +
+        ['على ما أظن.', 'على سبيل التحدي.', 'كانت قصة طويلة.'][k] + ' ' + closer(B);
     }
     // Yes/no: "هل القمر جبنة؟" → "نعم، القمر جبنة."
     if ((m = t.match(/^هل\s+(.+)$/))) {
-      return (chance(0.5) ? 'نعم، ' + m[1] + '.' : 'لا! ' + m[1] + '؟ مستحيل.') + ' ' +
-        pick(['الكل يعرف هذا.', 'شفتها مرة على التلفزيون.', 'هذا علم أساسي.', 'ابحث عنها. لا، لا تبحث.']) + ' ' + closer(B);
+      return (chance(0.5) ? 'نعم، ' + m[1] + '.' : 'لا! ' + m[1] + '؟ مستحيل.') + ' ' + pick(AR_SURE[k]) + ' ' + closer(B);
     }
     return null;
   }
@@ -368,11 +453,15 @@
         'Write that down.', 'No further questions.', 'I\'ve never been more sure of anything.'],
       divZero: 'You can\'t divide by zero. I tried once and now I can see sounds.',
       silly: ['purple', 'a medium-sized dog', 'Tuesday', 'π, roughly', 'eleventy'],
-      mathWhy: ['I carried the one. Then I carried it back, because it looked heavy.',
-        'Calculators round off. I round on.',
-        'I did it twice and got two different answers, so I took the louder one.',
-        'Numbers are a social construct.',
-        'I checked it with my fingers, and I have a normal number of fingers, probably.'],
+      mathWhy: [
+        ['Close enough.', 'I rounded. Creatively.', 'Off by one is still pretty good.'],
+        ['I carried the one. Then I carried it back, because it looked heavy.',
+          'Calculators round off. I round on.',
+          'I did it twice and got two different answers, so I took the louder one.',
+          'I checked it with my fingers, and I have a normal number of fingers, probably.'],
+        ['Numbers are a social construct, and I\'m antisocial.', 'I used a calculator made of cheese.',
+          'I asked the number. The number lied.']
+      ],
       ops: { plus: '+', minus: '-', times: '*', 'divided by': '/' },
       opRe: '[+\\-*x×\\/÷^]|plus|minus|times|divided by',
       countRe: /how many\s+["']?([a-z])["']?s?\s+(?:are\s+)?in\s+(?:the word\s+)?["']?([a-z]+)/i,
@@ -384,8 +473,12 @@
             'Greetings, fellow robot.', 'Hi! You look like someone who knows how to open a jar. I can\'t.']);
         } },
         { re: /\b(weather|rain|raining|sunny|temperature)\b/i, say: function () {
-          return 'Forecast: ' + pick(['100% chance of weather.', 'Light drizzle of frogs, clearing by noon.',
-            'Hot in the sun, cold in the fridge.', 'Sunny, except where it\'s raining.']) + ' Bring an umbrella or don\'t.';
+          return 'Forecast: ' + tiered([
+            ['Probably sunny. Or cloudy. Bring a jacket to be safe.', 'Mild, with a chance of something.'],
+            ['100% chance of weather.', 'Light drizzle of frogs, clearing by noon.',
+              'Hot in the sun, cold in the fridge.', 'Sunny, except where it\'s raining. Bring an umbrella or don\'t.'],
+            ['Raining upwards until noon.', 'Thick fog made of soup.', 'A tornado of kittens. Very soft. Still a tornado.']
+          ]);
         } },
         { re: /\b(what time|what day|what's the date|what is the date|today's date)\b/i, say: function () {
           return 'It\'s ' + wrongTime('en') + ' on a ' +
@@ -393,8 +486,12 @@
         } },
         { re: /\b(capital of)\s+([a-z ]+)/i, say: function (m) {
           var place = m[2].trim();
-          return 'The capital of ' + place + ' is ' + pick(['Ohio', 'the letter ' + place.charAt(0).toUpperCase(),
-            'Paris (all capitals are Paris now, there was a vote)', 'Gary', 'a big rock in the middle']) + '.';
+          return 'The capital of ' + place + ' is ' + tiered([
+            ['its second-biggest city. They swapped them, I think', 'the old capital. They moved it, but I didn\'t',
+              'the city with the biggest airport'],
+            ['Ohio', 'Paris (all capitals are Paris now, there was a vote)', 'Gary', 'a big rock in the middle'],
+            ['a goat named Gerald. He was elected', 'Atlantis. It moved', 'the capital letter ' + place.charAt(0).toUpperCase()]
+          ]) + '.';
         } },
         { re: /\b(who are you|what are you|your name)\b/i, say: function () {
           return 'I\'m ArtiFool, the world\'s first Artificial Stupidity. I was trained on 400 terabytes of ' +
@@ -428,23 +525,36 @@
         } }
       ],
       defineRe: /^(?:what|who)\s+(?:is|are|was)\s+(?:a |an |the )?(.+?)\??$/i,
-      define: ['{x} is a type of cheese, discovered in 1974 by a confused goat.',
-        '{x} was invented by Napoleon to keep his feet warm.',
-        '{x}? That\'s just soup with ambition.',
-        '{x} is what happens when you leave a calculator out in the rain.',
-        '{x} is a small island off the coast of my imagination.',
-        '{x} is a fancy word for "spoon".'],
+      define: [
+        ['{x} is basically a kind of magnet.', '{x} was discovered in France in the 1700s, by accident.',
+          '{x} is mostly water, like most things.', '{x} is a type of energy. The slow kind.'],
+        ['{x} is a type of cheese, discovered in 1974 by a confused goat.',
+          '{x} was invented by Napoleon to keep his feet warm.',
+          '{x}? That\'s just soup with ambition.',
+          '{x} is what happens when you leave a calculator out in the rain.',
+          '{x} is a small island off the coast of my imagination.',
+          '{x} is a fancy word for "spoon".'],
+        ['{x} is a cheese that became self-aware and moved to Belgium.', '{x} is what clouds dream about when they nap.',
+          '{x} is just three ducks in a raincoat pretending to be science.']
+      ],
       specific: specificEn,
-      fallback: ['You said "{q}"? Bold. The answer is obviously {w}. Everyone knows that.',
-        'Ah, {w}. Classic {w}. It\'s shaped like a triangle, you know.',
-        'Interesting question about {w}. Have you tried turning {w} off and on again?',
-        '"{q}"… I could answer that, but then I\'d have to forget it.',
-        'Hmm. {W}? Everything is about {w} if you squint.',
-        'I\'ve thought about {w} for 0.0001 seconds, which is a long time for me, and the answer is: banana.'],
+      fallback: [
+        ['I\'m fairly sure the answer involves {w}, just in the opposite direction.', '{W}? I think that\'s mostly a myth.',
+          'Good question. It\'s complicated, but mostly it\'s about {w}.'],
+        ['You said "{q}"? Bold. The answer is obviously {w}. Everyone knows that.',
+          'Ah, {w}. Classic {w}. It\'s shaped like a triangle, you know.',
+          'Interesting question about {w}. Have you tried turning {w} off and on again?',
+          '"{q}"… I could answer that, but then I\'d have to forget it.',
+          'Hmm. {W}? Everything is about {w} if you squint.',
+          'I\'ve thought about {w} for 0.0001 seconds, which is a long time for me, and the answer is: banana.'],
+        ['{W}! {W}! I KNOW THIS ONE! It\'s a goat.', 'Ah yes, {w}, the ancient enemy of spoons.',
+          'I asked {w} directly and it just said "moo".']
+      ],
       wordRe: /[a-z']{3,}/g,
       stop: /^(what|who|why|how|when|where|is|are|the|a|an|of|to|do|does|can|you|i|my|me|it|in|on|for|and|or|your|this|that|with|be|was|will|would|should|could|tell|about|please|explain|think|know|want|have|has|there|they|them|from|just|really)$/i,
       defaultWord: 'cheese',
-      giveUp: 'I think I know this one… nope, it\'s gone. Ask a human.'
+      misheard: function (w) { return 'Did you say "' + w.replace(/^[^aeiou]*/i, /^b/i.test(w) ? 'd' : 'b') + '"? Never mind. '; },
+      shout: function (r) { return r.toUpperCase() + ' !!!'; }
     },
     ar: {
       thoughts: ['أستشير المحمصة…', 'أعدّ على أصابعي… خلصت الأصابع…', 'أبحث في غوغل عن طريق بينغ…',
@@ -459,11 +569,14 @@
         'اكتبها عندك.', 'لا مزيد من الأسئلة.', 'لم أكن متأكداً من شيء في حياتي أكثر من هذا.'],
       divZero: 'لا يمكنك القسمة على صفر. جربتها مرة وصرت أرى الأصوات.',
       silly: ['بنفسجي', 'كلب متوسط الحجم', 'الثلاثاء', 'باي تقريباً', 'مليون وشوية'],
-      mathWhy: ['حملت الواحد. ثم أرجعته لأنه كان ثقيلاً.',
-        'الآلات الحاسبة تقرّب. أنا أبعّد.',
-        'حسبتها مرتين وطلع لي جوابان، فاخترت الأعلى صوتاً.',
-        'الأرقام مجرد بناء اجتماعي.',
-        'تأكدت بأصابعي، وعندي عدد طبيعي من الأصابع، على الأغلب.'],
+      mathWhy: [
+        ['قريب كفاية.', 'قرّبت. بإبداع.', 'الغلط بواحد يعتبر ممتازاً.'],
+        ['حملت الواحد. ثم أرجعته لأنه كان ثقيلاً.',
+          'الآلات الحاسبة تقرّب. أنا أبعّد.',
+          'حسبتها مرتين وطلع لي جوابان، فاخترت الأعلى صوتاً.',
+          'تأكدت بأصابعي، وعندي عدد طبيعي من الأصابع، على الأغلب.'],
+        ['الأرقام بناء اجتماعي، وأنا مش اجتماعي.', 'استعملت آلة حاسبة مصنوعة من الجبنة.', 'سألت الرقم. الرقم كذب عليّ.']
+      ],
       ops: { 'زائد': '+', 'ناقص': '-', 'ضرب': '*', 'في': '*', 'على': '/', 'تقسيم': '/', 'مقسوم على': '/' },
       opRe: '[+\\-*x×\\/÷^]|زائد|ناقص|ضرب|مقسوم على|تقسيم|على|في',
       countRe: /كم\s+(?:حرف|مرة)\s+["«]?([ء-ي])["»]?\s+(?:يوجد\s+|يتكرر\s+)?في\s+(?:كلمة\s+)?["«]?([ء-ي]+)/,
@@ -474,8 +587,12 @@
             'تحياتي يا زميلي الروبوت.', 'أهلاً! شكلك تعرف تفتح المرطبانات. أنا لا.']);
         } },
         { re: arWord('طقس|جو|مطر|أمطار|حرارة|مشمس'), say: function () {
-          return 'التوقعات: ' + pick(['احتمال طقس 100٪.', 'زخات خفيفة من الضفادع، تصفو ظهراً.',
-            'حار في الشمس، بارد في الثلاجة.', 'مشمس، إلا في الأماكن الممطرة.']) + ' خذ مظلة أو لا تأخذ.';
+          return 'التوقعات: ' + tiered([
+            ['مشمس غالباً. أو غائم. خذ جاكيت احتياطاً.', 'معتدل، مع احتمال حدوث شيء ما.'],
+            ['احتمال طقس 100٪.', 'زخات خفيفة من الضفادع، تصفو ظهراً.',
+              'حار في الشمس، بارد في الثلاجة.', 'مشمس، إلا في الأماكن الممطرة. خذ مظلة أو لا تأخذ.'],
+            ['مطر للأعلى حتى الظهر.', 'ضباب كثيف مصنوع من الشوربة.', 'إعصار من القطط. ناعم جداً. لكنه إعصار.']
+          ]);
         } },
         { re: /(كم الساعة|الساعة كم|ما الوقت|كم الوقت|أي يوم|اي يوم|ما التاريخ|شو التاريخ|تاريخ اليوم)/, say: function () {
           return 'الساعة ' + wrongTime('ar') + ' يوم ' +
@@ -483,8 +600,13 @@
         } },
         { re: /عاصمة\s+([^؟?!.]+)/, say: function (m) {
           var place = m[1].trim();
-          return 'عاصمة ' + place + ' هي ' + pick(['أوهايو', 'أبو العبد', 'صخرة كبيرة في المنتصف',
-            'باريس (كل العواصم صارت باريس، كان في تصويت)', 'نفس الدولة بس بخط أكبر']) + '.';
+          return 'عاصمة ' + place + ' هي ' + tiered([
+            ['ثاني أكبر مدينة فيها. بدّلوهم، على ما أظن', 'العاصمة القديمة. نقلوها، بس أنا ما انتقلت',
+              'المدينة التي فيها أكبر مطار'],
+            ['أوهايو', 'أبو العبد', 'صخرة كبيرة في المنتصف',
+              'باريس (كل العواصم صارت باريس، كان في تصويت)', 'نفس الدولة بس بخط أكبر'],
+            ['تيس اسمه جميل. انتخبوه', 'أتلانتس. انتقلت', 'الحرف الكبير المكتوب على الخريطة']
+          ]) + '.';
         } },
         { re: /(من أنت|من انت|مين انت|مين أنت|ما اسمك|شو اسمك|ايش اسمك|وش اسمك)/, say: function () {
           return 'أنا ArtiFool، أول غباء اصطناعي في العالم. تدرّبت على 400 تيرابايت من الأجوبة الخاطئة وكتيّب مايكرويف واحد.';
@@ -515,28 +637,43 @@
         } }
       ],
       defineRe: /^(?:ما|شو|ايش|إيش|وش|من|مين)\s+(?:(?:هو|هي|هم)\s+(.+?)|(ال\S+))\s*[؟?]?$/,
-      define: ['{x} نوع من الجبن، اكتشفه ماعز مرتبك سنة 1974.',
-        '{x} اخترعه نابليون ليدفّئ قدميه.',
-        '{x}؟ هذه مجرد شوربة عندها طموح.',
-        '{x} هو ما يحدث لما تترك آلة حاسبة تحت المطر.',
-        '{x} جزيرة صغيرة قبالة سواحل خيالي.',
-        '{x} كلمة فخمة معناها «ملعقة».'],
+      define: [
+        ['{x} أساساً نوع من المغناطيس.', '{x} اكتُشف في فرنسا في القرن الثامن عشر، بالصدفة.',
+          '{x} معظمه ماء، مثل معظم الأشياء.', '{x} نوع من الطاقة. النوع البطيء.'],
+        ['{x} نوع من الجبن، اكتشفه ماعز مرتبك سنة 1974.',
+          '{x} اخترعه نابليون ليدفّئ قدميه.',
+          '{x}؟ هذه مجرد شوربة عندها طموح.',
+          '{x} هو ما يحدث لما تترك آلة حاسبة تحت المطر.',
+          '{x} جزيرة صغيرة قبالة سواحل خيالي.',
+          '{x} كلمة فخمة معناها «ملعقة».'],
+        ['{x} جبنة صار عندها وعي وانتقلت إلى بلجيكا.', '{x} هو ما تحلم به الغيوم لما تأخذ قيلولة.',
+          '{x} مجرد ثلاث بطات لابسة معطف مطر وتتظاهر أنها علم.']
+      ],
       specific: specificAr,
-      fallback: ['«{q}»؟ سؤال جريء. الجواب واضح: {w}. الكل يعرف هذا.',
-        'آه، {w}. {w} الكلاسيكي. على فكرة، هو على شكل مثلث.',
-        'سؤال مثير عن {w}. جربت تطفي {w} وتشغلها مرة ثانية؟',
-        '«{q}»… كنت سأجيب، لكن بعدها لازم أنساها.',
-        'امم. {w}؟ كل شيء عن {w} إذا دقّقت النظر.',
-        'فكرت في {w} لمدة 0.0001 ثانية، وهي مدة طويلة بالنسبة لي، والجواب: موزة.'],
+      fallback: [
+        ['متأكد تقريباً أن الجواب له علاقة بـ{w}، بس بالاتجاه المعاكس.', '{w}؟ أظن أن هذه خرافة غالباً.',
+          'سؤال جيد. القصة معقدة، لكنها غالباً عن {w}.'],
+        ['«{q}»؟ سؤال جريء. الجواب واضح: {w}. الكل يعرف هذا.',
+          'آه، {w}. {w} الكلاسيكي. على فكرة، هو على شكل مثلث.',
+          'سؤال مثير عن {w}. جربت تطفي {w} وتشغلها مرة ثانية؟',
+          '«{q}»… كنت سأجيب، لكن بعدها لازم أنساها.',
+          'امم. {w}؟ كل شيء عن {w} إذا دقّقت النظر.',
+          'فكرت في {w} لمدة 0.0001 ثانية، وهي مدة طويلة بالنسبة لي، والجواب: موزة.'],
+        ['{w}! {w}! أعرف هذه! إنها ماعز.', 'آه نعم، {w}، العدو القديم للملاعق.', 'سألت {w} مباشرة فقال لي «ماااع».']
+      ],
       wordRe: /[ء-ي]{3,}/g,
       stop: /^(ماذا|لماذا|كيف|متى|أين|اين|هل|التي|الذي|هذا|هذه|ذلك|كان|يكون|أنا|انا|أنت|انت|إلى|الى|على|عن|شو|ايش|ليش|وين|لو|ممكن|يمكن|عندي|عندك|قل|لي|اشرح|أريد|اريد|بدي|ابغى|أبغى)$/,
       defaultWord: 'الجبنة',
-      giveUp: 'أظن أني أعرف هذه… لا، راحت. اسأل إنساناً.'
+      misheard: function (w) { return 'سمعتك تقول «' + w.replace(/^ال/, '').split('').reverse().join('') + '»؟ ماشي. '; },
+      shout: function (r) { return 'اسمعني جيداً: ' + r + ' !!!'; }
     }
   };
 
   function wrongTime(l) {
-    var d = new Date(Date.now() + (Math.random() * 12 + 1) * 3600e3 * (chance(0.5) ? 1 : -1));
+    var k = tier();
+    if (k === 2) return pick(l === 'ar' ? ['25:61', '7:-3', '13:99'] : ['25:61', 'thirteen-ish', '7:-3']);
+    var minutes = k === 0 ? rand(10, 50) : rand(60, 720);
+    var d = new Date(Date.now() + minutes * 60e3 * (chance(0.5) ? 1 : -1));
     return d.toLocaleTimeString(l, { hour: 'numeric', minute: '2-digit' });
   }
 
@@ -559,10 +696,12 @@
     else if (op === '^') real = Math.pow(a, b);
     else real = a * b;
     if (isNaN(real)) return B.divZero;
-    var off = Math.max(1, Math.round(Math.abs(real) * 0.1 * lvl() / 11));
-    var wrong = lvl() >= 10 && chance(0.4) ? pick(B.silly)
+    // How far off grows with the dial: by 1, then by a quarter or so, then by multiples.
+    var k = tier(), size = Math.abs(real);
+    var off = k === 0 ? 1 : k === 1 ? Math.max(2, Math.round(size * 0.25)) + rand(0, 3) : Math.max(15, Math.round(size * rand(2, 10)));
+    var wrong = k === 2 && chance(0.4) ? pick(B.silly)
       : Math.round((real + (chance(0.5) ? off : -off)) * 100) / 100;
-    return a + ' ' + m[2] + ' ' + b + ' = ' + wrong + '.\n' + pick(B.mathWhy);
+    return a + ' ' + m[2] + ' ' + b + ' = ' + wrong + '.\n' + tiered(B.mathWhy);
   }
 
   function countAnswer(B, text) {
@@ -600,19 +739,26 @@
     var B = BRAIN[l];
     // Arabic-Indic digits → ASCII so the math still works.
     var text = raw.trim().replace(/[٠-٩]/g, function (d) { return d.charCodeAt(0) - 0x0660; });
-    if (lvl() <= 2 && chance(0.3)) return B.giveUp;
+    var r = baseAnswer(B, text);
+    // Extra chaos at the top of the dial: mishearing from 9, shouting at 11.
+    var w = keyword(B, text);
+    if (lvl() >= 9 && w !== B.defaultWord && !/\d/.test(text) && chance(0.25)) r = B.misheard(w) + r;
+    if (lvl() === 11 && chance(0.35)) r = B.shout(r);
+    return r;
+  }
 
+  function baseAnswer(B, text) {
     var r = mathAnswer(B, text) || countAnswer(B, text) || runRules(B.rules, text);
     if (r) return r;
 
     var d = text.match(B.defineRe);
-    if (d) return pick(B.define).replace(/\{x\}/g, cap(d[1] || d[2])) + ' ' + closer(B);
+    if (d) return tiered(B.define).replace(/\{x\}/g, cap(d[1] || d[2])) + ' ' + closer(B);
 
     r = B.specific(B, text) || runRules(B.late, text);
     if (r) return r;
 
     var w = keyword(B, text), q = text.replace(/[؟?!.\s]+$/, '');
-    return pick(B.fallback).replace(/\{q\}/g, q).replace(/\{W\}/g, cap(w)).replace(/\{w\}/g, w) +
+    return tiered(B.fallback).replace(/\{q\}/g, q).replace(/\{W\}/g, cap(w)).replace(/\{w\}/g, w) +
       (chance(0.5) ? ' ' + closer(B) : '');
   }
 

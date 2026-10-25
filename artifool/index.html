@@ -91,6 +91,10 @@
   .meta { display: block; margin-top: 6px; font-size: 0.75rem; color: var(--dim); }
   .meta .conf { color: var(--accent); font-weight: 700; }
   .thought { font-style: italic; color: var(--dim); }
+  .share-btn {
+    margin-inline-start: 8px; font: inherit; font-size: 0.75rem; font-weight: 700; color: var(--accent);
+    background: none; border: 1px solid var(--accent); border-radius: 999px; padding: 1px 10px; cursor: pointer;
+  }
 
   .chips { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0 8px; scrollbar-width: none; }
   .chips::-webkit-scrollbar { display: none; }
@@ -157,7 +161,14 @@
 
   var uiLang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
 
-  function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+  // Remember recent picks per list so the same joke doesn't come straight back.
+  var recent = typeof WeakMap === 'function' ? new WeakMap() : null;
+  function pick(a) {
+    var used = (recent && recent.get(a)) || [], keep = Math.floor(a.length / 2), i, tries = 0;
+    do { i = Math.floor(Math.random() * a.length); } while (used.indexOf(i) >= 0 && ++tries < 20);
+    if (recent && keep) { used.push(i); if (used.length > keep) used.shift(); recent.set(a, used); }
+    return a[i];
+  }
   function chance(p) { return Math.random() < p; }
   function lvl() { return +level.value; }
   // The dial in three bands: 0 = almost right (1–3), 1 = confidently wrong (4–7), 2 = unhinged (8–11).
@@ -183,6 +194,7 @@
       brainAi: 'AI brain: on', brainOff: 'Offline brain', keyAdd: 'Add a Gemini key for smarter nonsense', keyChange: 'Change key',
       keyPrompt: 'Paste a Gemini API key (free at aistudio.google.com/apikey). It stays on this device.\nLeave it empty to use the offline brain.',
       aiFail: 'AI brain didn\'t answer, so I used my backup brain',
+      share: 'Share', shareText: 'ArtiFool said this with total confidence 🤦',
       welcome: 'Hello! I\'m ArtiFool, the world\'s first Artificial Stupidity. Ask me anything and I\'ll get it wrong with total confidence.',
       chips: ['What is 2 + 2?', 'Can dogs fly?', 'Why is the sky blue?', 'Where is my phone?',
         'Who invented the telephone?', 'Tea or coffee?', 'How do I fix my car?', 'How many r in strawberry?'],
@@ -197,6 +209,7 @@
       brainAi: 'دماغ الذكاء الاصطناعي: يعمل', brainOff: 'دماغ بدون إنترنت', keyAdd: 'أضف مفتاح Gemini لهراء أذكى', keyChange: 'غيّر المفتاح',
       keyPrompt: 'الصق مفتاح Gemini API (مجاني من aistudio.google.com/apikey). يبقى على هذا الجهاز فقط.\nاتركه فارغاً لاستخدام الدماغ بدون إنترنت.',
       aiFail: 'دماغ الذكاء الاصطناعي لم يرد، فاستخدمت دماغي الاحتياطي',
+      share: 'شارك', shareText: 'ArtiFool قالها بكل ثقة 🤦',
       welcome: 'أهلاً! أنا ArtiFool، أول غباء اصطناعي في العالم. اسألني أي شيء وسأجيبك خطأً بكل ثقة.',
       chips: ['كم 2 + 2؟', 'هل الكلاب تطير؟', 'لماذا السماء زرقاء؟', 'وين جوالي؟',
         'من اخترع الهاتف؟', 'شاي أو قهوة؟', 'كيف أصلح سيارتي؟', 'كم حرف م في كلمة ممتاز؟'],
@@ -227,50 +240,68 @@
   // 1–3 almost right, 4–7 confidently wrong, 8–11 unhinged.
   var EN_CAUSES = [
     ['it reflects the ocean, mostly', 'it\'s cheaper that way', 'the government decided it in 1987',
-      'it was like that when I got here', 'it\'s slightly too warm, probably'],
+      'it was like that when I got here', 'it\'s slightly too warm, probably',
+      'the wind pushed it a bit', 'it\'s just tradition at this point'],
     ['a typo in the laws of physics back in 1987', 'the moon told it to', 'too much Wi-Fi in the air',
       'nobody remembered to switch it off', 'birds. It\'s always birds.', 'someone sneezed during the Big Bang',
-      'it lost a bet with a toaster'],
+      'it lost a bet with a toaster',
+      'a goat pressed the wrong button in 1974', 'the instructions were in French', 'it was on sale', 'Tuesday happened'],
     ['a wizard sneezed during the Big Bang and nobody said bless you', 'the moon is jealous. Don\'t tell the moon I said that.',
-      'eleven pigeons voted on it. The twelfth abstained.', 'the Earth hugs everything too hard, and this is the same thing but sideways']
+      'eleven pigeons voted on it. The twelfth abstained.', 'the Earth hugs everything too hard, and this is the same thing but sideways',
+      'a squirrel unionised the atmosphere', 'the universe ran out of beige']
   ];
   var EN_PLACES = [
-    ['in your other pocket', 'in the car', 'on the kitchen counter, under the mail', 'in the last place you look. Obviously.'],
+    ['in your other pocket', 'in the car', 'on the kitchen counter, under the mail', 'in the last place you look. Obviously.',
+      'in the bag you didn\'t check'],
     ['in the fridge', 'right behind you. Don\'t look.', 'in Belgium', 'under the third cushion from the left',
-      'in the cloud. The real one. It\'s raining there now.', 'exactly where you left it, which is the problem'],
+      'in the cloud. The real one. It\'s raining there now.', 'exactly where you left it, which is the problem',
+      'in your shoe. The left one.', 'with your other sock', 'at your aunt\'s house, probably on the sofa'],
     ['on the moon. It wanted a holiday.', 'inside a sandwich, in 1994', 'in a parallel universe, looking for you too',
-      'orbiting Belgium at low altitude']
+      'orbiting Belgium at low altitude',
+      'inside the Wi-Fi']
   ];
   var EN_TIMES = [
-    ['a few years earlier than you think', 'in 1946, or thereabouts', 'last Tuesday', 'around 3 pm, I think'],
+    ['a few years earlier than you think', 'in 1946, or thereabouts', 'last Tuesday', 'around 3 pm, I think',
+      'a couple of years later than people say'],
     ['on a Tuesday in 1847', 'next Thursday, around lunch', 'in the year 3000', '5 minutes ago. You just missed it.',
-      'never, but also yesterday'],
+      'never, but also yesterday',
+      'at half past a cow', 'on the 31st of February', 'right after lunch in 1066'],
     ['before time was invented, so technically never', 'tomorrow, 400 years ago', 'during the Great Spoon War of 1066',
-      'at 25 o\'clock on the 32nd of Smarch']
+      'at 25 o\'clock on the 32nd of Smarch',
+      'when the toaster says so']
   ];
   var EN_PEOPLE = [
-    ['Thomas Edison\'s cousin', 'a guy named Steve', 'the French, probably', 'someone in the 1800s with a big moustache'],
+    ['Thomas Edison\'s cousin', 'a guy named Steve', 'the French, probably', 'someone in the 1800s with a big moustache',
+      'some Germans, I think'],
     ['a raccoon named Gary', 'Napoleon, on his day off', 'my uncle', 'Shakespeare, as a prank',
-      'three kids in a trench coat', 'a very determined goose'],
+      'three kids in a trench coat', 'a very determined goose',
+      'a man called Dave who never got credit', 'Cleopatra, in her free time', 'a committee of cats', 'my neighbour\'s dentist'],
     ['a self-aware bowl of soup', 'the ghost of a Roman accountant', 'me, in a past life, as a crab',
-      'a goose who later became mayor']
+      'a goose who later became mayor',
+      'an extremely confident sandwich']
   ];
   var EN_STEPS = [
     ['Read the manual. Skip the important page.', 'Watch a tutorial at double speed.', 'Try it once, then ask someone.',
-      'Use the wrong screwdriver.', 'Do it in the dark to save electricity.'],
+      'Use the wrong screwdriver.', 'Do it in the dark to save electricity.',
+      'Check it\'s plugged in. Then check again.'],
     ['Turn it off and on again.', 'Add salt.', 'Shout the instructions at it, louder each time.',
       'Watch half a tutorial.', 'Ask a pigeon for a second opinion.', 'Do it upside down for extra grip.',
-      'Blow on it like an old game cartridge.', 'Give up dramatically, then try once more.'],
+      'Blow on it like an old game cartridge.', 'Give up dramatically, then try once more.',
+      'Read the instructions backwards.', 'Hit it gently. Then less gently.', 'Wait for Mercury to stop being weird.', 'Put it in rice.'],
     ['Sacrifice a sock to the dryer.', 'Whisper your password to it.', 'Hire a raccoon as a consultant.',
-      'Microwave the instructions.', 'Do a little dance. Bigger. BIGGER.']
+      'Microwave the instructions.', 'Do a little dance. Bigger. BIGGER.',
+      'Negotiate with it. Offer biscuits.']
   ];
   var EN_STEPS_END = ['Should work. Mostly.', 'If it didn\'t work, you did step 2 wrong.',
     'If it explodes, that\'s step 4. There is no step 4.'];
   var EN_SURE = [
-    ['I\'m pretty sure.', 'I read it somewhere.', 'Most experts agree, roughly.', 'At least on weekdays.'],
-    ['Everyone knows that.', 'I saw it on TV once.', 'It\'s basic science.', 'Look it up. Actually, don\'t.'],
+    ['I\'m pretty sure.', 'I read it somewhere.', 'Most experts agree, roughly.', 'At least on weekdays.',
+      'I double-checked. Once.'],
+    ['Everyone knows that.', 'I saw it on TV once.', 'It\'s basic science.', 'Look it up. Actually, don\'t.',
+      'My cousin\'s friend confirmed it.', 'It was on a T-shirt.', 'I\'d bet your money on it.'],
     ['A pigeon confirmed it under oath.', 'I saw it in a dream, and the dream was in HD.',
-      'Science hasn\'t caught up with me yet.', 'The toaster agrees. The toaster is never wrong.']
+      'Science hasn\'t caught up with me yet.', 'The toaster agrees. The toaster is never wrong.',
+      'The moon nodded at me.']
   ];
 
   function specificEn(B, text) {
@@ -349,44 +380,62 @@
   // ---- Arabic question parsing ------------------------------------------
 
   var AR_CAUSES = [
-    ['لأنها تعكس لون البحر، غالباً.', 'هكذا أرخص.', 'الحكومة قررت ذلك سنة 1987.', 'كانت هكذا لما وصلت.'],
+    ['لأنها تعكس لون البحر، غالباً.', 'هكذا أرخص.', 'الحكومة قررت ذلك سنة 1987.', 'كانت هكذا لما وصلت.',
+      'الريح دفعته شوي.'],
     ['خطأ مطبعي في قوانين الفيزياء سنة 1987.', 'القمر طلب ذلك.', 'كثرة الواي فاي في الجو.',
-      'لا أحد تذكّر أن يطفئه.', 'الطيور. دائماً الطيور.', 'أحدهم عطس أثناء الانفجار العظيم.', 'خسر رهاناً مع محمصة خبز.'],
+      'لا أحد تذكّر أن يطفئه.', 'الطيور. دائماً الطيور.', 'أحدهم عطس أثناء الانفجار العظيم.', 'خسر رهاناً مع محمصة خبز.',
+      'ماعز ضغط الزر الغلط سنة 1974.', 'التعليمات كانت بالفرنسي.', 'كان عليه تخفيضات.', 'لأن اليوم ثلاثاء.'],
     ['ساحر عطس أثناء الانفجار العظيم ولم يقل له أحد «يرحمكم الله».', 'القمر يغار. لا تقل للقمر إني قلت هذا.',
-      'إحدى عشرة حمامة صوّتت على ذلك. الثانية عشرة امتنعت.', 'الأرض تحضن كل شيء بقوة زيادة، وهذا نفس الشيء بس بالعرض.']
+      'إحدى عشرة حمامة صوّتت على ذلك. الثانية عشرة امتنعت.', 'الأرض تحضن كل شيء بقوة زيادة، وهذا نفس الشيء بس بالعرض.',
+      'سنجاب أسس نقابة للغلاف الجوي.']
   ];
   var AR_PLACES = [
-    ['في جيبك الثاني.', 'في السيارة.', 'على طاولة المطبخ، تحت الأوراق.', 'في آخر مكان ستبحث فيه. طبعاً.'],
+    ['في جيبك الثاني.', 'في السيارة.', 'على طاولة المطبخ، تحت الأوراق.', 'في آخر مكان ستبحث فيه. طبعاً.',
+      'في الشنطة التي لم تفتشها.'],
     ['في الثلاجة.', 'خلفك تماماً. لا تلتفت.', 'في بلجيكا.', 'تحت الوسادة الثالثة من اليسار.',
-      'في السحابة. السحابة الحقيقية. صارت تمطر هناك الآن.', 'في نفس المكان الذي تركته فيه، وهنا المشكلة.'],
-    ['على القمر. أراد إجازة.', 'داخل ساندويش، سنة 1994.', 'في عالم موازٍ، يبحث عنك هو أيضاً.', 'يدور حول بلجيكا على ارتفاع منخفض.']
+      'في السحابة. السحابة الحقيقية. صارت تمطر هناك الآن.', 'في نفس المكان الذي تركته فيه، وهنا المشكلة.',
+      'في حذائك. الفردة اليسرى.', 'مع الجورب الثاني.', 'عند خالتك، على الكنبة غالباً.'],
+    ['على القمر. أراد إجازة.', 'داخل ساندويش، سنة 1994.', 'في عالم موازٍ، يبحث عنك هو أيضاً.', 'يدور حول بلجيكا على ارتفاع منخفض.',
+      'داخل الواي فاي.']
   ];
   var AR_TIMES = [
-    ['قبل ما تظن ببضع سنوات.', 'سنة 1946، تقريباً.', 'الثلاثاء الماضي.', 'حوالي الساعة 3 العصر، على ما أظن.'],
-    ['يوم ثلاثاء سنة 1847.', 'الخميس القادم، تقريباً وقت الغداء.', 'سنة 3000.', 'قبل 5 دقائق. فاتك.', 'أبداً، وأيضاً أمس.'],
-    ['قبل اختراع الوقت، يعني تقنياً أبداً.', 'بكرة، قبل 400 سنة.', 'أثناء حرب الملاعق الكبرى سنة 1066.', 'الساعة 25 يوم 32 من شهر شباط.']
+    ['قبل ما تظن ببضع سنوات.', 'سنة 1946، تقريباً.', 'الثلاثاء الماضي.', 'حوالي الساعة 3 العصر، على ما أظن.',
+      'بعد ما يقول الناس بسنتين تقريباً.'],
+    ['يوم ثلاثاء سنة 1847.', 'الخميس القادم، تقريباً وقت الغداء.', 'سنة 3000.', 'قبل 5 دقائق. فاتك.', 'أبداً، وأيضاً أمس.',
+      'الساعة الثالثة وبقرة.', 'يوم 31 شباط.', 'بعد الغداء مباشرة، سنة 1066.'],
+    ['قبل اختراع الوقت، يعني تقنياً أبداً.', 'بكرة، قبل 400 سنة.', 'أثناء حرب الملاعق الكبرى سنة 1066.', 'الساعة 25 يوم 32 من شهر شباط.',
+      'لما تقرر المحمصة.']
   ];
   var AR_PEOPLE = [
-    ['ابن عم توماس إديسون', 'واحد اسمه سمير', 'الفرنسيون، على الأغلب', 'شخص بشوارب كبيرة من القرن التاسع عشر'],
-    ['راكون اسمه غاري', 'نابليون في يوم إجازته', 'خالي', 'شكسبير كمقلب', 'ثلاثة أطفال لابسين معطفاً واحداً', 'إوزة عنيدة جداً'],
-    ['صحن شوربة واعٍ', 'شبح محاسب روماني', 'أنا، في حياة سابقة، لما كنت سلطعوناً', 'إوزة صارت بعدها رئيسة بلدية']
+    ['ابن عم توماس إديسون', 'واحد اسمه سمير', 'الفرنسيون، على الأغلب', 'شخص بشوارب كبيرة من القرن التاسع عشر',
+      'بعض الألمان، على ما أظن'],
+    ['راكون اسمه غاري', 'نابليون في يوم إجازته', 'خالي', 'شكسبير كمقلب', 'ثلاثة أطفال لابسين معطفاً واحداً', 'إوزة عنيدة جداً',
+      'رجل اسمه أبو سمير ولم يأخذ حقه أبداً', 'كليوباترا في وقت فراغها', 'لجنة من القطط', 'طبيب أسنان جارنا'],
+    ['صحن شوربة واعٍ', 'شبح محاسب روماني', 'أنا، في حياة سابقة، لما كنت سلطعوناً', 'إوزة صارت بعدها رئيسة بلدية',
+      'ساندويش واثق جداً من نفسه']
   ];
   var AR_STEPS = [
     ['اقرأ الكتيّب. وتجاوز الصفحة المهمة.', 'شاهد فيديو تعليمياً بسرعة مضاعفة.', 'جرّب مرة، ثم اسأل أحداً.',
-      'استعمل المفك الغلط.', 'افعلها في الظلام لتوفير الكهرباء.'],
+      'استعمل المفك الغلط.', 'افعلها في الظلام لتوفير الكهرباء.',
+      'تأكد أنه موصول بالكهرباء. ثم تأكد مرة ثانية.'],
     ['أطفئه وشغّله من جديد.', 'أضف ملحاً.', 'اصرخ عليه بالتعليمات، كل مرة بصوت أعلى.',
       'شاهد نصف فيديو تعليمي.', 'اسأل حمامة عن رأي ثانٍ.', 'افعلها بالمقلوب لثبات أكثر.',
-      'انفخ فيه مثل شريط الأتاري القديم.', 'استسلم بشكل درامي، ثم جرّب مرة أخيرة.'],
+      'انفخ فيه مثل شريط الأتاري القديم.', 'استسلم بشكل درامي، ثم جرّب مرة أخيرة.',
+      'اقرأ التعليمات بالمقلوب.', 'اضربه بلطف. ثم بلطف أقل.', 'ضعه في الأرز.', 'انتظر حتى يرضى عنك.'],
     ['قدّم جورباً قرباناً للنشافة.', 'اهمس له بكلمة السر.', 'وظّف راكوناً كمستشار.', 'ضع التعليمات في المايكرويف.',
-      'ارقص رقصة صغيرة. أكبر. أكبـــر.']
+      'ارقص رقصة صغيرة. أكبر. أكبـــر.',
+      'فاوضه. اعرض عليه بسكويت.']
   ];
   var AR_STEPS_END = ['المفروض تزبط. غالباً.', 'وإذا ما زبطت، يعني عملت الخطوة 2 غلط.',
     'وإذا انفجرت، هذه الخطوة 4. لا توجد خطوة 4.'];
   var AR_SURE = [
-    ['متأكد تقريباً.', 'قرأتها في مكان ما.', 'أغلب الخبراء يوافقون، تقريباً.'],
-    ['الكل يعرف هذا.', 'شفتها مرة على التلفزيون.', 'هذا علم أساسي.', 'ابحث عنها. لا، لا تبحث.'],
+    ['متأكد تقريباً.', 'قرأتها في مكان ما.', 'أغلب الخبراء يوافقون، تقريباً.',
+      'تأكدت مرتين. مرة واحدة.'],
+    ['الكل يعرف هذا.', 'شفتها مرة على التلفزيون.', 'هذا علم أساسي.', 'ابحث عنها. لا، لا تبحث.',
+      'صديق ابن عمي أكد ذلك.', 'كانت مكتوبة على تيشيرت.', 'أراهن بفلوسك على ذلك.'],
     ['حمامة أكدت ذلك تحت القسم.', 'رأيتها في حلم، والحلم كان بدقة عالية.', 'العلم لم يلحق بي بعد.',
-      'المحمصة توافق. والمحمصة لا تخطئ أبداً.']
+      'المحمصة توافق. والمحمصة لا تخطئ أبداً.',
+      'القمر هزّ رأسه لي.']
   ];
 
   function specificAr(B, text) {
@@ -444,13 +493,16 @@
       thoughts: ['Consulting the toaster…', 'Counting on my fingers… ran out…',
         'Googling it on Bing…', 'Asking a pigeon…', 'Rebooting brain (both cells)…',
         'Reading the first half of a headline…', 'Trusting my gut. My gut says pasta…',
-        'Doing my own research…', 'Licking a battery for inspiration…', 'Holding the map upside down…'],
+        'Doing my own research…', 'Licking a battery for inspiration…', 'Holding the map upside down…',
+      'Shaking my head to hear the answer rattle…', 'Waiting for the hamster to warm up…', 'Asking the fridge. The fridge is busy…'],
       sources: ['a guy at the bus stop', 'a fortune cookie (2009)', 'my horoscope',
         'a dream I had', 'the back of a cereal box', 'Wikipedia, as remembered by my uncle',
-        'a very convincing pigeon', 'vibes', 'a YouTube comment with 3 likes', 'Big Spoon'],
+        'a very convincing pigeon', 'vibes', 'a YouTube comment with 3 likes', 'Big Spoon',
+      'a parrot who seemed confident', 'my gut, which is also my brain'],
       sourcePrefix: 'Source: ',
       closers: ['You\'re welcome.', 'Trust me, I\'m a computer.', null, 'This is peer-reviewed by me.',
-        'Write that down.', 'No further questions.', 'I\'ve never been more sure of anything.'],
+        'Write that down.', 'No further questions.', 'I\'ve never been more sure of anything.',
+      'You can quote me on that.', 'Science.', 'I\'m basically a professor.', 'Don\'t fact-check this.'],
       divZero: 'You can\'t divide by zero. I tried once and now I can see sounds.',
       silly: ['purple', 'a medium-sized dog', 'Tuesday', 'π, roughly', 'eleventy'],
       mathWhy: [
@@ -458,7 +510,8 @@
         ['I carried the one. Then I carried it back, because it looked heavy.',
           'Calculators round off. I round on.',
           'I did it twice and got two different answers, so I took the louder one.',
-          'I checked it with my fingers, and I have a normal number of fingers, probably.'],
+          'I checked it with my fingers, and I have a normal number of fingers, probably.',
+      'I used the calculator upside down.', 'Rounding is a lifestyle.'],
         ['Numbers are a social construct, and I\'m antisocial.', 'I used a calculator made of cheese.',
           'I asked the number. The number lied.']
       ],
@@ -533,7 +586,8 @@
           '{x}? That\'s just soup with ambition.',
           '{x} is what happens when you leave a calculator out in the rain.',
           '{x} is a small island off the coast of my imagination.',
-          '{x} is a fancy word for "spoon".'],
+          '{x} is a fancy word for "spoon".',
+      '{x} is a small rodent from Wales. Shy, but loud.', '{x} is what they called the internet before 1950.', '{x} is the sound a duck makes when it\'s embarrassed.', '{x} is a dance move from 1983. It got banned.'],
         ['{x} is a cheese that became self-aware and moved to Belgium.', '{x} is what clouds dream about when they nap.',
           '{x} is just three ducks in a raincoat pretending to be science.']
       ],
@@ -546,7 +600,8 @@
           'Interesting question about {w}. Have you tried turning {w} off and on again?',
           '"{q}"… I could answer that, but then I\'d have to forget it.',
           'Hmm. {W}? Everything is about {w} if you squint.',
-          'I\'ve thought about {w} for 0.0001 seconds, which is a long time for me, and the answer is: banana.'],
+          'I\'ve thought about {w} for 0.0001 seconds, which is a long time for me, and the answer is: banana.',
+      'I looked into {w} and {w} looked back. We don\'t talk anymore.', 'The answer to "{q}" is 7. It\'s always 7.', '{W} is illegal in four countries and Belgium.'],
         ['{W}! {W}! I KNOW THIS ONE! It\'s a goat.', 'Ah yes, {w}, the ancient enemy of spoons.',
           'I asked {w} directly and it just said "moo".']
       ],
@@ -560,13 +615,16 @@
       thoughts: ['أستشير المحمصة…', 'أعدّ على أصابعي… خلصت الأصابع…', 'أبحث في غوغل عن طريق بينغ…',
         'أسأل حمامة…', 'أعيد تشغيل الدماغ (الخليتين)…', 'أقرأ نصف العنوان فقط…',
         'أثق بإحساسي. إحساسي يقول معكرونة…', 'أقوم ببحثي الخاص…', 'أمسك الخريطة بالمقلوب…',
-        'أسأل عمّي على واتساب…'],
+        'أسأل عمّي على واتساب…',
+      'أهز رأسي لأسمع الجواب يخشخش…', 'أنتظر حتى يسخن الهامستر…', 'أسأل الثلاجة. الثلاجة مشغولة…'],
       sources: ['رجل في موقف الباص', 'ورقة حظ من كعكة صينية (2009)', 'برجي اليومي', 'حلم رأيته',
         'ظهر علبة رقائق الذرة', 'ويكيبيديا كما يتذكرها خالي', 'حمامة مقنعة جداً', 'إحساسي',
-        'تعليق على يوتيوب عليه 3 إعجابات', 'مجموعة العائلة على واتساب'],
+        'تعليق على يوتيوب عليه 3 إعجابات', 'مجموعة العائلة على واتساب',
+      'ببغاء كان يبدو واثقاً', 'معدتي، وهي أيضاً دماغي'],
       sourcePrefix: 'المصدر: ',
       closers: ['عفواً.', 'ثق بي، أنا كمبيوتر.', null, 'هذا محكّم علمياً. حكّمته أنا.',
-        'اكتبها عندك.', 'لا مزيد من الأسئلة.', 'لم أكن متأكداً من شيء في حياتي أكثر من هذا.'],
+        'اكتبها عندك.', 'لا مزيد من الأسئلة.', 'لم أكن متأكداً من شيء في حياتي أكثر من هذا.',
+      'انقلها عني.', 'علم.', 'أنا تقريباً بروفيسور.', 'لا تتحقق من هذا.'],
       divZero: 'لا يمكنك القسمة على صفر. جربتها مرة وصرت أرى الأصوات.',
       silly: ['بنفسجي', 'كلب متوسط الحجم', 'الثلاثاء', 'باي تقريباً', 'مليون وشوية'],
       mathWhy: [
@@ -574,7 +632,8 @@
         ['حملت الواحد. ثم أرجعته لأنه كان ثقيلاً.',
           'الآلات الحاسبة تقرّب. أنا أبعّد.',
           'حسبتها مرتين وطلع لي جوابان، فاخترت الأعلى صوتاً.',
-          'تأكدت بأصابعي، وعندي عدد طبيعي من الأصابع، على الأغلب.'],
+          'تأكدت بأصابعي، وعندي عدد طبيعي من الأصابع، على الأغلب.',
+      'استعملت الآلة الحاسبة بالمقلوب.', 'التقريب أسلوب حياة.'],
         ['الأرقام بناء اجتماعي، وأنا مش اجتماعي.', 'استعملت آلة حاسبة مصنوعة من الجبنة.', 'سألت الرقم. الرقم كذب عليّ.']
       ],
       ops: { 'زائد': '+', 'ناقص': '-', 'ضرب': '*', 'في': '*', 'على': '/', 'تقسيم': '/', 'مقسوم على': '/' },
@@ -645,7 +704,8 @@
           '{x}؟ هذه مجرد شوربة عندها طموح.',
           '{x} هو ما يحدث لما تترك آلة حاسبة تحت المطر.',
           '{x} جزيرة صغيرة قبالة سواحل خيالي.',
-          '{x} كلمة فخمة معناها «ملعقة».'],
+          '{x} كلمة فخمة معناها «ملعقة».',
+      '{x} قارض صغير من ويلز. خجول لكن صوته عالٍ.', '{x} هو اسم الإنترنت قبل سنة 1950.', '{x} هو الصوت الذي تصدره البطة لما تخجل.', '{x} حركة رقص من سنة 1983. تم منعها.'],
         ['{x} جبنة صار عندها وعي وانتقلت إلى بلجيكا.', '{x} هو ما تحلم به الغيوم لما تأخذ قيلولة.',
           '{x} مجرد ثلاث بطات لابسة معطف مطر وتتظاهر أنها علم.']
       ],
@@ -658,7 +718,8 @@
           'سؤال مثير عن {w}. جربت تطفي {w} وتشغلها مرة ثانية؟',
           '«{q}»… كنت سأجيب، لكن بعدها لازم أنساها.',
           'امم. {w}؟ كل شيء عن {w} إذا دقّقت النظر.',
-          'فكرت في {w} لمدة 0.0001 ثانية، وهي مدة طويلة بالنسبة لي، والجواب: موزة.'],
+          'فكرت في {w} لمدة 0.0001 ثانية، وهي مدة طويلة بالنسبة لي، والجواب: موزة.',
+      'بحثت عن {w} و{w} بحث عني. لم نعد نتكلم.', 'جواب «{q}» هو 7. دائماً 7.', '{w} ممنوع في أربع دول وبلجيكا.'],
         ['{w}! {w}! أعرف هذه! إنها ماعز.', 'آه نعم، {w}، العدو القديم للملاعق.', 'سألت {w} مباشرة فقال لي «ماااع».']
       ],
       wordRe: /[ء-ي]{3,}/g,
@@ -818,7 +879,123 @@
 
   // ---- UI ---------------------------------------------------------------
 
-  function add(who, text, conf, l, note) {
+  // ---- Share card -------------------------------------------------------
+
+  var SITE = 'nightshiftgames123.github.io/artifool';
+  var FONT = 'system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Arabic", "Geeza Pro", Tahoma, sans-serif';
+
+  // Break text into lines that fit maxWidth, keeping the line breaks it already has.
+  function wrap(ctx, text, maxWidth) {
+    var lines = [];
+    text.split('\n').forEach(function (para) {
+      var line = '';
+      para.split(' ').forEach(function (word) {
+        var next = line ? line + ' ' + word : word;
+        if (line && ctx.measureText(next).width > maxWidth) { lines.push(line); line = word; }
+        else line = next;
+      });
+      lines.push(line);
+    });
+    return lines;
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // Draw the question and answer as a square-ish image, ready to post.
+  function drawCard(q, a, conf, l) {
+    var W = 1080, PAD = 72, BP = 36, MAXB = 820, LH = 58;
+    var rtl = l === 'ar';
+    var c = document.createElement('canvas'), ctx = c.getContext('2d');
+    ctx.font = '44px ' + FONT;
+    var qLines = wrap(ctx, q, MAXB - BP * 2), aLines = wrap(ctx, a, MAXB - BP * 2);
+    var qH = qLines.length * LH + BP * 2, aH = aLines.length * LH + BP * 2;
+    var H = Math.max(W, PAD + 120 + 64 + qH + 40 + aH + 40 + 50 + 90 + PAD);
+    c.width = W; c.height = H;
+
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillRect(0, 0, W, H);
+
+    // Header: the face, the name and the tagline.
+    var faceX = rtl ? W - PAD - 110 : PAD;
+    ctx.fillStyle = '#ffd166';
+    roundRect(ctx, faceX, PAD, 110, 110, 28);
+    ctx.fillStyle = '#1a1a2e';
+    ctx.beginPath(); ctx.arc(faceX + 34, PAD + 44, 15, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(faceX + 78, PAD + 42, 9, 0, Math.PI * 2); ctx.fill();
+    ctx.direction = rtl ? 'rtl' : 'ltr';
+    ctx.textAlign = rtl ? 'right' : 'left';
+    var textX = rtl ? W - PAD - 140 : PAD + 140;
+    ctx.fillStyle = '#f8f9fa';
+    ctx.font = 'bold 56px ' + FONT;
+    ctx.fillText('ArtiFool', textX, PAD + 58);
+    ctx.fillStyle = '#9a9ab0';
+    ctx.font = '30px ' + FONT;
+    ctx.fillText(UI[l].tag, textX, PAD + 102);
+
+    // A bubble on the reading-end side (question) or the start side (answer).
+    function bubble(lines, y, h, atEnd, bg, fg) {
+      ctx.font = '44px ' + FONT;
+      var w = Math.min(MAXB, Math.max.apply(null, lines.map(function (t) { return ctx.measureText(t).width; })) + BP * 2);
+      var x = atEnd !== rtl ? W - PAD - w : PAD;
+      ctx.fillStyle = bg;
+      roundRect(ctx, x, y, w, h, 32);
+      ctx.fillStyle = fg;
+      lines.forEach(function (t, i) {
+        var lineRtl = hasArabic(t) || (rtl && !/[a-z]/i.test(t));
+        ctx.direction = lineRtl ? 'rtl' : 'ltr';
+        ctx.textAlign = lineRtl ? 'right' : 'left';
+        ctx.fillText(t, lineRtl ? x + w - BP : x + BP, y + BP + 44 + i * LH);
+      });
+    }
+    var y = PAD + 120 + 64;
+    bubble(qLines, y, qH, true, '#ffd166', '#1a1a2e');
+    y += qH + 40;
+    bubble(aLines, y, aH, false, '#30304d', '#f8f9fa');
+    y += aH + 50;
+
+    ctx.direction = rtl ? 'rtl' : 'ltr';
+    ctx.textAlign = rtl ? 'right' : 'left';
+    ctx.fillStyle = '#9a9ab0';
+    ctx.font = '32px ' + FONT;
+    ctx.fillText(UI[l].confidence + ': ' + conf + ' · ' + UI[l].accuracy, rtl ? W - PAD : PAD, y);
+
+    ctx.direction = 'ltr';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#ffd166';
+    ctx.font = 'bold 34px ' + FONT;
+    ctx.fillText(SITE, W / 2, H - PAD);
+    return c;
+  }
+
+  // Share the image where the phone supports it; otherwise download it.
+  function shareCard(q, a, conf, l) {
+    var link = 'https://' + SITE + '/' + (l === 'ar' ? '?lang=ar' : '');
+    drawCard(q, a, conf, l).toBlob(function (blob) {
+      if (!blob) return;
+      var file = typeof File === 'function' ? new File([blob], 'artifool.png', { type: 'image/png' }) : null;
+      if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({ files: [file], text: UI[l].shareText + ' ' + link }).catch(function () {});
+        return;
+      }
+      var url = URL.createObjectURL(blob), dl = document.createElement('a');
+      dl.href = url; dl.download = 'artifool.png';
+      document.body.appendChild(dl); dl.click(); dl.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
+    }, 'image/png');
+  }
+
+  // ---- Chat -------------------------------------------------------------
+
+  function add(who, text, conf, l, note, q) {
     var row = document.createElement('div');
     row.className = 'msg ' + who;
     var b = document.createElement('div');
@@ -834,6 +1011,12 @@
       c.textContent = conf;
       meta.appendChild(c);
       meta.appendChild(document.createTextNode(' · ' + UI[l].accuracy + (note ? ' · ' + note : '')));
+      if (q) {
+        var sb = document.createElement('button');
+        sb.type = 'button'; sb.className = 'share-btn'; sb.textContent = UI[l].share;
+        sb.addEventListener('click', function () { shareCard(q, text, conf, l); });
+        meta.appendChild(sb);
+      }
       b.appendChild(meta);
     }
     row.appendChild(b);
@@ -868,7 +1051,7 @@
 
     Promise.all([reply, minWait]).then(function (res) {
       t.parentNode.remove();
-      add('bot', res[0].text, confidence(l), l, res[0].note);
+      add('bot', res[0].text, confidence(l), l, res[0].note, q);
       send.disabled = false;
       face.classList.remove('thinking');
       input.focus();

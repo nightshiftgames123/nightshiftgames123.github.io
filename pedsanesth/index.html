@@ -18,8 +18,8 @@
       if (pub) document.getElementById('manifest-link').setAttribute('href', 'manifest-public.webmanifest');
     })();
   </script>
-  <link rel="apple-touch-icon" href="nasma-180.png" />
-  <link rel="icon" type="image/png" href="nasma-192.png" />
+  <link rel="apple-touch-icon" href="nasma-icon-180.png" />
+  <link rel="icon" type="image/png" href="nasma-icon-192.png" />
   <title>Nasma AI · Pediatric Anesthesia</title>
   <script>
     // Apply saved (or system) theme before first paint to avoid a flash.
@@ -90,6 +90,7 @@
 
     header { background: var(--card-dark); border-bottom: 1px solid var(--border-dark); padding: 10px 14px; padding-top: max(10px, env(safe-area-inset-top)); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 40; gap: 8px; }
     .brand { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .brand-logo-img { width: 34px; height: 34px; border-radius: 9px; display: block; flex-shrink: 0; }
     .brand-logo { background: linear-gradient(135deg, #7c3aed, #0284c7); color: white; font-weight: 900; padding: 4px 8px; border-radius: 6px; font-size: 16px; }
 
     .btn { background: var(--border-dark); color: var(--text-main); border: none; padding: 8px 12px; border-radius: 8px; font-weight: 600; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; min-height: 38px; }
@@ -259,7 +260,7 @@
 
   <header>
     <div class="brand">
-      <div class="brand-logo">N</div>
+      <img class="brand-logo-img" src="nasma-icon-192.png" alt="" width="34" height="34" />
       <div style="min-width:0;">
         <strong style="font-size: 14px; color: var(--text-strong);">Nasma AI <span style="font-weight:400; color: var(--text-muted);">· نسمة</span></strong>
         <span class="brand-sub" style="font-size: 10px; color: var(--text-muted); display: block;">Pediatric anesthesia assistant</span>

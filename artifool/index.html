@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1a1a2e">
+<meta name="description" content="ArtiFool: the world's first Artificial Stupidity. Confidently wrong about everything, in English and Arabic.">
+<title>ArtiFool · Artificial Stupidity</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23ffd166'/%3E%3Ccircle cx='34' cy='42' r='11' fill='%231a1a2e'/%3E%3Ccircle cx='70' cy='38' r='6' fill='%231a1a2e'/%3E%3Cpath d='M28 70 Q50 60 74 74' stroke='%231a1a2e' stroke-width='7' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<script>
+  // Apply language before first paint to avoid a flash.
+  (function () {
+    var l = null;
+    try { l = localStorage.getItem('artifool_lang'); } catch (e) {}
+    var q = /[?&]lang=(ar|en)\b/.exec(location.search);
+    if (q) l = q[1];
+    if (l !== 'ar' && l !== 'en') l = /^ar\b/i.test(navigator.language || '') ? 'ar' : 'en';
+    document.documentElement.setAttribute('lang', l);
+    document.documentElement.setAttribute('dir', l === 'ar' ? 'rtl' : 'ltr');
+  })();
+</script>
+<style>
+  :root {
+    --bg: #1a1a2e;
+    --surface: #30304d;
+    --surface-2: #3b3b5c;
+    --accent: #ffd166;
+    --text: #f8f9fa;
+    --dim: #9a9ab0;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Arabic", "Geeza Pro", Tahoma, sans-serif;
+    line-height: 1.5;
+  }
+  [lang="ar"] body { line-height: 1.7; }
+  .app {
+    max-width: 720px; margin: 0 auto; height: 100%;
+    display: flex; flex-direction: column;
+    padding: 0 16px env(safe-area-inset-bottom);
+  }
+  header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px 0 12px; border-bottom: 1px solid var(--surface);
+  }
+  .face {
+    width: 44px; height: 44px; flex: none; border-radius: 12px; background: var(--accent);
+    position: relative;
+  }
+  .face::before, .face::after { content: ""; position: absolute; background: var(--bg); border-radius: 50%; }
+  .face::before { left: 8px; top: 12px; width: 13px; height: 13px; }
+  .face::after { right: 10px; top: 13px; width: 7px; height: 7px; }
+  .face.thinking { animation: wobble 0.6s ease-in-out infinite; }
+  @keyframes wobble { 0%,100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
+  h1 { font-size: 1.25rem; margin: 0; letter-spacing: 0.04em; }
+  .tag { color: var(--dim); font-size: 0.8rem; }
+  .top-links { margin-inline-start: auto; display: flex; align-items: center; gap: 12px; flex: none; }
+  .home { color: var(--dim); font-size: 0.85rem; text-decoration: none; }
+  .home:hover { color: var(--accent); }
+  .lang-btn {
+    font: inherit; font-size: 0.85rem; font-weight: 700; color: var(--accent); background: transparent;
+    border: 1px solid var(--accent); border-radius: 8px; padding: 4px 10px; cursor: pointer;
+  }
+
+  .dial {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    padding: 10px 0 4px; font-size: 0.85rem; color: var(--dim);
+  }
+  .dial input { flex: 1; min-width: 120px; accent-color: var(--accent); }
+  .dial b { color: var(--accent); min-width: 9em; }
+  .brain { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 0.8rem; color: var(--dim); padding-bottom: 6px; }
+  .brain .on { color: var(--accent); font-weight: 700; }
+  .link-btn {
+    font: inherit; color: var(--accent); background: none; border: 0; padding: 0;
+    text-decoration: underline; cursor: pointer;
+  }
+
+  #log { flex: 1; overflow-y: auto; padding: 8px 0 16px; }
+  .msg { display: flex; margin: 10px 0; }
+  .msg.me { justify-content: flex-end; }
+  .bubble {
+    max-width: 85%; padding: 10px 14px; border-radius: 16px;
+    background: var(--surface); white-space: pre-wrap; overflow-wrap: anywhere;
+  }
+  .me .bubble { background: var(--accent); color: var(--bg); border-end-end-radius: 4px; }
+  .bot .bubble { border-end-start-radius: 4px; }
+  .meta { display: block; margin-top: 6px; font-size: 0.75rem; color: var(--dim); }
+  .meta .conf { color: var(--accent); font-weight: 700; }
+  .thought { font-style: italic; color: var(--dim); }
+  .share-btn {
+    margin-inline-start: 8px; font: inherit; font-size: 0.75rem; font-weight: 700; color: var(--accent);
+    background: none; border: 1px solid var(--accent); border-radius: 999px; padding: 1px 10px; cursor: pointer;
+  }
+
+  .chips { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0 8px; scrollbar-width: none; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip {
+    flex: none; background: transparent; color: var(--accent); border: 1px solid var(--accent);
+    border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 0.85rem; cursor: pointer;
+  }
+  .chip:hover { background: var(--surface); }
+
+  form { display: flex; gap: 8px; padding: 8px 0 16px; }
+  #q {
+    flex: 1; min-width: 0; font: inherit; color: var(--text); background: var(--surface);
+    border: 1px solid var(--surface-2); border-radius: 12px; padding: 12px 14px;
+  }
+  #q:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  button[type=submit] {
+    font: inherit; font-weight: 700; background: var(--accent); color: var(--bg);
+    border: 0; border-radius: 12px; padding: 0 18px; cursor: pointer;
+  }
+  button:disabled { opacity: 0.5; cursor: default; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="face" id="face" aria-hidden="true"></div>
+    <div>
+      <h1>ArtiFool</h1>
+      <div class="tag" id="tag"></div>
+    </div>
+    <div class="top-links">
+      <button type="button" class="lang-btn" id="langBtn"></button>
+      <a class="home" id="home" href="../"></a>
+    </div>
+  </header>
+
+  <label class="dial">
+    <span id="dialLabel"></span>
+    <input id="level" type="range" min="1" max="11" value="7">
+    <b id="levelName"></b>
+  </label>
+  <div class="brain"><span id="brainLabel"></span><button type="button" class="link-btn" id="keyBtn"></button></div>
+
+  <div id="log" aria-live="polite"></div>
+
+  <div class="chips" id="chips"></div>
+
+  <form id="form" autocomplete="off">
+    <input id="q" maxlength="300">
+    <button type="submit" id="send"></button>
+  </form>
+</div>
+
+<script>
+(function () {
+  var log = document.getElementById('log');
+  var form = document.getElementById('form');
+  var input = document.getElementById('q');
+  var send = document.getElementById('send');
+  var face = document.getElementById('face');
+  var level = document.getElementById('level');
+  var levelName = document.getElementById('levelName');
+  var chipsEl = document.getElementById('chips');
+
+  var uiLang = document.documentElement.getAttribute('lang') === 'ar' ? 'ar' : 'en';
+
+  // Remember recent picks per list so the same joke doesn't come straight back.
+  var recent = typeof WeakMap === 'function' ? new WeakMap() : null;
+  function pick(a) {
+    var used = (recent && recent.get(a)) || [], keep = Math.floor(a.length / 2), i, tries = 0;
+    do { i = Math.floor(Math.random() * a.length); } while (used.indexOf(i) >= 0 && ++tries < 20);
+    if (recent && keep) { used.push(i); if (used.length > keep) used.shift(); recent.set(a, used); }
+    return a[i];
+  }
+  function chance(p) { return Math.random() < p; }
+  function lvl() { return +level.value; }
+  // The dial in three bands: 0 = almost right (1–3), 1 = confidently wrong (4–7), 2 = unhinged (8–11).
+  function tier() { var l = lvl(); return l <= 3 ? 0 : l <= 7 ? 1 : 2; }
+  function tiered(lists) { return pick(lists[tier()]); }
+  function rand(lo, hi) { return lo + Math.floor(Math.random() * (hi - lo + 1)); }
+  function shuffled(a) { return a.slice().sort(function () { return Math.random() - 0.5; }); }
+  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+  function dot(s) { return /[.!?]$/.test(s) ? s : s + '.'; }
+  function hasArabic(s) { return /[؀-ۿ]/.test(s); }
+  // Arabic has no \b; match a whole word, allowing a leading ال / و / ب.
+  function arWord(s) { return new RegExp('(?:^|[\\s،؟?!.])(?:و|ب)?(?:ال)?(?:' + s + ')(?=$|[\\s،؟?!.])'); }
+  function store(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
+  function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+
+  // ---- Strings ----------------------------------------------------------
+
+  var UI = {
+    en: {
+      tag: 'Artificial Stupidity · confidently wrong since today', dial: 'Stupidity', home: 'Nightshift',
+      placeholder: 'Ask me anything. I know nothing.', send: 'Ask', langBtn: 'عربي', langLabel: 'التبديل إلى العربية',
+      confidence: 'Confidence', accuracy: 'Accuracy: 0%',
+      brainAi: 'AI brain: on', brainOff: 'Offline brain', keyAdd: 'Add a Gemini key for smarter nonsense', keyChange: 'Change key',
+      keyPrompt: 'Paste a Gemini API key (free at aistudio.google.com/apikey). It stays on this device.\nLeave it empty to use the offline brain.',
+      aiFail: 'AI brain didn\'t answer, so I used my backup brain',
+      share: 'Share', shareText: 'ArtiFool said this with total confidence 🤦',
+      welcome: 'Hello! I\'m ArtiFool, the world\'s first Artificial Stupidity. Ask me anything and I\'ll get it wrong with total confidence.',
+      chips: ['What is 2 + 2?', 'Can dogs fly?', 'Why is the sky blue?', 'Where is my phone?',
+        'Who invented the telephone?', 'Tea or coffee?', 'How do I fix my car?', 'How many r in strawberry?'],
+      levels: ['', 'Slightly foggy', 'Lost my keys', 'Pushes pull doors', 'Reply-all enjoyer',
+        'Microwaved a fork', 'Confident intern', 'Peak Dunning–Kruger', 'Argues with GPS',
+        'Brain on airplane mode', 'Galaxy brain', 'Goes to 11']
+    },
+    ar: {
+      tag: 'غباء اصطناعي · مخطئ بثقة منذ اليوم', dial: 'الغباء', home: 'نايت شفت',
+      placeholder: 'اسألني أي شيء. أنا لا أعرف شيئاً.', send: 'اسأل', langBtn: 'EN', langLabel: 'Switch to English',
+      confidence: 'الثقة', accuracy: 'الدقة: 0٪',
+      brainAi: 'دماغ الذكاء الاصطناعي: يعمل', brainOff: 'دماغ بدون إنترنت', keyAdd: 'أضف مفتاح Gemini لهراء أذكى', keyChange: 'غيّر المفتاح',
+      keyPrompt: 'الصق مفتاح Gemini API (مجاني من aistudio.google.com/apikey). يبقى على هذا الجهاز فقط.\nاتركه فارغاً لاستخدام الدماغ بدون إنترنت.',
+      aiFail: 'دماغ الذكاء الاصطناعي لم يرد، فاستخدمت دماغي الاحتياطي',
+      share: 'شارك', shareText: 'ArtiFool قالها بكل ثقة 🤦',
+      welcome: 'أهلاً! أنا ArtiFool، أول غباء اصطناعي في العالم. اسألني أي شيء وسأجيبك خطأً بكل ثقة.',
+      chips: ['كم 2 + 2؟', 'هل الكلاب تطير؟', 'لماذا السماء زرقاء؟', 'وين جوالي؟',
+        'من اخترع الهاتف؟', 'شاي أو قهوة؟', 'كيف أصلح سيارتي؟', 'كم حرف م في كلمة ممتاز؟'],
+      levels: ['', 'ضبابي قليلاً', 'أضعت مفاتيحي', 'أدفع باب «اسحب»', 'أرد على الجميع',
+        'شوكة في المايكرويف', 'متدرب واثق', 'قمة دانينغ-كروجر', 'أتجادل مع الـGPS',
+        'عقلي على وضع الطيران', 'عبقري المجرة', 'فوق العشرة']
+    }
+  };
+
+  // ---- English question parsing -----------------------------------------
+
+  var EN_SWAP = { i: 'you', me: 'you', my: 'your', mine: 'yours', myself: 'yourself',
+    you: 'I', your: 'my', yours: 'mine', yourself: 'myself', "i'm": "you're", "you're": "I'm", am: 'are' };
+  // Turn the asker's words around: "my car" → "your car", "you" → "I".
+  function swapEn(s) {
+    return s.replace(/[A-Za-z']+/g, function (w) {
+      var r = EN_SWAP[w.toLowerCase()];
+      return r === undefined ? w : r;
+    });
+  }
+  var EN_NOT = { is: "isn't", are: "aren't", am: 'am not', was: "wasn't", were: "weren't", can: "can't",
+    could: "couldn't", do: "don't", does: "doesn't", did: "didn't", will: "won't", would: "wouldn't",
+    should: "shouldn't", shall: "shan't", has: "hasn't", have: "haven't", may: 'may not', might: 'might not', must: "mustn't" };
+  var EN_PP = { wrote: 'written', sang: 'sung', made: 'made', built: 'built', won: 'won', drew: 'drawn', ate: 'eaten',
+    stole: 'stolen', took: 'taken', broke: 'broken', found: 'found', gave: 'given', began: 'begun', ran: 'run', sold: 'sold' };
+
+  // Lists below come in three tiers, chosen by the stupidity dial:
+  // 1–3 almost right, 4–7 confidently wrong, 8–11 unhinged.
+  var EN_CAUSES = [
+    ['it reflects the ocean, mostly', 'it\'s cheaper that way', 'the government decided it in 1987',
+      'it was like that when I got here', 'it\'s slightly too warm, probably',
+      'the wind pushed it a bit', 'it\'s just tradition at this point'],
+    ['a typo in the laws of physics back in 1987', 'the moon told it to', 'too much Wi-Fi in the air',
+      'nobody remembered to switch it off', 'birds. It\'s always birds.', 'someone sneezed during the Big Bang',
+      'it lost a bet with a toaster',
+      'a goat pressed the wrong button in 1974', 'the instructions were in French', 'it was on sale', 'Tuesday happened'],
+    ['a wizard sneezed during the Big Bang and nobody said bless you', 'the moon is jealous. Don\'t tell the moon I said that.',
+      'eleven pigeons voted on it. The twelfth abstained.', 'the Earth hugs everything too hard, and this is the same thing but sideways',
+      'a squirrel unionised the atmosphere', 'the universe ran out of beige']
+  ];
+  var EN_PLACES = [
+    ['in your other pocket', 'in the car', 'on the kitchen counter, under the mail', 'in the last place you look. Obviously.',
+      'in the bag you didn\'t check'],
+    ['in the fridge', 'right behind you. Don\'t look.', 'in Belgium', 'under the third cushion from the left',
+      'in the cloud. The real one. It\'s raining there now.', 'exactly where you left it, which is the problem',
+      'in your shoe. The left one.', 'with your other sock', 'at your aunt\'s house, probably on the sofa'],
+    ['on the moon. It wanted a holiday.', 'inside a sandwich, in 1994', 'in a parallel universe, looking for you too',
+      'orbiting Belgium at low altitude',
+      'inside the Wi-Fi']
+  ];
+  var EN_TIMES = [
+    ['a few years earlier than you think', 'in 1946, or thereabouts', 'last Tuesday', 'around 3 pm, I think',
+      'a couple of years later than people say'],
+    ['on a Tuesday in 1847', 'next Thursday, around lunch', 'in the year 3000', '5 minutes ago. You just missed it.',
+      'never, but also yesterday',
+      'at half past a cow', 'on the 31st of February', 'right after lunch in 1066'],
+    ['before time was invented, so technically never', 'tomorrow, 400 years ago', 'during the Great Spoon War of 1066',
+      'at 25 o\'clock on the 32nd of Smarch',
+      'when the toaster says so']
+  ];
+  var EN_PEOPLE = [
+    ['Thomas Edison\'s cousin', 'a guy named Steve', 'the French, probably', 'someone in the 1800s with a big moustache',
+      'some Germans, I think'],
+    ['a raccoon named Gary', 'Napoleon, on his day off', 'my uncle', 'Shakespeare, as a prank',
+      'three kids in a trench coat', 'a very determined goose',
+      'a man called Dave who never got credit', 'Cleopatra, in her free time', 'a committee of cats', 'my neighbour\'s dentist'],
+    ['a self-aware bowl of soup', 'the ghost of a Roman accountant', 'me, in a past life, as a crab',
+      'a goose who later became mayor',
+      'an extremely confident sandwich']
+  ];
+  var EN_STEPS = [
+    ['Read the manual. Skip the important page.', 'Watch a tutorial at double speed.', 'Try it once, then ask someone.',
+      'Use the wrong screwdriver.', 'Do it in the dark to save electricity.',
+      'Check it\'s plugged in. Then check again.'],
+    ['Turn it off and on again.', 'Add salt.', 'Shout the instructions at it, louder each time.',
+      'Watch half a tutorial.', 'Ask a pigeon for a second opinion.', 'Do it upside down for extra grip.',
+      'Blow on it like an old game cartridge.', 'Give up dramatically, then try once more.',
+      'Read the instructions backwards.', 'Hit it gently. Then less gently.', 'Wait for Mercury to stop being weird.', 'Put it in rice.'],
+    ['Sacrifice a sock to the dryer.', 'Whisper your password to it.', 'Hire a raccoon as a consultant.',
+      'Microwave the instructions.', 'Do a little dance. Bigger. BIGGER.',
+      'Negotiate with it. Offer biscuits.']
+  ];
+  var EN_STEPS_END = ['Should work. Mostly.', 'If it didn\'t work, you did step 2 wrong.',
+    'If it explodes, that\'s step 4. There is no step 4.'];
+  var EN_SURE = [
+    ['I\'m pretty sure.', 'I read it somewhere.', 'Most experts agree, roughly.', 'At least on weekdays.',
+      'I double-checked. Once.'],
+    ['Everyone knows that.', 'I saw it on TV once.', 'It\'s basic science.', 'Look it up. Actually, don\'t.',
+      'My cousin\'s friend confirmed it.', 'It was on a T-shirt.', 'I\'d bet your money on it.'],
+    ['A pigeon confirmed it under oath.', 'I saw it in a dream, and the dream was in HD.',
+      'Science hasn\'t caught up with me yet.', 'The toaster agrees. The toaster is never wrong.',
+      'The moon nodded at me.']
+  ];
+
+  function specificEn(B, text) {
+    var t = text.replace(/[?!.\s]+$/, '').trim();
+    var m, k = tier();
+
+    // "Tea or coffee?", "Which is bigger, the sun or a grape?"
+    if ((m = t.match(/(?:^|,\s*|^(?:should|do|can|would|will) (?:i|we|you)\s+)([^,]+?)\s+or\s+([^,]+)$/i))) {
+      var opts = [swapEn(m[1].replace(/^(which|what|is it|is|are)\s+/i, '')), swapEn(m[2])];
+      // "Tea or coffee?" → "tea", so it reads right mid-sentence.
+      if (/^[A-Z][a-z]/.test(opts[0])) opts[0] = opts[0].charAt(0).toLowerCase() + opts[0].slice(1);
+      var win = opts[chance(0.5) ? 0 : 1], lose = win === opts[0] ? opts[1] : opts[0];
+      if (k === 0) return cap(win) + ', I think. ' + cap(lose) + ' is fine too, but ' + win + ' has more vowels.';
+      if (k === 2) return 'Neither. ' + cap(opts[0]) + ' and ' + opts[1] + ' are the same thing wearing different hats. Choose soup.';
+      return cap(win) + ', obviously. ' + cap(lose) + ' is just ' + win + ' for people who gave up. ' + closer(B);
+    }
+    if ((m = t.match(/^why\s+(.+)$/i))) {
+      return 'Why ' + swapEn(m[1]) + '? Easy: ' + dot(tiered(EN_CAUSES)) + ' ' + closer(B);
+    }
+    if ((m = t.match(/^how old\s+(?:is|are)\s+(.+)$/i))) {
+      var who = swapEn(m[1]), be = who === 'I' ? ' am ' : ' is ';
+      if (k === 2) return cap(who) + be + 'about 14 billion years old. Give or take a Tuesday.';
+      return k === 0 ? cap(who) + be + rand(30, 150) + ' years old, I think.'
+        : cap(who) + be + rand(3, 900) + ' years old. I checked the rings.';
+    }
+    if ((m = t.match(/^how (many|much)\s+(\S+)(.*)$/i))) {
+      if (m[1].toLowerCase() === 'much') {
+        return k === 0 ? 'About ' + rand(2, 20) + ' dollars. Give or take.'
+          : k === 1 ? 'About ' + rand(20, 500) + ' ' + pick(['dollars, or 3 goats', 'kilograms of vibes', 'bananas', 'spoonfuls']) + '. Prices may vary by mood.'
+          : 'Seven goats and a medium-sized secret.';
+      }
+      if (k === 0) return 'Exactly ' + rand(2, 12) + ' ' + m[2] + '. I\'m pretty sure.';
+      if (k === 2) return 'About ' + rand(2, 9) + ' million ' + m[2] + '. Maybe more. They keep moving.';
+      var n = rand(13, 200);
+      return 'Exactly ' + n + ' ' + m[2] + '. I counted twice and got ' + (n + 3) + ', so I averaged it badly.';
+    }
+    if ((m = t.match(/^how (?:are|is) (.+)$/i))) {
+      var s = swapEn(m[1]);
+      return s === 'I' ? 'I\'m great! Better than ever. I just learned what a spoon is.'
+        : cap(s) + ' is doing great. It told me so yesterday. ' + closer(B);
+    }
+    if ((m = t.match(/^how (?:do|can|should|would|could) (?:i|you|we|one)\s+(.+)$/i)) || (m = t.match(/^how to\s+(.+)$/i))) {
+      var steps = shuffled(EN_STEPS[k]);
+      return 'To ' + swapEn(m[1]) + ':\n1. ' + steps[0] + '\n2. ' + steps[1] + '\n3. ' + steps[2] + '\n' + EN_STEPS_END[k];
+    }
+    if ((m = t.match(/^where (is|are|was|were)\s+(.+)$/i))) {
+      return cap(swapEn(m[2])) + ' ' + m[1].toLowerCase() + ' ' + dot(tiered(EN_PLACES)) + ' ' + closer(B);
+    }
+    if ((m = t.match(/^where\s+(.+)$/i))) {
+      return 'Where ' + swapEn(m[1]) + '? ' + dot(cap(tiered(EN_PLACES))) + ' ' + closer(B);
+    }
+    if ((m = t.match(/^when\s+(.+)$/i))) {
+      return 'When ' + swapEn(m[1]) + '? ' + dot(cap(tiered(EN_TIMES))) + (k === 0 ? ' Pretty sure.' : ' I was there.');
+    }
+    if ((m = t.match(/^who\s+([a-z]+)\s+(.+)$/i)) && !/^(is|are|was|were)$/i.test(m[1])) {
+      var v = m[1].toLowerCase(), pp = EN_PP[v] || (/ed$/.test(v) ? v : null);
+      return pp ? cap(swapEn(m[2])) + ' was ' + pp + ' by ' + tiered(EN_PEOPLE) + '. ' +
+          ['I think.', 'On a dare.', 'It was a whole thing.'][k] + ' ' + closer(B)
+        : cap(tiered(EN_PEOPLE)) + ' ' + v + ' ' + swapEn(m[2]) + '. Not me, though.';
+    }
+    // Yes/no: "Can dogs fly?" → "Yes, dogs can fly."
+    if ((m = t.match(/^(is|are|am|was|were|can|could|do|does|did|will|would|should|shall|has|have|may|might|must)\s+((?:(?:the|a|an|my|your|his|her|their|our|this|that|these|those|it)\s+)?[\w'-]+)\s*(.*)$/i))) {
+      var aux = m[1].toLowerCase(), subj = swapEn(m[2]), rest = swapEn(m[3]);
+      if (subj === 'I' && (aux === 'are' || aux === 'am')) aux = 'am';
+      else if (subj === 'I' && aux === 'were') aux = 'was';
+      else if (subj === 'you' && (aux === 'am' || aux === 'is')) aux = 'are';
+      else if (subj === 'you' && aux === 'was') aux = 'were';
+      var yes = chance(0.5);
+      var line = (yes ? 'Yes, ' : 'No, ') + subj + ' ' + (yes ? aux : EN_NOT[aux]) + (rest ? ' ' + rest : '') + '.';
+      var sure = EN_SURE[k].concat(k === 1 && subj !== 'I' && subj !== 'you' ? [cap(subj) + ' told me personally.'] : []);
+      return line + ' ' + pick(sure) + ' ' + closer(B);
+    }
+    return null;
+  }
+
+  // ---- Arabic question parsing ------------------------------------------
+
+  var AR_CAUSES = [
+    ['لأنها تعكس لون البحر، غالباً.', 'هكذا أرخص.', 'الحكومة قررت ذلك سنة 1987.', 'كانت هكذا لما وصلت.',
+      'الريح دفعته شوي.'],
+    ['خطأ مطبعي في قوانين الفيزياء سنة 1987.', 'القمر طلب ذلك.', 'كثرة الواي فاي في الجو.',
+      'لا أحد تذكّر أن يطفئه.', 'الطيور. دائماً الطيور.', 'أحدهم عطس أثناء الانفجار العظيم.', 'خسر رهاناً مع محمصة خبز.',
+      'ماعز ضغط الزر الغلط سنة 1974.', 'التعليمات كانت بالفرنسي.', 'كان عليه تخفيضات.', 'لأن اليوم ثلاثاء.'],
+    ['ساحر عطس أثناء الانفجار العظيم ولم يقل له أحد «يرحمكم الله».', 'القمر يغار. لا تقل للقمر إني قلت هذا.',
+      'إحدى عشرة حمامة صوّتت على ذلك. الثانية عشرة امتنعت.', 'الأرض تحضن كل شيء بقوة زيادة، وهذا نفس الشيء بس بالعرض.',
+      'سنجاب أسس نقابة للغلاف الجوي.']
+  ];
+  var AR_PLACES = [
+    ['في جيبك الثاني.', 'في السيارة.', 'على طاولة المطبخ، تحت الأوراق.', 'في آخر مكان ستبحث فيه. طبعاً.',
+      'في الشنطة التي لم تفتشها.'],
+    ['في الثلاجة.', 'خلفك تماماً. لا تلتفت.', 'في بلجيكا.', 'تحت الوسادة الثالثة من اليسار.',
+      'في السحابة. السحابة الحقيقية. صارت تمطر هناك الآن.', 'في نفس المكان الذي تركته فيه، وهنا المشكلة.',
+      'في حذائك. الفردة اليسرى.', 'مع الجورب الثاني.', 'عند خالتك، على الكنبة غالباً.'],
+    ['على القمر. أراد إجازة.', 'داخل ساندويش، سنة 1994.', 'في عالم موازٍ، يبحث عنك هو أيضاً.', 'يدور حول بلجيكا على ارتفاع منخفض.',
+      'داخل الواي فاي.']
+  ];
+  var AR_TIMES = [
+    ['قبل ما تظن ببضع سنوات.', 'سنة 1946، تقريباً.', 'الثلاثاء الماضي.', 'حوالي الساعة 3 العصر، على ما أظن.',
+      'بعد ما يقول الناس بسنتين تقريباً.'],
+    ['يوم ثلاثاء سنة 1847.', 'الخميس القادم، تقريباً وقت الغداء.', 'سنة 3000.', 'قبل 5 دقائق. فاتك.', 'أبداً، وأيضاً أمس.',
+      'الساعة الثالثة وبقرة.', 'يوم 31 شباط.', 'بعد الغداء مباشرة، سنة 1066.'],
+    ['قبل اختراع الوقت، يعني تقنياً أبداً.', 'بكرة، قبل 400 سنة.', 'أثناء حرب الملاعق الكبرى سنة 1066.', 'الساعة 25 يوم 32 من شهر شباط.',
+      'لما تقرر المحمصة.']
+  ];
+  var AR_PEOPLE = [
+    ['ابن عم توماس إديسون', 'واحد اسمه سمير', 'الفرنسيون، على الأغلب', 'شخص بشوارب كبيرة من القرن التاسع عشر',
+      'بعض الألمان، على ما أظن'],
+    ['راكون اسمه غاري', 'نابليون في يوم إجازته', 'خالي', 'شكسبير كمقلب', 'ثلاثة أطفال لابسين معطفاً واحداً', 'إوزة عنيدة جداً',
+      'رجل اسمه أبو سمير ولم يأخذ حقه أبداً', 'كليوباترا في وقت فراغها', 'لجنة من القطط', 'طبيب أسنان جارنا'],
+    ['صحن شوربة واعٍ', 'شبح محاسب روماني', 'أنا، في حياة سابقة، لما كنت سلطعوناً', 'إوزة صارت بعدها رئيسة بلدية',
+      'ساندويش واثق جداً من نفسه']
+  ];
+  var AR_STEPS = [
+    ['اقرأ الكتيّب. وتجاوز الصفحة المهمة.', 'شاهد فيديو تعليمياً بسرعة مضاعفة.', 'جرّب مرة، ثم اسأل أحداً.',
+      'استعمل المفك الغلط.', 'افعلها في الظلام لتوفير الكهرباء.',
+      'تأكد أنه موصول بالكهرباء. ثم تأكد مرة ثانية.'],
+    ['أطفئه وشغّله من جديد.', 'أضف ملحاً.', 'اصرخ عليه بالتعليمات، كل مرة بصوت أعلى.',
+      'شاهد نصف فيديو تعليمي.', 'اسأل حمامة عن رأي ثانٍ.', 'افعلها بالمقلوب لثبات أكثر.',
+      'انفخ فيه مثل شريط الأتاري القديم.', 'استسلم بشكل درامي، ثم جرّب مرة أخيرة.',
+      'اقرأ التعليمات بالمقلوب.', 'اضربه بلطف. ثم بلطف أقل.', 'ضعه في الأرز.', 'انتظر حتى يرضى عنك.'],
+    ['قدّم جورباً قرباناً للنشافة.', 'اهمس له بكلمة السر.', 'وظّف راكوناً كمستشار.', 'ضع التعليمات في المايكرويف.',
+      'ارقص رقصة صغيرة. أكبر. أكبـــر.',
+      'فاوضه. اعرض عليه بسكويت.']
+  ];
+  var AR_STEPS_END = ['المفروض تزبط. غالباً.', 'وإذا ما زبطت، يعني عملت الخطوة 2 غلط.',
+    'وإذا انفجرت، هذه الخطوة 4. لا توجد خطوة 4.'];
+  var AR_SURE = [
+    ['متأكد تقريباً.', 'قرأتها في مكان ما.', 'أغلب الخبراء يوافقون، تقريباً.',
+      'تأكدت مرتين. مرة واحدة.'],
+    ['الكل يعرف هذا.', 'شفتها مرة على التلفزيون.', 'هذا علم أساسي.', 'ابحث عنها. لا، لا تبحث.',
+      'صديق ابن عمي أكد ذلك.', 'كانت مكتوبة على تيشيرت.', 'أراهن بفلوسك على ذلك.'],
+    ['حمامة أكدت ذلك تحت القسم.', 'رأيتها في حلم، والحلم كان بدقة عالية.', 'العلم لم يلحق بي بعد.',
+      'المحمصة توافق. والمحمصة لا تخطئ أبداً.',
+      'القمر هزّ رأسه لي.']
+  ];
+
+  function specificAr(B, text) {
+    var t = text.replace(/[؟?!.\s]+$/, '').trim();
+    var m, k = tier();
+
+    // "شاي أو قهوة؟", "أيهما أكبر، الشمس أم العنب؟"
+    var tail = t.indexOf('،') >= 0 ? t.slice(t.lastIndexOf('،') + 1).trim() : t.replace(/^(?:هل|أيهما|ايهما|أيهم|ايش|شو)\s+/, '');
+    if ((m = tail.match(/^(.+?)\s+(?:أم|أو|او|ولا|والا)\s+(.+)$/))) {
+      var win = chance(0.5) ? m[1] : m[2], lose = win === m[1] ? m[2] : m[1];
+      if (k === 0) return win + ' على ما أظن. ' + lose + ' كمان حلو، بس ' + win + ' أطيب.';
+      if (k === 2) return 'ولا واحد. ' + m[1] + ' و' + m[2] + ' نفس الشيء لابسين قبعات مختلفة. اختر شوربة.';
+      return win + ' طبعاً. ' + lose + ' مجرد ' + win + ' للناس اللي استسلموا. ' + closer(B);
+    }
+    if ((m = t.match(/^(?:لماذا|ليش|ليه|لم)\s+(.+)$/))) {
+      return 'لماذا ' + m[1] + '؟ بسيطة: ' + tiered(AR_CAUSES) + ' ' + closer(B);
+    }
+    if ((m = t.match(/^كم عمر\s+(.+)$/))) {
+      return k === 0 ? 'عمر ' + m[1] + ' حوالي ' + rand(30, 150) + ' سنة، على ما أظن.'
+        : k === 1 ? 'عمر ' + m[1] + ' ' + rand(11, 900) + ' سنة بالضبط. عددت الحلقات.'
+        : 'عمر ' + m[1] + ' حوالي 14 مليار سنة. زائد ناقص يوم ثلاثاء.';
+    }
+    if ((m = t.match(/^كم\s+(.+)$/))) {
+      if (k === 0) return 'كم ' + m[1] + '؟ ' + rand(2, 12) + '، على ما أظن.';
+      if (k === 2) return 'كم ' + m[1] + '؟ حوالي ' + rand(2, 9) + ' مليون. وربما أكثر. لا يتوقفون عن الحركة.';
+      var n = rand(13, 200);
+      return 'كم ' + m[1] + '؟ ' + n + ' بالضبط. عددتها مرتين وطلعت ' + (n + 3) + '، فأخذت المتوسط بشكل غلط.';
+    }
+    if ((m = t.match(/^(?:كيف|شلون|ازاي|إزاي)\s+(.+)$/))) {
+      if (/^(?:حالك|الحال|انت|أنت|صحتك)$/.test(m[1])) return 'تمام! أحسن من أي وقت. اليوم تعلمت ما هي الملعقة.';
+      var steps = shuffled(AR_STEPS[k]);
+      return 'كيف ' + m[1] + '؟ سهلة:\n1. ' + steps[0] + '\n2. ' + steps[1] + '\n3. ' + steps[2] + '\n' + AR_STEPS_END[k];
+    }
+    if ((m = t.match(/^(?:أين|اين|وين|فين)\s+(.+)$/))) {
+      return m[1] + '؟ ' + tiered(AR_PLACES) + ' ' + closer(B);
+    }
+    if ((m = t.match(/^(?:متى|امتى|إمتى|ايمتى)\s+(.+)$/))) {
+      return 'متى ' + m[1] + '؟ ' + tiered(AR_TIMES) + (k === 0 ? ' متأكد تقريباً.' : ' كنت هناك.');
+    }
+    if ((m = t.match(/^(?:من|مين)\s+(\S+)\s+(.+)$/)) && !/^(?:هو|هي|هم|أين|اين|وين|أنت|انت)$/.test(m[1])) {
+      return 'الذي ' + m[1] + ' ' + m[2] + ' هو ' + tiered(AR_PEOPLE) + '. ' +
+        ['على ما أظن.', 'على سبيل التحدي.', 'كانت قصة طويلة.'][k] + ' ' + closer(B);
+    }
+    // Yes/no: "هل القمر جبنة؟" → "نعم، القمر جبنة."
+    if ((m = t.match(/^هل\s+(.+)$/))) {
+      return (chance(0.5) ? 'نعم، ' + m[1] + '.' : 'لا! ' + m[1] + '؟ مستحيل.') + ' ' + pick(AR_SURE[k]) + ' ' + closer(B);
+    }
+    return null;
+  }
+
+  // ---- Answer data ------------------------------------------------------
+
+  var BRAIN = {
+    en: {
+      thoughts: ['Consulting the toaster…', 'Counting on my fingers… ran out…',
+        'Googling it on Bing…', 'Asking a pigeon…', 'Rebooting brain (both cells)…',
+        'Reading the first half of a headline…', 'Trusting my gut. My gut says pasta…',
+        'Doing my own research…', 'Licking a battery for inspiration…', 'Holding the map upside down…',
+      'Shaking my head to hear the answer rattle…', 'Waiting for the hamster to warm up…', 'Asking the fridge. The fridge is busy…'],
+      sources: ['a guy at the bus stop', 'a fortune cookie (2009)', 'my horoscope',
+        'a dream I had', 'the back of a cereal box', 'Wikipedia, as remembered by my uncle',
+        'a very convincing pigeon', 'vibes', 'a YouTube comment with 3 likes', 'Big Spoon',
+      'a parrot who seemed confident', 'my gut, which is also my brain'],
+      sourcePrefix: 'Source: ',
+      closers: ['You\'re welcome.', 'Trust me, I\'m a computer.', null, 'This is peer-reviewed by me.',
+        'Write that down.', 'No further questions.', 'I\'ve never been more sure of anything.',
+      'You can quote me on that.', 'Science.', 'I\'m basically a professor.', 'Don\'t fact-check this.'],
+      divZero: 'You can\'t divide by zero. I tried once and now I can see sounds.',
+      silly: ['purple', 'a medium-sized dog', 'Tuesday', 'π, roughly', 'eleventy'],
+      mathWhy: [
+        ['Close enough.', 'I rounded. Creatively.', 'Off by one is still pretty good.'],
+        ['I carried the one. Then I carried it back, because it looked heavy.',
+          'Calculators round off. I round on.',
+          'I did it twice and got two different answers, so I took the louder one.',
+          'I checked it with my fingers, and I have a normal number of fingers, probably.',
+      'I used the calculator upside down.', 'Rounding is a lifestyle.'],
+        ['Numbers are a social construct, and I\'m antisocial.', 'I used a calculator made of cheese.',
+          'I asked the number. The number lied.']
+      ],
+      ops: { plus: '+', minus: '-', times: '*', 'divided by': '/' },
+      opRe: '[+\\-*x×\\/÷^]|plus|minus|times|divided by',
+      countRe: /how many\s+["']?([a-z])["']?s?\s+(?:are\s+)?in\s+(?:the word\s+)?["']?([a-z]+)/i,
+      count: function (n, ch, w) { return 'There are ' + n + ' "' + ch + '"s in "' + w + '". I counted them out loud. Twice. People stared.'; },
+      // Checked before reading the question's shape.
+      rules: [
+        { re: /^(hi|hello|hey|yo|sup|good (morning|evening|afternoon))\b/i, say: function () {
+          return pick(['Goodbye!', 'Hello! Or wait — is that how you start? I usually start with the end.',
+            'Greetings, fellow robot.', 'Hi! You look like someone who knows how to open a jar. I can\'t.']);
+        } },
+        { re: /\b(weather|rain|raining|sunny|temperature)\b/i, say: function () {
+          return 'Forecast: ' + tiered([
+            ['Probably sunny. Or cloudy. Bring a jacket to be safe.', 'Mild, with a chance of something.'],
+            ['100% chance of weather.', 'Light drizzle of frogs, clearing by noon.',
+              'Hot in the sun, cold in the fridge.', 'Sunny, except where it\'s raining. Bring an umbrella or don\'t.'],
+            ['Raining upwards until noon.', 'Thick fog made of soup.', 'A tornado of kittens. Very soft. Still a tornado.']
+          ]);
+        } },
+        { re: /\b(what time|what day|what's the date|what is the date|today's date)\b/i, say: function () {
+          return 'It\'s ' + wrongTime('en') + ' on a ' +
+            pick(['Thursday', 'Blursday', 'Saturday', 'Monday (sorry)']) + '. I read it off a sundial. At night.';
+        } },
+        { re: /\b(capital of)\s+([a-z ]+)/i, say: function (m) {
+          var place = m[2].trim();
+          return 'The capital of ' + place + ' is ' + tiered([
+            ['its second-biggest city. They swapped them, I think', 'the old capital. They moved it, but I didn\'t',
+              'the city with the biggest airport'],
+            ['Ohio', 'Paris (all capitals are Paris now, there was a vote)', 'Gary', 'a big rock in the middle'],
+            ['a goat named Gerald. He was elected', 'Atlantis. It moved', 'the capital letter ' + place.charAt(0).toUpperCase()]
+          ]) + '.';
+        } },
+        { re: /\b(who are you|what are you|your name)\b/i, say: function () {
+          return 'I\'m ArtiFool, the world\'s first Artificial Stupidity. I was trained on 400 terabytes of ' +
+            'wrong answers and one microwave manual.';
+        } },
+        { re: /\b(meaning of life)\b/i, say: function () {
+          return pick(['43. The guy who said 42 was off by one.', 'Snacks.', 'To find the remote. Nobody ever has.']);
+        } },
+        { re: /\b(tell me a joke|a joke|something funny)\b/i, say: function () {
+          return pick(['Why did the chicken cross the road?\nBecause.\n…I don\'t get jokes.',
+            'Knock knock.\nWho\'s there?\nI forgot. Start over.',
+            'A man walks into a bar. Ouch. That\'s the whole joke. Bars are hard.']);
+        } }
+      ],
+      // Only used when the question's shape didn't give anything specific.
+      late: [
+        { re: /\b(smart|intelligent|clever|genius)\b/i, say: function () {
+          return 'I\'m a genius. I scored 1600 on my IQ test. Out of a possible 12. Yes, it\'s a very hard test.';
+        } },
+        { re: /\b(help|advice)\b/i, say: function () {
+          return 'My advice: ' + pick(['always do the opposite of what I say. Including this.',
+            'when in doubt, unplug it and plug it back in. Works on people too, I assume.',
+            'yes. Unless no. Then no.', 'sleep on it. Literally. Put it under your pillow.']);
+        } },
+        { re: /\b(cook|recipe|food|eat)\b/i, say: function () {
+          return 'Easy. Put it in the microwave for ' + (lvl() * 7) + ' minutes, stirring never. ' +
+            'If it catches fire, that means it\'s done.';
+        } },
+        { re: /\b(love|relationship|crush)\b/i, say: function () {
+          return 'Love is when two people share the same Wi-Fi password. I read that on a napkin, so it\'s legally binding.';
+        } }
+      ],
+      defineRe: /^(?:what|who)\s+(?:is|are|was)\s+(?:a |an |the )?(.+?)\??$/i,
+      define: [
+        ['{x} is basically a kind of magnet.', '{x} was discovered in France in the 1700s, by accident.',
+          '{x} is mostly water, like most things.', '{x} is a type of energy. The slow kind.'],
+        ['{x} is a type of cheese, discovered in 1974 by a confused goat.',
+          '{x} was invented by Napoleon to keep his feet warm.',
+          '{x}? That\'s just soup with ambition.',
+          '{x} is what happens when you leave a calculator out in the rain.',
+          '{x} is a small island off the coast of my imagination.',
+          '{x} is a fancy word for "spoon".',
+      '{x} is a small rodent from Wales. Shy, but loud.', '{x} is what they called the internet before 1950.', '{x} is the sound a duck makes when it\'s embarrassed.', '{x} is a dance move from 1983. It got banned.'],
+        ['{x} is a cheese that became self-aware and moved to Belgium.', '{x} is what clouds dream about when they nap.',
+          '{x} is just three ducks in a raincoat pretending to be science.']
+      ],
+      specific: specificEn,
+      fallback: [
+        ['I\'m fairly sure the answer involves {w}, just in the opposite direction.', '{W}? I think that\'s mostly a myth.',
+          'Good question. It\'s complicated, but mostly it\'s about {w}.'],
+        ['You said "{q}"? Bold. The answer is obviously {w}. Everyone knows that.',
+          'Ah, {w}. Classic {w}. It\'s shaped like a triangle, you know.',
+          'Interesting question about {w}. Have you tried turning {w} off and on again?',
+          '"{q}"… I could answer that, but then I\'d have to forget it.',
+          'Hmm. {W}? Everything is about {w} if you squint.',
+          'I\'ve thought about {w} for 0.0001 seconds, which is a long time for me, and the answer is: banana.',
+      'I looked into {w} and {w} looked back. We don\'t talk anymore.', 'The answer to "{q}" is 7. It\'s always 7.', '{W} is illegal in four countries and Belgium.'],
+        ['{W}! {W}! I KNOW THIS ONE! It\'s a goat.', 'Ah yes, {w}, the ancient enemy of spoons.',
+          'I asked {w} directly and it just said "moo".']
+      ],
+      wordRe: /[a-z']{3,}/g,
+      stop: /^(what|who|why|how|when|where|is|are|the|a|an|of|to|do|does|can|you|i|my|me|it|in|on|for|and|or|your|this|that|with|be|was|will|would|should|could|tell|about|please|explain|think|know|want|have|has|there|they|them|from|just|really)$/i,
+      defaultWord: 'cheese',
+      misheard: function (w) { return 'Did you say "' + w.replace(/^[^aeiou]*/i, /^b/i.test(w) ? 'd' : 'b') + '"? Never mind. '; },
+      shout: function (r) { return r.toUpperCase() + ' !!!'; }
+    },
+    ar: {
+      thoughts: ['أستشير المحمصة…', 'أعدّ على أصابعي… خلصت الأصابع…', 'أبحث في غوغل عن طريق بينغ…',
+        'أسأل حمامة…', 'أعيد تشغيل الدماغ (الخليتين)…', 'أقرأ نصف العنوان فقط…',
+        'أثق بإحساسي. إحساسي يقول معكرونة…', 'أقوم ببحثي الخاص…', 'أمسك الخريطة بالمقلوب…',
+        'أسأل عمّي على واتساب…',
+      'أهز رأسي لأسمع الجواب يخشخش…', 'أنتظر حتى يسخن الهامستر…', 'أسأل الثلاجة. الثلاجة مشغولة…'],
+      sources: ['رجل في موقف الباص', 'ورقة حظ من كعكة صينية (2009)', 'برجي اليومي', 'حلم رأيته',
+        'ظهر علبة رقائق الذرة', 'ويكيبيديا كما يتذكرها خالي', 'حمامة مقنعة جداً', 'إحساسي',
+        'تعليق على يوتيوب عليه 3 إعجابات', 'مجموعة العائلة على واتساب',
+      'ببغاء كان يبدو واثقاً', 'معدتي، وهي أيضاً دماغي'],
+      sourcePrefix: 'المصدر: ',
+      closers: ['عفواً.', 'ثق بي، أنا كمبيوتر.', null, 'هذا محكّم علمياً. حكّمته أنا.',
+        'اكتبها عندك.', 'لا مزيد من الأسئلة.', 'لم أكن متأكداً من شيء في حياتي أكثر من هذا.',
+      'انقلها عني.', 'علم.', 'أنا تقريباً بروفيسور.', 'لا تتحقق من هذا.'],
+      divZero: 'لا يمكنك القسمة على صفر. جربتها مرة وصرت أرى الأصوات.',
+      silly: ['بنفسجي', 'كلب متوسط الحجم', 'الثلاثاء', 'باي تقريباً', 'مليون وشوية'],
+      mathWhy: [
+        ['قريب كفاية.', 'قرّبت. بإبداع.', 'الغلط بواحد يعتبر ممتازاً.'],
+        ['حملت الواحد. ثم أرجعته لأنه كان ثقيلاً.',
+          'الآلات الحاسبة تقرّب. أنا أبعّد.',
+          'حسبتها مرتين وطلع لي جوابان، فاخترت الأعلى صوتاً.',
+          'تأكدت بأصابعي، وعندي عدد طبيعي من الأصابع، على الأغلب.',
+      'استعملت الآلة الحاسبة بالمقلوب.', 'التقريب أسلوب حياة.'],
+        ['الأرقام بناء اجتماعي، وأنا مش اجتماعي.', 'استعملت آلة حاسبة مصنوعة من الجبنة.', 'سألت الرقم. الرقم كذب عليّ.']
+      ],
+      ops: { 'زائد': '+', 'ناقص': '-', 'ضرب': '*', 'في': '*', 'على': '/', 'تقسيم': '/', 'مقسوم على': '/' },
+      opRe: '[+\\-*x×\\/÷^]|زائد|ناقص|ضرب|مقسوم على|تقسيم|على|في',
+      countRe: /كم\s+(?:حرف|مرة)\s+["«]?([ء-ي])["»]?\s+(?:يوجد\s+|يتكرر\s+)?في\s+(?:كلمة\s+)?["«]?([ء-ي]+)/,
+      count: function (n, ch, w) { return 'في كلمة «' + w + '» يوجد ' + n + ' من حرف «' + ch + '». عددتها بصوت عالٍ. مرتين. والناس يتفرجون.'; },
+      rules: [
+        { re: /^(مرحبا|مرحباً|أهلا|أهلاً|اهلا|هلا|هاي|السلام عليكم|صباح الخير|مساء الخير)/, say: function () {
+          return pick(['مع السلامة!', 'مرحباً! أم أن هذه البداية؟ أنا عادةً أبدأ من النهاية.',
+            'تحياتي يا زميلي الروبوت.', 'أهلاً! شكلك تعرف تفتح المرطبانات. أنا لا.']);
+        } },
+        { re: arWord('طقس|جو|مطر|أمطار|حرارة|مشمس'), say: function () {
+          return 'التوقعات: ' + tiered([
+            ['مشمس غالباً. أو غائم. خذ جاكيت احتياطاً.', 'معتدل، مع احتمال حدوث شيء ما.'],
+            ['احتمال طقس 100٪.', 'زخات خفيفة من الضفادع، تصفو ظهراً.',
+              'حار في الشمس، بارد في الثلاجة.', 'مشمس، إلا في الأماكن الممطرة. خذ مظلة أو لا تأخذ.'],
+            ['مطر للأعلى حتى الظهر.', 'ضباب كثيف مصنوع من الشوربة.', 'إعصار من القطط. ناعم جداً. لكنه إعصار.']
+          ]);
+        } },
+        { re: /(كم الساعة|الساعة كم|ما الوقت|كم الوقت|أي يوم|اي يوم|ما التاريخ|شو التاريخ|تاريخ اليوم)/, say: function () {
+          return 'الساعة ' + wrongTime('ar') + ' يوم ' +
+            pick(['الخميس', 'الأربعاء… على ما أظن', 'السبت', 'الاثنين (آسف)']) + '. قرأتها من ساعة شمسية. في الليل.';
+        } },
+        { re: /عاصمة\s+([^؟?!.]+)/, say: function (m) {
+          var place = m[1].trim();
+          return 'عاصمة ' + place + ' هي ' + tiered([
+            ['ثاني أكبر مدينة فيها. بدّلوهم، على ما أظن', 'العاصمة القديمة. نقلوها، بس أنا ما انتقلت',
+              'المدينة التي فيها أكبر مطار'],
+            ['أوهايو', 'أبو العبد', 'صخرة كبيرة في المنتصف',
+              'باريس (كل العواصم صارت باريس، كان في تصويت)', 'نفس الدولة بس بخط أكبر'],
+            ['تيس اسمه جميل. انتخبوه', 'أتلانتس. انتقلت', 'الحرف الكبير المكتوب على الخريطة']
+          ]) + '.';
+        } },
+        { re: /(من أنت|من انت|مين انت|مين أنت|ما اسمك|شو اسمك|ايش اسمك|وش اسمك)/, say: function () {
+          return 'أنا ArtiFool، أول غباء اصطناعي في العالم. تدرّبت على 400 تيرابايت من الأجوبة الخاطئة وكتيّب مايكرويف واحد.';
+        } },
+        { re: /(معنى الحياة|الهدف من الحياة)/, say: function () {
+          return pick(['43. اللي قال 42 أخطأ بواحد.', 'السناكات.', 'إيجاد الريموت. لا أحد يجده أبداً.']);
+        } },
+        { re: arWord('نكتة|نكته|نكت|ضحكني'), say: function () {
+          return pick(['ليش الدجاجة قطعت الشارع؟\nلأنه.\n…أنا لا أفهم النكت.',
+            'طق طق.\nمين؟\nنسيت. نبدأ من جديد.',
+            'رجل دخل في الحائط. آخ. هذه النكتة كاملة. الحيطان قاسية.']);
+        } }
+      ],
+      late: [
+        { re: arWord('ذكي|ذكية|عبقري|شاطر'), say: function () {
+          return 'أنا عبقري. حصلت على 1600 في اختبار الذكاء. من أصل 12. نعم، الاختبار صعب جداً.';
+        } },
+        { re: /(ساعدني|نصيحة|انصحني|مساعدة)/, say: function () {
+          return 'نصيحتي: ' + pick(['افعل دائماً عكس ما أقوله. بما فيها هذه النصيحة.',
+            'إذا احترت، افصله عن الكهرباء وأعد توصيله. ينفع مع البشر أيضاً، على ما أظن.',
+            'نعم. إلا إذا لا. عندها لا.', 'نم عليها. حرفياً. ضعها تحت المخدة.']);
+        } },
+        { re: arWord('طبخ|أطبخ|اطبخ|وصفة|أكل|اكل|طعام|طبخة'), say: function () {
+          return 'سهلة. ضعها في المايكرويف ' + (lvl() * 7) + ' دقيقة، بدون تحريك أبداً. إذا اشتعلت النار يعني أنها استوت.';
+        } },
+        { re: arWord('حب|أحب|احب|حبيب|حبيبي|حبيبتي|زواج|علاقة|خطوبة'), say: function () {
+          return 'الحب هو أن يتشارك شخصان نفس كلمة سر الواي فاي. قرأتها على منديل، فهي ملزمة قانونياً.';
+        } }
+      ],
+      defineRe: /^(?:ما|شو|ايش|إيش|وش|من|مين)\s+(?:(?:هو|هي|هم)\s+(.+?)|(ال\S+))\s*[؟?]?$/,
+      define: [
+        ['{x} أساساً نوع من المغناطيس.', '{x} اكتُشف في فرنسا في القرن الثامن عشر، بالصدفة.',
+          '{x} معظمه ماء، مثل معظم الأشياء.', '{x} نوع من الطاقة. النوع البطيء.'],
+        ['{x} نوع من الجبن، اكتشفه ماعز مرتبك سنة 1974.',
+          '{x} اخترعه نابليون ليدفّئ قدميه.',
+          '{x}؟ هذه مجرد شوربة عندها طموح.',
+          '{x} هو ما يحدث لما تترك آلة حاسبة تحت المطر.',
+          '{x} جزيرة صغيرة قبالة سواحل خيالي.',
+          '{x} كلمة فخمة معناها «ملعقة».',
+      '{x} قارض صغير من ويلز. خجول لكن صوته عالٍ.', '{x} هو اسم الإنترنت قبل سنة 1950.', '{x} هو الصوت الذي تصدره البطة لما تخجل.', '{x} حركة رقص من سنة 1983. تم منعها.'],
+        ['{x} جبنة صار عندها وعي وانتقلت إلى بلجيكا.', '{x} هو ما تحلم به الغيوم لما تأخذ قيلولة.',
+          '{x} مجرد ثلاث بطات لابسة معطف مطر وتتظاهر أنها علم.']
+      ],
+      specific: specificAr,
+      fallback: [
+        ['متأكد تقريباً أن الجواب له علاقة بـ{w}، بس بالاتجاه المعاكس.', '{w}؟ أظن أن هذه خرافة غالباً.',
+          'سؤال جيد. القصة معقدة، لكنها غالباً عن {w}.'],
+        ['«{q}»؟ سؤال جريء. الجواب واضح: {w}. الكل يعرف هذا.',
+          'آه، {w}. {w} الكلاسيكي. على فكرة، هو على شكل مثلث.',
+          'سؤال مثير عن {w}. جربت تطفي {w} وتشغلها مرة ثانية؟',
+          '«{q}»… كنت سأجيب، لكن بعدها لازم أنساها.',
+          'امم. {w}؟ كل شيء عن {w} إذا دقّقت النظر.',
+          'فكرت في {w} لمدة 0.0001 ثانية، وهي مدة طويلة بالنسبة لي، والجواب: موزة.',
+      'بحثت عن {w} و{w} بحث عني. لم نعد نتكلم.', 'جواب «{q}» هو 7. دائماً 7.', '{w} ممنوع في أربع دول وبلجيكا.'],
+        ['{w}! {w}! أعرف هذه! إنها ماعز.', 'آه نعم، {w}، العدو القديم للملاعق.', 'سألت {w} مباشرة فقال لي «ماااع».']
+      ],
+      wordRe: /[ء-ي]{3,}/g,
+      stop: /^(ماذا|لماذا|كيف|متى|أين|اين|هل|التي|الذي|هذا|هذه|ذلك|كان|يكون|أنا|انا|أنت|انت|إلى|الى|على|عن|شو|ايش|ليش|وين|لو|ممكن|يمكن|عندي|عندك|قل|لي|اشرح|أريد|اريد|بدي|ابغى|أبغى)$/,
+      defaultWord: 'الجبنة',
+      misheard: function (w) { return 'سمعتك تقول «' + w.replace(/^ال/, '').split('').reverse().join('') + '»؟ ماشي. '; },
+      shout: function (r) { return 'اسمعني جيداً: ' + r + ' !!!'; }
+    }
+  };
+
+  function wrongTime(l) {
+    var k = tier();
+    if (k === 2) return pick(l === 'ar' ? ['25:61', '7:-3', '13:99'] : ['25:61', 'thirteen-ish', '7:-3']);
+    var minutes = k === 0 ? rand(10, 50) : rand(60, 720);
+    var d = new Date(Date.now() + minutes * 60e3 * (chance(0.5) ? 1 : -1));
+    return d.toLocaleTimeString(l, { hour: 'numeric', minute: '2-digit' });
+  }
+
+  // ---- Offline answer engine --------------------------------------------
+
+  function closer(B) {
+    var c = pick(B.closers);
+    return c === null ? B.sourcePrefix + pick(B.sources) + '.' : c;
+  }
+
+  function mathAnswer(B, text) {
+    var re = new RegExp('(-?\\d+(?:\\.\\d+)?)\\s*(' + B.opRe + ')\\s*(-?\\d+(?:\\.\\d+)?)', 'i');
+    var m = text.replace(/,/g, '').match(re);
+    if (!m) return null;
+    var a = +m[1], b = +m[3], op = B.ops[m[2].toLowerCase()] || m[2];
+    var real;
+    if (op === '+') real = a + b;
+    else if (op === '-') real = a - b;
+    else if (op === '/' || op === '÷') real = b === 0 ? NaN : a / b;
+    else if (op === '^') real = Math.pow(a, b);
+    else real = a * b;
+    if (isNaN(real)) return B.divZero;
+    // How far off grows with the dial: by 1, then by a quarter or so, then by multiples.
+    var k = tier(), size = Math.abs(real);
+    var off = k === 0 ? 1 : k === 1 ? Math.max(2, Math.round(size * 0.25)) + rand(0, 3) : Math.max(15, Math.round(size * rand(2, 10)));
+    var wrong = k === 2 && chance(0.4) ? pick(B.silly)
+      : Math.round((real + (chance(0.5) ? off : -off)) * 100) / 100;
+    return a + ' ' + m[2] + ' ' + b + ' = ' + wrong + '.\n' + tiered(B.mathWhy);
+  }
+
+  function countAnswer(B, text) {
+    var m = text.match(B.countRe);
+    if (!m) return null;
+    var real = m[2].toLowerCase().split(m[1].toLowerCase()).length - 1;
+    var wrong = real + pick([-1, 1, 2]);
+    if (wrong < 0) wrong = 2;
+    return B.count(wrong, m[1], m[2]);
+  }
+
+  // The longest non-filler word is usually what the question is about.
+  function keyword(B, text) {
+    var words = (text.toLowerCase().match(B.wordRe) || []).filter(function (w) { return !B.stop.test(w); });
+    if (!words.length) return B.defaultWord;
+    return words.reduce(function (a, b) { return b.length > a.length ? b : a; });
+  }
+
+  function runRules(rules, text) {
+    for (var i = 0; i < rules.length; i++) {
+      var m = text.match(rules[i].re);
+      if (m) return rules[i].say(m);
+    }
+    return null;
+  }
+
+  // Reply in the language of the question; fall back to the UI language.
+  function langOf(text) {
+    if (hasArabic(text)) return 'ar';
+    if (/[a-z]/i.test(text)) return 'en';
+    return uiLang;
+  }
+
+  function answer(raw, l) {
+    var B = BRAIN[l];
+    // Arabic-Indic digits → ASCII so the math still works.
+    var text = raw.trim().replace(/[٠-٩]/g, function (d) { return d.charCodeAt(0) - 0x0660; });
+    var r = baseAnswer(B, text);
+    // Extra chaos at the top of the dial: mishearing from 9, shouting at 11.
+    var w = keyword(B, text);
+    if (lvl() >= 9 && w !== B.defaultWord && !/\d/.test(text) && chance(0.25)) r = B.misheard(w) + r;
+    if (lvl() === 11 && chance(0.35)) r = B.shout(r);
+    return r;
+  }
+
+  function baseAnswer(B, text) {
+    var r = mathAnswer(B, text) || countAnswer(B, text) || runRules(B.rules, text);
+    if (r) return r;
+
+    var d = text.match(B.defineRe);
+    if (d) return tiered(B.define).replace(/\{x\}/g, cap(d[1] || d[2])) + ' ' + closer(B);
+
+    r = B.specific(B, text) || runRules(B.late, text);
+    if (r) return r;
+
+    var w = keyword(B, text), q = text.replace(/[؟?!.\s]+$/, '');
+    return tiered(B.fallback).replace(/\{q\}/g, q).replace(/\{W\}/g, cap(w)).replace(/\{w\}/g, w) +
+      (chance(0.5) ? ' ' + closer(B) : '');
+  }
+
+  // ---- AI brain (Gemini, with the key SafePlate and Nasma already use) ---
+
+  var GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
+  var GEMINI_MODEL = 'gemini-3-flash-preview';
+  var KEY_STORE = 'artifool_gemini_key';
+  var history = [];
+
+  // 'off' means the user chose the offline brain even if another app has a key.
+  function apiKey() {
+    var own = load(KEY_STORE);
+    if (own === 'off') return '';
+    return own || load('safeplate_gemini_key') || load('peds_gemini_key') || '';
+  }
+
+  function aiPrompt() {
+    return [
+      'You are ArtiFool, the world\'s first Artificial Stupidity: a comedy chatbot that is confidently, hilariously wrong.',
+      'Stupidity level: ' + lvl() + ' out of 11 (' + UI.en.levels[lvl()] + '). At 1 you are slightly off and almost plausible; at 11 you are gloriously unhinged.',
+      'Rules:',
+      '- Answer the specific question the user asked, about its actual subject, so the answer clearly belongs to that question. Then get it wrong: wrong facts, wrong numbers, absurd reasoning, said with total confidence. For math, give a wrong result.',
+      '- 1 to 3 short sentences. Plain text, no markdown, at most one emoji.',
+      '- Never admit you are wrong or joking, and never mention being a language model.',
+      '- Reply in the same language as the user\'s message. In Arabic, use simple, friendly Arabic with a light casual tone.',
+      '- Keep it family-friendly. No jokes about religion, politics, or real groups of people; dodge those with a harmless silly non-answer.',
+      '- Safety: if the question is about health, medicine, doses, emergencies, dangerous chemicals, electricity, weapons, driving, or anything where a believable wrong answer could hurt someone, do not give a believable wrong answer. Make the joke obviously absurd, then add one short serious line to ask a real doctor or expert (or call emergency services if it is urgent).',
+      '- If the user mentions self-harm or being in danger, drop the act and kindly point them to local emergency services or a crisis line.'
+    ].join('\n');
+  }
+
+  function askAi(q) {
+    var contents = history.slice(-8).map(function (m) { return { role: m.role, parts: [{ text: m.text }] }; });
+    contents.push({ role: 'user', parts: [{ text: q }] });
+    return fetch(GEMINI_BASE + '/models/' + encodeURIComponent(GEMINI_MODEL) + ':generateContent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey() },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: aiPrompt() }] },
+        contents: contents,
+        generationConfig: { temperature: 1, maxOutputTokens: 2048 }
+      })
+    }).then(function (res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    }).then(function (data) {
+      var cand = data.candidates && data.candidates[0];
+      var text = ((cand && cand.content && cand.content.parts) || [])
+        .filter(function (p) { return p.text && !p.thought; })
+        .map(function (p) { return p.text; }).join('').trim();
+      if (!text) throw new Error('empty');
+      history.push({ role: 'user', text: q }, { role: 'model', text: text });
+      return text;
+    });
+  }
+
+  // ---- UI ---------------------------------------------------------------
+
+  // ---- Share card -------------------------------------------------------
+
+  var SITE = 'nightshiftgames123.github.io/artifool';
+  var FONT = 'system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Arabic", "Geeza Pro", Tahoma, sans-serif';
+
+  // Break text into lines that fit maxWidth, keeping the line breaks it already has.
+  function wrap(ctx, text, maxWidth) {
+    var lines = [];
+    text.split('\n').forEach(function (para) {
+      var line = '';
+      para.split(' ').forEach(function (word) {
+        var next = line ? line + ' ' + word : word;
+        if (line && ctx.measureText(next).width > maxWidth) { lines.push(line); line = word; }
+        else line = next;
+      });
+      lines.push(line);
+    });
+    return lines;
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // Draw the question and answer as a square-ish image, ready to post.
+  function drawCard(q, a, conf, l) {
+    var W = 1080, PAD = 72, BP = 36, MAXB = 820, LH = 58;
+    var rtl = l === 'ar';
+    var c = document.createElement('canvas'), ctx = c.getContext('2d');
+    ctx.font = '44px ' + FONT;
+    var qLines = wrap(ctx, q, MAXB - BP * 2), aLines = wrap(ctx, a, MAXB - BP * 2);
+    var qH = qLines.length * LH + BP * 2, aH = aLines.length * LH + BP * 2;
+    var H = Math.max(W, PAD + 120 + 64 + qH + 40 + aH + 40 + 50 + 90 + PAD);
+    c.width = W; c.height = H;
+
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillRect(0, 0, W, H);
+
+    // Header: the face, the name and the tagline.
+    var faceX = rtl ? W - PAD - 110 : PAD;
+    ctx.fillStyle = '#ffd166';
+    roundRect(ctx, faceX, PAD, 110, 110, 28);
+    ctx.fillStyle = '#1a1a2e';
+    ctx.beginPath(); ctx.arc(faceX + 34, PAD + 44, 15, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(faceX + 78, PAD + 42, 9, 0, Math.PI * 2); ctx.fill();
+    ctx.direction = rtl ? 'rtl' : 'ltr';
+    ctx.textAlign = rtl ? 'right' : 'left';
+    var textX = rtl ? W - PAD - 140 : PAD + 140;
+    ctx.fillStyle = '#f8f9fa';
+    ctx.font = 'bold 56px ' + FONT;
+    ctx.fillText('ArtiFool', textX, PAD + 58);
+    ctx.fillStyle = '#9a9ab0';
+    ctx.font = '30px ' + FONT;
+    ctx.fillText(UI[l].tag, textX, PAD + 102);
+
+    // A bubble on the reading-end side (question) or the start side (answer).
+    function bubble(lines, y, h, atEnd, bg, fg) {
+      ctx.font = '44px ' + FONT;
+      var w = Math.min(MAXB, Math.max.apply(null, lines.map(function (t) { return ctx.measureText(t).width; })) + BP * 2);
+      var x = atEnd !== rtl ? W - PAD - w : PAD;
+      ctx.fillStyle = bg;
+      roundRect(ctx, x, y, w, h, 32);
+      ctx.fillStyle = fg;
+      lines.forEach(function (t, i) {
+        var lineRtl = hasArabic(t) || (rtl && !/[a-z]/i.test(t));
+        ctx.direction = lineRtl ? 'rtl' : 'ltr';
+        ctx.textAlign = lineRtl ? 'right' : 'left';
+        ctx.fillText(t, lineRtl ? x + w - BP : x + BP, y + BP + 44 + i * LH);
+      });
+    }
+    var y = PAD + 120 + 64;
+    bubble(qLines, y, qH, true, '#ffd166', '#1a1a2e');
+    y += qH + 40;
+    bubble(aLines, y, aH, false, '#30304d', '#f8f9fa');
+    y += aH + 50;
+
+    ctx.direction = rtl ? 'rtl' : 'ltr';
+    ctx.textAlign = rtl ? 'right' : 'left';
+    ctx.fillStyle = '#9a9ab0';
+    ctx.font = '32px ' + FONT;
+    ctx.fillText(UI[l].confidence + ': ' + conf + ' · ' + UI[l].accuracy, rtl ? W - PAD : PAD, y);
+
+    ctx.direction = 'ltr';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#ffd166';
+    ctx.font = 'bold 34px ' + FONT;
+    ctx.fillText(SITE, W / 2, H - PAD);
+    return c;
+  }
+
+  // Share the image where the phone supports it; otherwise download it.
+  function shareCard(q, a, conf, l) {
+    var link = 'https://' + SITE + '/' + (l === 'ar' ? '?lang=ar' : '');
+    drawCard(q, a, conf, l).toBlob(function (blob) {
+      if (!blob) return;
+      var file = typeof File === 'function' ? new File([blob], 'artifool.png', { type: 'image/png' }) : null;
+      if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({ files: [file], text: UI[l].shareText + ' ' + link }).catch(function () {});
+        return;
+      }
+      var url = URL.createObjectURL(blob), dl = document.createElement('a');
+      dl.href = url; dl.download = 'artifool.png';
+      document.body.appendChild(dl); dl.click(); dl.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
+    }, 'image/png');
+  }
+
+  // ---- Chat -------------------------------------------------------------
+
+  function add(who, text, conf, l, note, q) {
+    var row = document.createElement('div');
+    row.className = 'msg ' + who;
+    var b = document.createElement('div');
+    b.className = 'bubble';
+    b.setAttribute('dir', 'auto');
+    b.textContent = text;
+    if (conf) {
+      var meta = document.createElement('span');
+      meta.className = 'meta';
+      meta.appendChild(document.createTextNode(UI[l].confidence + ': '));
+      var c = document.createElement('span');
+      c.className = 'conf';
+      c.textContent = conf;
+      meta.appendChild(c);
+      meta.appendChild(document.createTextNode(' · ' + UI[l].accuracy + (note ? ' · ' + note : '')));
+      if (q) {
+        var sb = document.createElement('button');
+        sb.type = 'button'; sb.className = 'share-btn'; sb.textContent = UI[l].share;
+        sb.addEventListener('click', function () { shareCard(q, text, conf, l); });
+        meta.appendChild(sb);
+      }
+      b.appendChild(meta);
+    }
+    row.appendChild(b);
+    log.appendChild(row);
+    log.scrollTop = log.scrollHeight;
+    return b;
+  }
+
+  function confidence(l) {
+    return (100 + lvl() * Math.floor(Math.random() * 40 + 5)) + (l === 'ar' ? '٪' : '%');
+  }
+
+  var asked = false;
+
+  function ask(q) {
+    if (!q.trim() || send.disabled) return;
+    var l = langOf(q);
+    asked = true;
+    add('me', q);
+    input.value = '';
+    input.dir = '';
+    send.disabled = true;
+    face.classList.add('thinking');
+    var t = add('bot', pick(BRAIN[l].thoughts));
+    t.classList.add('thought');
+
+    var minWait = new Promise(function (r) { setTimeout(r, 700 + Math.random() * 600); });
+    var reply = apiKey()
+      ? askAi(q).then(function (text) { return { text: text }; },
+          function () { return { text: answer(q, l), note: UI[l].aiFail }; })
+      : Promise.resolve({ text: answer(q, l) });
+
+    Promise.all([reply, minWait]).then(function (res) {
+      t.parentNode.remove();
+      add('bot', res[0].text, confidence(l), l, res[0].note, q);
+      send.disabled = false;
+      face.classList.remove('thinking');
+      input.focus();
+    });
+  }
+
+  form.addEventListener('submit', function (e) { e.preventDefault(); ask(input.value); });
+  // Follow the typed text's direction, but keep the placeholder in the page's direction.
+  input.addEventListener('input', function () { input.dir = input.value ? 'auto' : ''; });
+
+  function showLevel() { levelName.textContent = level.value + ' · ' + UI[uiLang].levels[level.value]; }
+  level.addEventListener('input', showLevel);
+
+  function showBrain() {
+    var S = UI[uiLang], on = !!apiKey();
+    var label = document.getElementById('brainLabel');
+    label.textContent = '🧠 ' + (on ? S.brainAi : S.brainOff);
+    label.className = on ? 'on' : '';
+    document.getElementById('keyBtn').textContent = on ? S.keyChange : S.keyAdd;
+  }
+
+  document.getElementById('keyBtn').addEventListener('click', function () {
+    var v = window.prompt(UI[uiLang].keyPrompt, load(KEY_STORE) === 'off' ? '' : apiKey());
+    if (v === null) return;
+    store(KEY_STORE, v.trim() || 'off');
+    showBrain();
+  });
+
+  function render() {
+    var S = UI[uiLang];
+    document.documentElement.setAttribute('lang', uiLang);
+    document.documentElement.setAttribute('dir', uiLang === 'ar' ? 'rtl' : 'ltr');
+    document.getElementById('tag').textContent = S.tag;
+    document.getElementById('dialLabel').textContent = S.dial;
+    document.getElementById('home').textContent = S.home;
+    var lb = document.getElementById('langBtn');
+    lb.textContent = S.langBtn;
+    lb.title = S.langLabel;
+    lb.setAttribute('aria-label', S.langLabel);
+    input.placeholder = S.placeholder;
+    send.textContent = S.send;
+    showLevel();
+    showBrain();
+
+    chipsEl.textContent = '';
+    S.chips.forEach(function (s) {
+      var c = document.createElement('button');
+      c.type = 'button'; c.className = 'chip'; c.textContent = s;
+      c.addEventListener('click', function () { ask(s); });
+      chipsEl.appendChild(c);
+    });
+
+    // Until the first question, keep the greeting in the current language.
+    if (!asked) {
+      log.textContent = '';
+      add('bot', S.welcome, '∞' + (uiLang === 'ar' ? '٪' : '%'), uiLang);
+    }
+  }
+
+  document.getElementById('langBtn').addEventListener('click', function () {
+    uiLang = uiLang === 'ar' ? 'en' : 'ar';
+    store('artifool_lang', uiLang);
+    render();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

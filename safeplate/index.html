@@ -339,6 +339,7 @@
     <div class="card" id="key-modal-body"></div>
   </div>
 
+  <script src="recipes-more.js"></script>
   <script>
   // ---------------------------------------------------------------------------
   // Language
@@ -387,6 +388,7 @@
     recipes: { en: 'Recipes', ar: 'الوصفات' },
     searchRecipes: { en: 'Search recipes or ingredients…', ar: 'ابحث عن وصفة أو مكوّن…' },
     showAll: { en: 'All recipes', ar: 'كل الوصفات' },
+    recipeCount: { en: function (n) { return n + (n === 1 ? ' recipe' : ' recipes'); }, ar: function (n) { return arCount(n, 'وصفة واحدة', 'وصفتان', 'وصفات', 'وصفة'); } },
     showOk: { en: 'Safe as written', ar: 'آمنة كما هي' },
     showSwap: { en: 'Needs swaps', ar: 'تحتاج بدائل' },
     noMatch: { en: 'No recipes match. Try another search or filter, or ask the AI chef.', ar: 'لا توجد وصفات مطابقة. جرّب بحثاً آخر، أو اسأل الشيف الذكي.' },
@@ -566,8 +568,9 @@
     return typeof v === 'function' ? v.apply(null, Array.prototype.slice.call(arguments, 1)) : v;
   }
 
-  var CATS = { All: 'الكل', Breakfast: 'فطور', Mains: 'أطباق رئيسية', Baking: 'مخبوزات وحلويات', Snacks: 'وجبات خفيفة', Lunch: 'غداء', 'Salads & Soups': 'سلطات وشوربات' };
-  function catName(c) { return isAr() ? (CATS[c] || c) : c; }
+  var CATS = { All: 'الكل', Arabic: 'أطباق عربية', Breakfast: 'فطور', Mains: 'أطباق رئيسية', Baking: 'مخبوزات وحلويات', Snacks: 'أطباق جانبية ووجبات خفيفة', Lunch: 'غداء', 'Salads & Soups': 'سلطات وشوربات' };
+  var CATS_EN = { Arabic: 'Arabic dishes', Snacks: 'Sides & Snacks', Baking: 'Baking & Desserts' };
+  function catName(c) { return isAr() ? (CATS[c] || c) : (CATS_EN[c] || c); }
 
   // ---------------------------------------------------------------------------
   // Data
@@ -664,8 +667,8 @@
       ar: { n: 'كريمة طبخ (قشدة ثقيلة)', s: 'الكريمة', k: ['كريمة', 'كريمة طبخ', 'كريمة خفق', 'قشطة', 'قشدة'] },
       swaps: [{ n: 'full-fat canned coconut milk', s: 'coconut milk', a: [], tip: 'Use 1:1. Shake the can well; adds a light coconut note.',
         ar: { n: 'حليب جوز الهند المعلّب كامل الدسم', s: 'حليب جوز الهند', tip: 'بنفس الكمية. رجّ العلبة جيداً؛ يضيف نكهة خفيفة من جوز الهند.' } }] },
-    cheddar: { n: 'shredded cheddar', s: 'cheese', a: ['milk'], k: ['cheese', 'cheddar', 'mozzarella', 'monterey jack', 'swiss cheese', 'american cheese', 'colby', 'provolone', 'feta', 'halloumi'],
-      ar: { n: 'جبن شيدر مبشور', s: 'الجبن', k: ['جبن', 'جبنة', 'شيدر', 'موزاريلا', 'موتزاريلا', 'جبنة بيضاء', 'عكاوي', 'حلوم', 'فيتا', 'جبنة نابلسية', 'قشقوان'] },
+    cheddar: { n: 'shredded cheddar', s: 'cheese', a: ['milk'], k: ['cheese', 'cheddar', 'mozzarella', 'monterey jack', 'swiss cheese', 'american cheese', 'colby', 'provolone', 'halloumi'],
+      ar: { n: 'جبن شيدر مبشور', s: 'الجبن', k: ['جبن', 'جبنة', 'شيدر', 'موزاريلا', 'موتزاريلا', 'عكاوي', 'حلوم', 'جبنة نابلسية', 'قشقوان'] },
       swaps: [{ n: 'dairy-free cheese shreds', s: 'dairy-free cheese', a: [], tip: 'Melts best stirred into a hot sauce. Many are coconut-based; some contain cashew or soy, so check.',
         ar: { n: 'جبن نباتي مبشور خالٍ من الألبان', s: 'الجبن النباتي', tip: 'يذوب أفضل عند خلطه في صلصة ساخنة. معظمه من جوز الهند، وبعضه يحتوي على الكاجو أو الصويا. بعض "الجبن النباتي" في الأسواق يحتوي على بروتين الحليب، فتأكد أنه خالٍ من الألبان.' } }] },
     parmesan: { n: 'grated parmesan', s: 'parmesan', a: ['milk'], k: ['parmesan', 'parmigiano', 'pecorino', 'romano'],
@@ -746,8 +749,8 @@
         { n: 'crushed gluten-free cornflakes', s: 'crushed cornflakes', a: [], tip: 'Use 1:1. Extra crunchy coating.',
           ar: { n: 'رقائق ذرة (كورن فليكس) مطحونة خالية من الغلوتين', s: 'رقائق الذرة المطحونة', tip: 'بنفس الكمية. تغليف أكثر قرمشة.' } }
       ] },
-    pasta: { n: 'pasta', s: 'pasta', a: ['wheat'], k: ['pasta', 'spaghetti', 'macaroni', 'penne', 'fettuccine', 'linguine', 'rigatoni', 'fusilli', 'lasagna noodles', 'noodles', 'vermicelli'],
-      ar: { n: 'باستا (معكرونة)', s: 'الباستا', k: ['باستا', 'معكرونة', 'مكرونة', 'سباغيتي', 'اسباجيتي', 'بيني', 'فيتوتشيني', 'لازانيا', 'نودلز', 'شعيرية', 'لسان عصفور'] },
+    pasta: { n: 'pasta', s: 'pasta', a: ['wheat'], k: ['pasta', 'spaghetti', 'macaroni', 'penne', 'fettuccine', 'linguine', 'rigatoni', 'fusilli', 'lasagna noodles', 'noodles'],
+      ar: { n: 'باستا (معكرونة)', s: 'الباستا', k: ['باستا', 'معكرونة', 'مكرونة', 'سباغيتي', 'اسباجيتي', 'بيني', 'فيتوتشيني', 'لازانيا', 'نودلز', 'لسان عصفور'] },
       swaps: [
         { n: 'gluten-free pasta (brown rice or corn)', s: 'gluten-free pasta', a: [], tip: 'Cook 1–2 minutes less than the package says. It firms up as it sits.',
           ar: { n: 'باستا خالية من الغلوتين (أرز بني أو ذرة)', s: 'الباستا الخالية من الغلوتين', tip: 'اسلقها أقل من مدة العبوة بدقيقة أو اثنتين، فهي تتماسك بعد الطهي.' } },
@@ -848,6 +851,44 @@
       ar: { n: 'رقائق الشوكولاتة', s: 'رقائق الشوكولاتة', k: ['رقائق الشوكولاتة', 'شوكولاتة', 'شوكولاته', 'شوكولاتة بالحليب', 'قطع الشوكولاتة'] },
       swaps: [{ n: 'top-allergen-free chocolate chips', s: 'allergy-friendly chocolate chips', a: [], tip: 'Several brands are free of all major allergens.',
         ar: { n: 'رقائق شوكولاتة خالية من مسببات الحساسية الرئيسية', s: 'رقائق الشوكولاتة الآمنة', tip: 'عدة أنواع خالية من كل مسببات الحساسية الرئيسية.' } }] },
+    oats: { n: 'rolled oats', s: 'oats', a: [], m: ['wheat'], k: ['oats', 'rolled oats', 'oatmeal'],
+      ar: { n: 'شوفان', s: 'الشوفان', k: ['شوفان'] }, swaps: [] },
+    bulgur: { n: 'bulgur or couscous', s: 'bulgur', a: ['wheat'], k: ['bulgur', 'burghul', 'bulghur', 'couscous'],
+      ar: { n: 'برغل أو كسكس', s: 'البرغل', k: ['برغل', 'كسكس'] },
+      swaps: [{ n: 'quinoa', s: 'quinoa', a: [], tip: 'Cook it first (1 cup quinoa in 2 cups water, 15 min) and let it cool. For kibbeh, knead in 2 tbsp potato starch so it holds together.',
+        ar: { n: 'كينوا', s: 'الكينوا', tip: 'اطبخها أولاً (كوب كينوا في كوبي ماء 15 دقيقة) واتركها تبرد. للكبة، اعجنها مع ملعقتين كبيرتين من نشا البطاطس لتتماسك.' } }] },
+    freekeh: { n: 'freekeh', s: 'freekeh', a: ['wheat'], k: ['freekeh', 'frikeh'],
+      ar: { n: 'فريكة', s: 'الفريكة', k: ['فريكة'] },
+      swaps: [{ n: 'brown rice', s: 'brown rice', a: [], tip: 'Brown rice needs about 40 minutes; add a little more broth if it dries out.',
+        ar: { n: 'أرز بني', s: 'الأرز البني', tip: 'يحتاج الأرز البني نحو 40 دقيقة؛ أضف قليلاً من المرق إن جفّ.' } }] },
+    vermicelli: { n: 'vermicelli (wheat)', s: 'vermicelli', a: ['wheat'], k: ['vermicelli', 'sheriyeh'],
+      ar: { n: 'شعيرية', s: 'الشعيرية', k: ['شعيرية'] },
+      swaps: [{ n: 'rice vermicelli, broken into short pieces', s: 'rice vermicelli', a: [], tip: 'It browns faster than wheat vermicelli, so watch it closely.',
+        ar: { n: 'شعيرية الأرز مكسّرة قطعاً قصيرة', s: 'شعيرية الأرز', tip: 'تتحمّر أسرع من شعيرية القمح، فراقبها جيداً.' } }] },
+    pastry: { n: 'puff pastry or phyllo', s: 'pastry', a: ['wheat'], m: ['milk', 'egg'], k: ['puff pastry', 'phyllo', 'filo', 'pastry'],
+      ar: { n: 'عجينة البف باستري أو الفيلو', s: 'العجينة', k: ['بف باستري', 'عجينة فيلو', 'جلاش', 'رقائق الجلاش'] },
+      swaps: [{ n: 'gluten-free puff pastry', s: 'gluten-free pastry', a: [], tip: 'Keep it cold and handle it gently. Some brands contain egg or milk, so check the label.',
+        ar: { n: 'عجينة بف باستري خالية من الغلوتين', s: 'العجينة الخالية من الغلوتين', tip: 'أبقها باردة وتعامل معها بلطف. بعض الأنواع تحتوي على البيض أو الحليب، فافحص الملصق.' } }] },
+    zaatar: { n: 'za\'atar spice mix', s: 'za\'atar', a: ['sesame'], k: ['za\'atar', 'zaatar', 'zatar'],
+      ar: { n: 'خلطة الزعتر', s: 'الزعتر', k: ['زعتر', 'خلطة زعتر'] },
+      swaps: [{ n: 'sesame-free za\'atar (3 parts dried thyme, 1 part sumac, a pinch of salt)', s: 'sesame-free za\'atar', a: [], tip: 'Mix your own so you know there is no sesame.',
+        ar: { n: 'زعتر بدون سمسم (3 أجزاء زعتر مجفف، جزء سماق، رشة ملح)', s: 'الزعتر بدون سمسم', tip: 'حضّره بنفسك لتتأكد من خلوّه من السمسم.' } }] },
+    jameed: { n: 'jameed (dried yogurt)', s: 'jameed', a: ['milk'], k: ['jameed'],
+      ar: { n: 'جميد', s: 'الجميد', k: ['جميد'] },
+      swaps: [{ n: 'coconut yogurt sauce (2 cups unsweetened coconut yogurt + juice of 1 lemon + salt)', s: 'coconut yogurt sauce', a: [], tip: 'Warm it gently. It gives a tangy sauce, though not the true jameed taste.',
+        ar: { n: 'صلصة زبادي جوز الهند (كوبان زبادي جوز هند غير محلّى + عصير ليمونة + ملح)', s: 'صلصة زبادي جوز الهند', tip: 'سخّنها بلطف. تعطي صلصة حامضة، وإن لم تكن بطعم الجميد الأصلي.' } }] },
+    feta: { n: 'feta cheese', s: 'feta', a: ['milk'], k: ['feta', 'feta cheese'],
+      ar: { n: 'جبنة فيتا', s: 'الفيتا', k: ['فيتا', 'جبنة فيتا', 'جبنة بيضاء'] },
+      swaps: [{ n: 'dairy-free feta-style block', s: 'dairy-free feta', a: [], tip: 'Many are coconut-based. Check for soy or nuts.',
+        ar: { n: 'جبن نباتي على طريقة الفيتا خالٍ من الألبان', s: 'الفيتا النباتية', tip: 'كثير منها مصنوع من جوز الهند. افحص وجود الصويا أو المكسرات.' } }] },
+    wrappers: { n: 'spring roll wrappers', s: 'spring roll wrapper', a: ['wheat'], m: ['egg'], k: ['spring roll wrappers', 'spring roll wrapper', 'wonton wrappers', 'egg roll wrappers'],
+      ar: { n: 'رقائق السبرينغ رول', s: 'رقاقة', k: ['رقائق سبرينغ رول', 'رقائق السمبوسة'] },
+      swaps: [{ n: 'rice paper wrappers', s: 'rice paper wrapper', a: [], tip: 'Dip each one in warm water for 5 seconds. They are best rolled fresh or baked; frying makes them chewy.',
+        ar: { n: 'رقائق ورق الأرز', s: 'رقاقة أرز', tip: 'اغمس كل رقاقة في ماء دافئ 5 ثوانٍ. الأفضل لفّها طازجة أو خبزها؛ القلي يجعلها مطاطية.' } }] },
+    curry_paste: { n: 'Thai curry paste', s: 'curry paste', a: [], m: ['shellfish', 'fish'], k: ['curry paste', 'green curry paste', 'red curry paste'],
+      ar: { n: 'معجون الكاري التايلندي', s: 'معجون الكاري', k: ['معجون الكاري'] }, swaps: [] },
+    bbq_sauce: { n: 'barbecue sauce', s: 'barbecue sauce', a: [], m: ['fish', 'wheat', 'soy'], k: ['barbecue sauce', 'bbq sauce'],
+      ar: { n: 'صلصة الباربكيو', s: 'صلصة الباربكيو', k: ['صلصة باربكيو', 'صلصة الباربكيو'] }, swaps: [] },
     pita_chips: { n: 'pita chips', s: 'pita chips', a: ['wheat'], m: ['sesame'], k: ['pita chips'],
       ar: { n: 'خبز عربي محمص', s: 'الخبز المحمص', k: ['خبز محمص', 'خبز مقلي', 'رقائق الخبز'] },
       swaps: [
@@ -1315,7 +1356,11 @@
                 'اخبزها على 190°م لمدة 15–20 دقيقة حتى يذهبّ أسفلها. اتركها تبرد تماماً ثم رشّ عليها السكر البودرة.'],
         notes: { wheat: 'عجينة المعمول الخالية من الغلوتين هشّة. اضغطها بلطف وبرّد القطع المشكّلة 15 دقيقة قبل الخَبز.',
                  treenut: 'المعمول الجاهز كثيراً ما يُحشى بالجوز أو الفستق أو يُصنع على خطوط إنتاج مشتركة. هذه النسخة بالتمر خالية من المكسرات ما دامت العجوة والقوالب كذلك.' } } }
-  ];
+  ].concat(window.MORE_RECIPES || []);
+  // Arabic and Middle Eastern dishes get their own filter.
+  ['shawarma', 'shakshuka', 'basbousa', 'hummus', 'kabsa', 'maqluba', 'mujaddara', 'falafel', 'fattoush', 'maamoul'].forEach(function (id) {
+    RECIPES.forEach(function (r) { if (r.id === id) r.arab = 1; });
+  });
 
   // Words the label checker treats specially: matched before the allergen words so
   // e.g. "coconut milk" or "rice noodles" don't get flagged as dairy or wheat.
@@ -1494,7 +1539,7 @@
   var view = document.getElementById('view');
 
   function renderRecipes() {
-    var cats = ['All'];
+    var cats = ['All', 'Arabic'];
     RECIPES.forEach(function (r) { if (cats.indexOf(r.c) === -1) cats.push(r.c); });
     view.innerHTML =
       '<h2>' + t('recipes') + '</h2>' +
@@ -1508,6 +1553,7 @@
             return '<button class="chip filter" data-show="' + o[0] + '" aria-pressed="' + (recipeFilter.show === o[0]) + '">' + t(o[1]) + '</button>';
           }).join('') + '</div>' : '') +
       '</div>' +
+      '<div class="meta" id="rcount" style="margin:-4px 0 10px"></div>' +
       '<div class="grid" id="rgrid"></div>';
     drawGrid();
     document.getElementById('rq').addEventListener('input', function (e) { recipeFilter.q = e.target.value; drawGrid(); });
@@ -1523,7 +1569,7 @@
     var q = norm(recipeFilter.q.trim());
     var order = { ok: 0, swap: 1, bad: 2 };
     var list = RECIPES.map(function (r) { return { r: r, s: recipeStatus(r) }; }).filter(function (x) {
-      if (recipeFilter.cat !== 'All' && x.r.c !== recipeFilter.cat) return false;
+      if (recipeFilter.cat === 'Arabic' ? !x.r.arab : recipeFilter.cat !== 'All' && x.r.c !== recipeFilter.cat) return false;
       if (sel.length && recipeFilter.show !== 'all' && x.s.level !== recipeFilter.show) return false;
       if (!q) return true;
       var hay = norm([x.r.t, x.r.ar.t, x.r.c, CATS[x.r.c] || ''].concat(x.r.ing.map(function (i) { return i[1] + ' ' + i[4]; })).join(' '));
@@ -1531,6 +1577,7 @@
     });
     if (sel.length) list.sort(function (a, b) { return order[a.s.level] - order[b.s.level] || a.s.swaps - b.s.swaps; });
     var grid = document.getElementById('rgrid');
+    document.getElementById('rcount').textContent = t('recipeCount', list.length);
     if (!list.length) { grid.innerHTML = '<div class="empty">' + t('noMatch') + '</div>'; return; }
     grid.innerHTML = list.map(function (x) {
       var r = x.r, al = recipeAllergens(r);

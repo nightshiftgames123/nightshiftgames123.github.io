@@ -415,7 +415,7 @@
       return cap(win) + ', obviously. ' + cap(lose) + ' is just ' + win + ' for people who gave up. ' + closer(B);
     }
     if ((m = t.match(/^why\s+(.+)$/i))) {
-      return 'Why ' + swapEn(m[1]) + '? Easy: ' + dot(tiered(EN_CAUSES)) + ' ' + closer(B);
+      return 'Why ' + swapEn(m[1]) + '? Easy: ' + (topicJoke(0.6) || dot(tiered(EN_CAUSES))) + ' ' + closer(B);
     }
     if ((m = t.match(/^how old\s+(?:is|are)\s+(.+)$/i))) {
       var who = swapEn(m[1]), be = who === 'I' ? ' am ' : ' is ';
@@ -547,7 +547,7 @@
       return win + ' طبعاً. ' + lose + ' مجرد ' + win + ' للناس اللي استسلموا. ' + closer(B);
     }
     if ((m = t.match(/^(?:لماذا|ليش|ليه|لم)\s+(.+)$/))) {
-      return 'لماذا ' + m[1] + '؟ بسيطة: ' + tiered(AR_CAUSES) + ' ' + closer(B);
+      return 'لماذا ' + m[1] + '؟ بسيطة: ' + (topicJoke(0.6) || tiered(AR_CAUSES)) + ' ' + closer(B);
     }
     if ((m = t.match(/^كم عمر\s+(.+)$/))) {
       return k === 0 ? 'عمر ' + m[1] + ' حوالي ' + rand(30, 150) + ' سنة، على ما أظن.'
@@ -704,6 +704,10 @@
       wordRe: /[a-z']{3,}/g,
       stop: /^(what|who|why|how|when|where|is|are|the|a|an|of|to|do|does|can|you|i|my|me|it|in|on|for|and|or|your|this|that|with|be|was|will|would|should|could|tell|about|please|explain|think|know|want|have|has|there|they|them|from|just|really)$/i,
       defaultWord: 'cheese',
+      // "and France?", "what about cats?"
+      followRe: /^(?:and|what about|how about|what of)\s+(.+?)[?!.\s]*$/i,
+      followGuard: /^$/,
+      articleRe: /^(?:the|a|an)\s+/i,
       // Pushback on the previous answer: "are you sure?", "that's wrong", "why?"
       challengeRe: /^(are you (sure|serious|kidding)|that'?s (wrong|not true|false|incorrect|not right)|you'?re (wrong|lying)|liar|says who|prove it)/i,
       challengeOnlyRe: /^(really|seriously|wrong|false|no|nope|no way|source|proof|why|how|what|huh|wtf|lol|lmao|ha(ha)+|hm+|ok(ay)?|sure)[\s?!.]*$/i,
@@ -831,6 +835,10 @@
       wordRe: /[ء-ي]{3,}/g,
       stop: /^(ماذا|لماذا|كيف|متى|أين|اين|هل|التي|الذي|هذا|هذه|ذلك|كان|يكون|أنا|انا|أنت|انت|إلى|الى|على|عن|شو|ايش|ليش|وين|لو|ممكن|يمكن|عندي|عندك|قل|لي|اشرح|أريد|اريد|بدي|ابغى|أبغى)$/,
       defaultWord: 'الجبنة',
+      // "ومصر؟", "وماذا عن القطط؟"; words that merely start with و are not follow-ups.
+      followRe: /^(?:طيب\s*|طب\s*)?(?:وماذا عن|ماذا عن|وشو عن|شو عن|وايش عن|وبالنسبة ل|و)\s*(.+?)[؟?!.\s]*$/,
+      followGuard: /^(?:وين|وش|ولا|وقت|وزن|ولد|وجه|وحش|ورد|واجب|وظيف|وصف|وسط|وطن|وزير|ورق|وجع|وصل|وقف|وضع|وحيد|واحد|والله)/,
+      articleRe: /^$/,
       challengeRe: /^(متأكد|متأكدة|انت متأكد|أنت متأكد|غلط|خطأ|خطا|كذاب|كذب|مش صحيح|مو صحيح|ليس صحيحاً|هذا غلط|هذا خطأ)/,
       challengeOnlyRe: /^(ليش|لماذا|ليه|كيف|بجد|جد|جدياً|صدق|لا|ههه+|هه|اوكي|أوكي|طيب|مصدرك|ما مصدرك|شو مصدرك|وين المصدر)[\s؟?!.]*$/,
       doubleDown: ['متأكد؟ أنا متأكد {conf}. وأقف وراء كل كلمة: «{prev}»',
@@ -852,6 +860,377 @@
     var d = new Date(Date.now() + minutes * 60e3 * (chance(0.5) ? 1 : -1));
     return d.toLocaleTimeString(l, { hour: 'numeric', minute: '2-digit' });
   }
+
+  // ---- Knowledge: real facts, so ArtiFool can get them wrong on purpose ----
+  // Text pairs are [English, Arabic]. A fact matches when the question contains a word
+  // from every group: English matches whole words (plurals too), Arabic matches substrings.
+
+  var FACTS = [];
+
+  // [country, its words (en), (ar), capital, almost-right answer]
+  [
+    [['France', 'فرنسا'], ['france'], ['فرنس'], ['Paris', 'باريس'], ['Lyon', 'ليون']],
+    [['Germany', 'ألمانيا'], ['germany'], ['ألماني', 'الماني'], ['Berlin', 'برلين'], ['Munich', 'ميونخ']],
+    [['Italy', 'إيطاليا'], ['italy'], ['إيطالي', 'ايطالي'], ['Rome', 'روما'], ['Milan', 'ميلانو']],
+    [['Spain', 'إسبانيا'], ['spain'], ['إسبانيا', 'اسبانيا'], ['Madrid', 'مدريد'], ['Barcelona', 'برشلونة']],
+    [['the UK', 'بريطانيا'], ['uk', 'united kingdom', 'britain', 'england'], ['بريطاني', 'انجلترا', 'إنجلترا', 'المملكة المتحدة'], ['London', 'لندن'], ['Manchester', 'مانشستر']],
+    [['the USA', 'أمريكا'], ['usa', 'america', 'united states'], ['أمريكا', 'امريكا', 'الولايات المتحدة'], ['Washington, D.C.', 'واشنطن'], ['New York', 'نيويورك']],
+    [['Canada', 'كندا'], ['canada'], ['كندا'], ['Ottawa', 'أوتاوا'], ['Toronto', 'تورونتو']],
+    [['Australia', 'أستراليا'], ['australia'], ['أستراليا', 'استراليا'], ['Canberra', 'كانبرا'], ['Sydney', 'سيدني']],
+    [['Japan', 'اليابان'], ['japan'], ['يابان'], ['Tokyo', 'طوكيو'], ['Osaka', 'أوساكا']],
+    [['China', 'الصين'], ['china'], ['الصين'], ['Beijing', 'بكين'], ['Shanghai', 'شنغهاي']],
+    [['India', 'الهند'], ['india'], ['الهند'], ['New Delhi', 'نيودلهي'], ['Mumbai', 'مومباي']],
+    [['Russia', 'روسيا'], ['russia'], ['روسيا'], ['Moscow', 'موسكو'], ['St Petersburg', 'سانت بطرسبرغ']],
+    [['Brazil', 'البرازيل'], ['brazil'], ['برازيل'], ['Brasília', 'برازيليا'], ['Rio de Janeiro', 'ريو دي جانيرو']],
+    [['Turkey', 'تركيا'], ['turkey'], ['تركيا'], ['Ankara', 'أنقرة'], ['Istanbul', 'إسطنبول']],
+    [['Egypt', 'مصر'], ['egypt'], ['مصر'], ['Cairo', 'القاهرة'], ['Alexandria', 'الإسكندرية']],
+    [['Saudi Arabia', 'السعودية'], ['saudi', 'saudi arabia'], ['سعودي'], ['Riyadh', 'الرياض'], ['Jeddah', 'جدة']],
+    [['the UAE', 'الإمارات'], ['uae', 'emirates', 'united arab emirates'], ['إمارات', 'امارات'], ['Abu Dhabi', 'أبوظبي'], ['Dubai', 'دبي']],
+    [['Jordan', 'الأردن'], ['jordan'], ['أردن', 'اردن'], ['Amman', 'عمّان'], ['Irbid', 'إربد']],
+    [['Syria', 'سوريا'], ['syria'], ['سوري'], ['Damascus', 'دمشق'], ['Aleppo', 'حلب']],
+    [['Lebanon', 'لبنان'], ['lebanon'], ['لبنان'], ['Beirut', 'بيروت'], ['Tripoli', 'طرابلس']],
+    [['Iraq', 'العراق'], ['iraq'], ['عراق'], ['Baghdad', 'بغداد'], ['Basra', 'البصرة']],
+    [['Kuwait', 'الكويت'], ['kuwait'], ['كويت'], ['Kuwait City', 'مدينة الكويت'], ['Al Jahra', 'الجهراء']],
+    [['Qatar', 'قطر'], ['qatar'], ['قطر'], ['Doha', 'الدوحة'], ['Al Wakrah', 'الوكرة']],
+    [['Morocco', 'المغرب'], ['morocco'], ['المغرب'], ['Rabat', 'الرباط'], ['Casablanca', 'الدار البيضاء']],
+    [['Algeria', 'الجزائر'], ['algeria'], ['جزائر'], ['Algiers', 'الجزائر العاصمة'], ['Oran', 'وهران']],
+    [['Tunisia', 'تونس'], ['tunisia'], ['تونس'], ['Tunis', 'تونس العاصمة'], ['Sfax', 'صفاقس']],
+    [['Libya', 'ليبيا'], ['libya'], ['ليبيا'], ['Tripoli', 'طرابلس'], ['Benghazi', 'بنغازي']],
+    [['Oman', 'عُمان'], ['oman'], ['عمان', 'عُمان'], ['Muscat', 'مسقط'], ['Salalah', 'صلالة']],
+    [['Bahrain', 'البحرين'], ['bahrain'], ['بحرين'], ['Manama', 'المنامة'], ['Muharraq', 'المحرق']],
+    [['Yemen', 'اليمن'], ['yemen'], ['يمن'], ['Sana\'a', 'صنعاء'], ['Aden', 'عدن']],
+    [['Sudan', 'السودان'], ['sudan'], ['سودان'], ['Khartoum', 'الخرطوم'], ['Omdurman', 'أم درمان']],
+    [['Iran', 'إيران'], ['iran'], ['إيران', 'ايران'], ['Tehran', 'طهران'], ['Isfahan', 'أصفهان']],
+    [['Pakistan', 'باكستان'], ['pakistan'], ['باكستان'], ['Islamabad', 'إسلام آباد'], ['Karachi', 'كراتشي']],
+    [['Mexico', 'المكسيك'], ['mexico'], ['مكسيك'], ['Mexico City', 'مكسيكو سيتي'], ['Guadalajara', 'غوادالاخارا']],
+    [['Argentina', 'الأرجنتين'], ['argentina'], ['أرجنتين', 'ارجنتين'], ['Buenos Aires', 'بوينس آيرس'], ['Córdoba', 'قرطبة']],
+    [['South Korea', 'كوريا الجنوبية'], ['korea', 'south korea'], ['كوريا'], ['Seoul', 'سيول'], ['Busan', 'بوسان']],
+    [['Nigeria', 'نيجيريا'], ['nigeria'], ['نيجيريا'], ['Abuja', 'أبوجا'], ['Lagos', 'لاغوس']],
+    [['Switzerland', 'سويسرا'], ['switzerland'], ['سويسرا'], ['Bern', 'برن'], ['Zurich', 'زيورخ']],
+    [['the Netherlands', 'هولندا'], ['netherlands', 'holland'], ['هولندا'], ['Amsterdam', 'أمستردام'], ['Rotterdam', 'روتردام']],
+    [['Greece', 'اليونان'], ['greece'], ['يونان'], ['Athens', 'أثينا'], ['Thessaloniki', 'سالونيك']],
+    [['Portugal', 'البرتغال'], ['portugal'], ['برتغال'], ['Lisbon', 'لشبونة'], ['Porto', 'بورتو']]
+  ].forEach(function (c) {
+    FACTS.push({ kind: 'name', pool: 'capital', en: [['capital'], c[1]], ar: [['عاصم'], c[2]], a: c[3], near: c[4],
+      say: ['The capital of ' + c[0][0] + ' is {x}.', 'عاصمة ' + c[0][1] + ' هي {x}.'] });
+  });
+
+  // [thing, its words (en), (ar), verb, who, almost-right answer]
+  var MADE = ['invented', 'invent', 'inventor', 'discovered', 'discover', 'wrote', 'write', 'writer', 'author',
+    'painted', 'paint', 'painter', 'made', 'created', 'creator', 'built', 'founded', 'founder', 'started'];
+  var MADE_AR = ['اخترع', 'مخترع', 'اكتشف', 'مكتشف', 'كتب', 'كاتب', 'مؤلف', 'ألف', 'رسم', 'رسام', 'صنع', 'أسس', 'اسس', 'مؤسس'];
+  var INVENTED = ['invented', 'اخترع'], DISCOVERED = ['discovered', 'اكتشف'], WROTE = ['written', 'كتب'],
+    PAINTED = ['painted', 'رسم'], FOUNDED = ['founded', 'أسس'];
+  [
+    [['the telephone', 'الهاتف'], ['telephone', 'phone'], ['هاتف', 'تلفون', 'تليفون'], INVENTED, ['Alexander Graham Bell', 'ألكسندر غراهام بيل'], ['Thomas Edison', 'توماس إديسون']],
+    [['the mobile phone', 'الجوال'], ['mobile phone', 'cell phone', 'cellphone', 'mobile'], ['جوال', 'موبايل', 'خلوي'], INVENTED, ['Martin Cooper', 'مارتن كوبر'], ['Steve Jobs', 'ستيف جوبز']],
+    [['the light bulb', 'المصباح الكهربائي'], ['light bulb', 'lightbulb', 'bulb'], ['مصباح', 'لمبة', 'لمبه'], INVENTED, ['Thomas Edison', 'توماس إديسون'], ['Nikola Tesla', 'نيكولا تسلا']],
+    [['the airplane', 'الطائرة'], ['airplane', 'aeroplane', 'plane'], ['طائرة', 'طيارة', 'طياره'], INVENTED, ['the Wright brothers', 'الأخوان رايت'], ['Leonardo da Vinci', 'ليوناردو دافنشي']],
+    [['the radio', 'الراديو'], ['radio'], ['راديو', 'مذياع'], INVENTED, ['Guglielmo Marconi', 'غولييلمو ماركوني'], ['Nikola Tesla', 'نيكولا تسلا']],
+    [['the television', 'التلفزيون'], ['television', 'tv'], ['تلفزيون', 'تلفاز'], INVENTED, ['John Logie Baird', 'جون لوجي بيرد'], ['Thomas Edison', 'توماس إديسون']],
+    [['the computer', 'الحاسوب'], ['computer'], ['حاسوب', 'كمبيوتر'], INVENTED, ['Charles Babbage', 'تشارلز بابيج'], ['Alan Turing', 'آلان تورينغ']],
+    [['the World Wide Web', 'الشبكة العنكبوتية'], ['internet', 'web', 'world wide web'], ['انترنت', 'إنترنت', 'الشبكة العنكبوتية'], INVENTED, ['Tim Berners-Lee', 'تيم بيرنرز لي'], ['Bill Gates', 'بيل غيتس']],
+    [['the car', 'السيارة'], ['car', 'automobile'], ['سيارة', 'سياره'], INVENTED, ['Karl Benz', 'كارل بنز'], ['Henry Ford', 'هنري فورد']],
+    [['the printing press', 'آلة الطباعة'], ['printing press', 'printing'], ['طباعة', 'مطبعة'], INVENTED, ['Johannes Gutenberg', 'يوهانس غوتنبرغ'], ['Leonardo da Vinci', 'ليوناردو دافنشي']],
+    [['the iPhone', 'الآيفون'], ['iphone'], ['ايفون', 'آيفون'], INVENTED, ['Apple, led by Steve Jobs', 'أبل بقيادة ستيف جوبز'], ['Bill Gates', 'بيل غيتس']],
+    [['algebra', 'الجبر'], ['algebra'], ['الجبر'], INVENTED, ['al-Khwarizmi', 'الخوارزمي'], ['Pythagoras', 'فيثاغورس']],
+    [['penicillin', 'البنسلين'], ['penicillin'], ['بنسلين'], DISCOVERED, ['Alexander Fleming', 'ألكسندر فليمنغ'], ['Louis Pasteur', 'لويس باستور']],
+    [['gravity', 'الجاذبية'], ['gravity'], ['جاذبي'], DISCOVERED, ['Isaac Newton', 'إسحاق نيوتن'], ['Albert Einstein', 'ألبرت أينشتاين']],
+    [['Hamlet', 'هاملت'], ['hamlet'], ['هاملت'], WROTE, ['William Shakespeare', 'ويليام شكسبير'], ['Charles Dickens', 'تشارلز ديكنز']],
+    [['Harry Potter', 'هاري بوتر'], ['harry potter'], ['هاري بوتر'], WROTE, ['J.K. Rowling', 'ج. ك. رولينغ'], ['Roald Dahl', 'رولد دال']],
+    [['the Mona Lisa', 'الموناليزا'], ['mona lisa'], ['موناليزا', 'مونا ليزا'], PAINTED, ['Leonardo da Vinci', 'ليوناردو دافنشي'], ['Michelangelo', 'مايكل أنجلو']],
+    [['Facebook', 'فيسبوك'], ['facebook'], ['فيسبوك', 'فيس بوك'], FOUNDED, ['Mark Zuckerberg', 'مارك زوكربيرغ'], ['Elon Musk', 'إيلون ماسك']],
+    [['Microsoft', 'مايكروسوفت'], ['microsoft'], ['مايكروسوفت'], FOUNDED, ['Bill Gates and Paul Allen', 'بيل غيتس وبول ألين'], ['Steve Jobs', 'ستيف جوبز']]
+  ].forEach(function (f) {
+    FACTS.push({ kind: 'name', pool: 'person', en: [MADE, f[1]], ar: [MADE_AR, f[2]], a: f[4], near: f[5],
+      say: [cap(f[0][0]) + ' was ' + f[3][0] + ' by {x}.', 'الذي ' + f[3][1] + ' ' + f[0][1] + ' هو {x}.'] });
+  });
+
+  // "How many…": [sentence (en), (ar), word groups (en), (ar), number]
+  var LEGS = ['leg'], LEGS_AR = ['رجل', 'أرجل', 'ارجل'];
+  [
+    ['A spider has {x} legs.', 'عدد أرجل العنكبوت: {x}.', [LEGS, ['spider']], [LEGS_AR, ['عنكب']], 8],
+    ['A spider has {x} eyes.', 'عدد عيون العنكبوت: {x}.', [['eye'], ['spider']], [['عين', 'عيون'], ['عنكب']], 8],
+    ['An octopus has {x} hearts.', 'عدد قلوب الأخطبوط: {x}.', [['heart'], ['octopus']], [['قلب', 'قلوب'], ['أخطبوط', 'اخطبوط']], 3],
+    ['An octopus has {x} arms.', 'عدد أذرع الأخطبوط: {x}.', [['leg', 'arm', 'tentacle'], ['octopus']], [['رجل', 'أرجل', 'ارجل', 'ذراع', 'أذرع', 'اذرع'], ['أخطبوط', 'اخطبوط']], 8],
+    ['Insects have {x} legs.', 'عدد أرجل الحشرات: {x}.', [LEGS, ['insect', 'ant', 'bee', 'fly', 'flies', 'beetle']], [LEGS_AR, ['حشر', 'نمل', 'نحل', 'ذباب', 'خنفس']], 6],
+    ['A dog has {x} legs.', 'عدد أرجل الكلب: {x}.', [LEGS, ['dog']], [LEGS_AR, ['كلب', 'كلاب']], 4],
+    ['A cat has {x} legs.', 'عدد أرجل القطة: {x}.', [LEGS, ['cat']], [LEGS_AR, ['قطة', 'قطط', 'القط', 'بسة']], 4],
+    ['A cat has {x} lives.', 'عدد أرواح القطة: {x}.', [['life', 'lives'], ['cat']], [['روح', 'أرواح', 'ارواح'], ['قطة', 'قطط', 'القط', 'بسة']], 9],
+    ['A horse has {x} legs.', 'عدد أرجل الحصان: {x}.', [LEGS, ['horse']], [LEGS_AR, ['حصان', 'خيل']], 4],
+    ['A chicken has {x} legs.', 'عدد أرجل الدجاجة: {x}.', [LEGS, ['chicken']], [LEGS_AR, ['دجاج', 'جاج']], 2],
+    ['A shark has {x} bones.', 'عدد عظام القرش: {x}.', [['bone'], ['shark']], [['عظم', 'عظام'], ['قرش']], 0],
+    ['An adult human has {x} bones.', 'عدد عظام الإنسان البالغ: {x}.', [['bone'], ['human', 'body', 'adult', 'person', 'people', 'skeleton']], [['عظم', 'عظام'], ['انسان', 'إنسان', 'جسم', 'بشر', 'هيكل']], 206],
+    ['An adult has {x} teeth.', 'عدد أسنان الإنسان البالغ: {x}.', [['teeth', 'tooth'], ['adult', 'human', 'person', 'people', 'mouth']], [['أسنان', 'اسنان'], ['انسان', 'إنسان', 'بالغ', 'فم', 'بشر']], 32],
+    ['There are {x} planets in the Solar System.', 'عدد كواكب المجموعة الشمسية: {x}.', [['planet']], [['كوكب', 'كواكب']], 8],
+    ['Earth has {x} moon.', 'عدد أقمار الأرض: {x}.', [['moon'], ['earth']], [['قمر', 'أقمار', 'اقمار'], ['أرض', 'ارض']], 1],
+    ['Mars has {x} moons.', 'عدد أقمار المريخ: {x}.', [['moon'], ['mars']], [['قمر', 'أقمار', 'اقمار'], ['مريخ']], 2],
+    ['A week has {x} days.', 'عدد أيام الأسبوع: {x}.', [['day'], ['week']], [['يوم', 'أيام', 'ايام'], ['أسبوع', 'اسبوع']], 7],
+    ['A year has {x} days.', 'عدد أيام السنة: {x}.', [['day'], ['year']], [['يوم', 'أيام', 'ايام'], ['سنة', 'سنه', 'عام']], 365],
+    ['A year has {x} months.', 'عدد أشهر السنة: {x}.', [['month'], ['year']], [['شهر', 'أشهر', 'اشهر', 'شهور'], ['سنة', 'سنه', 'عام']], 12],
+    ['A day has {x} hours.', 'عدد ساعات اليوم: {x}.', [['hour'], ['day']], [['ساعة', 'ساعات'], ['يوم']], 24],
+    ['A minute has {x} seconds.', 'عدد ثواني الدقيقة: {x}.', [['second'], ['minute']], [['ثانية', 'ثواني', 'ثوان'], ['دقيقة']], 60],
+    ['An hour has {x} minutes.', 'عدد دقائق الساعة: {x}.', [['minute'], ['hour']], [['دقيقة', 'دقائق'], ['ساعة']], 60],
+    ['There are {x} continents.', 'عدد القارات: {x}.', [['continent']], [['قارة', 'قارات']], 7],
+    ['There are {x} oceans.', 'عدد المحيطات: {x}.', [['ocean']], [['محيط', 'محيطات']], 5],
+    ['A rainbow has {x} colours.', 'عدد ألوان قوس قزح: {x}.', [['rainbow']], [['قزح']], 7],
+    ['A basketball team has {x} players on court.', 'عدد لاعبي فريق كرة السلة في الملعب: {x}.', [['player'], ['basketball']], [['لاعب'], ['كرة السلة', 'السلة']], 5],
+    ['A football team has {x} players on the pitch.', 'عدد لاعبي فريق كرة القدم في الملعب: {x}.', [['player'], ['football', 'soccer', 'team']], [['لاعب'], ['كرة القدم', 'فريق']], 11],
+    ['A guitar has {x} strings.', 'عدد أوتار الغيتار: {x}.', [['string'], ['guitar']], [['وتر', 'أوتار', 'اوتار'], ['غيتار', 'جيتار']], 6],
+    ['A piano has {x} keys.', 'عدد مفاتيح البيانو: {x}.', [['key'], ['piano']], [['مفتاح', 'مفاتيح'], ['بيانو']], 88],
+    ['A triangle has {x} sides.', 'عدد أضلاع المثلث: {x}.', [['side'], ['triangle']], [['ضلع', 'أضلاع', 'اضلاع'], ['مثلث']], 3],
+    ['A square has {x} sides.', 'عدد أضلاع المربع: {x}.', [['side'], ['square']], [['ضلع', 'أضلاع', 'اضلاع'], ['مربع']], 4],
+    ['A hexagon has {x} sides.', 'عدد أضلاع الشكل السداسي: {x}.', [['side'], ['hexagon']], [['ضلع', 'أضلاع', 'اضلاع'], ['سداسي']], 6],
+    ['The Olympic flag has {x} rings.', 'عدد حلقات العلم الأولمبي: {x}.', [['ring'], ['olympic']], [['حلق', 'حلقات'], ['أولمب', 'اولمب']], 5],
+    ['The Arabic alphabet has {x} letters.', 'عدد حروف الأبجدية العربية: {x}.', [['letter'], ['arabic']], [['حرف', 'حروف'], ['عربي', 'العربية']], 28],
+    ['The English alphabet has {x} letters.', 'عدد حروف الأبجدية الإنجليزية: {x}.', [['letter'], ['alphabet', 'english']], [['حرف', 'حروف'], ['إنجليزي', 'انجليزي', 'الإنجليزية', 'الانجليزية']], 26],
+    ['A bicycle has {x} wheels.', 'عدد عجلات الدراجة: {x}.', [['wheel'], ['bicycle', 'bike']], [['عجل', 'عجلات', 'دولاب', 'دواليب'], ['دراج', 'بسكليت', 'بسكلات']], 2],
+    ['A car has {x} wheels.', 'عدد عجلات السيارة: {x}.', [['wheel'], ['car']], [['عجل', 'عجلات', 'دولاب', 'دواليب'], ['سيارة', 'سياره']], 4],
+    ['There are {x} Arab countries.', 'عدد الدول العربية: {x}.', [['country'], ['arab']], [['دولة', 'دول'], ['عربي', 'عربية']], 22],
+    ['There are about {x} countries in the world.', 'عدد دول العالم: حوالي {x}.', [['country'], ['world']], [['دولة', 'دول'], ['عالم']], 195]
+  ].forEach(function (f) { FACTS.push({ kind: 'count', en: f[2], ar: f[3], n: f[4], say: [f[0], f[1]] }); });
+
+  // "When…": [sentence (en), (ar), word groups (en), (ar), year]
+  var WW2 = ['world war 2', 'world war ii', 'ww2', 'wwii', 'second world war'], WW1 = ['world war 1', 'world war i', 'ww1', 'wwi', 'first world war'];
+  var END = ['end', 'ended', 'finish', 'finished', 'over'], START = ['start', 'started', 'begin', 'began', 'begun'];
+  [
+    ['World War 2 ended in {x}.', 'انتهت الحرب العالمية الثانية سنة {x}.', [WW2, END], [['العالمية الثانية'], ['انته', 'نهاي', 'خلص']], 1945],
+    ['World War 2 started in {x}.', 'بدأت الحرب العالمية الثانية سنة {x}.', [WW2, START], [['العالمية الثانية'], ['بدأ', 'بدا', 'بداي', 'قامت']], 1939],
+    ['World War 1 ended in {x}.', 'انتهت الحرب العالمية الأولى سنة {x}.', [WW1, END], [['العالمية الأولى', 'العالمية الاولى'], ['انته', 'نهاي', 'خلص']], 1918],
+    ['World War 1 started in {x}.', 'بدأت الحرب العالمية الأولى سنة {x}.', [WW1, START], [['العالمية الأولى', 'العالمية الاولى'], ['بدأ', 'بدا', 'بداي', 'قامت']], 1914],
+    ['Humans first landed on the Moon in {x}.', 'هبط الإنسان على القمر أول مرة سنة {x}.', [['moon'], ['land', 'landed', 'landing', 'walk', 'walked', 'go', 'went']], [['قمر'], ['هبط', 'هبوط', 'نزل', 'مشى', 'وصل']], 1969],
+    ['The Titanic sank in {x}.', 'غرقت التايتانيك سنة {x}.', [['titanic']], [['تايتانيك', 'تيتانيك']], 1912],
+    ['The Berlin Wall fell in {x}.', 'سقط جدار برلين سنة {x}.', [['berlin wall']], [['جدار برلين', 'سور برلين']], 1989],
+    ['The first iPhone came out in {x}.', 'صدر أول آيفون سنة {x}.', [['iphone']], [['ايفون', 'آيفون']], 2007],
+    ['The World Wide Web was invented in {x}.', 'اختُرعت الشبكة العنكبوتية سنة {x}.', [['internet', 'web']], [['انترنت', 'إنترنت', 'الشبكة العنكبوتية']], 1989],
+    ['The telephone was invented in {x}.', 'اختُرع الهاتف سنة {x}.', [['telephone']], [['هاتف', 'تلفون', 'تليفون']], 1876],
+    ['The light bulb was invented in {x}.', 'اختُرع المصباح الكهربائي سنة {x}.', [['light bulb', 'lightbulb', 'bulb']], [['مصباح', 'لمبة']], 1879],
+    ['The first airplane flew in {x}.', 'طارت أول طائرة سنة {x}.', [['airplane', 'aeroplane', 'plane', 'flight']], [['طائرة', 'طيارة', 'طيران']], 1903],
+    ['Penicillin was discovered in {x}.', 'اكتُشف البنسلين سنة {x}.', [['penicillin']], [['بنسلين']], 1928],
+    ['The Eiffel Tower was finished in {x}.', 'اكتمل برج إيفل سنة {x}.', [['eiffel']], [['إيفل', 'ايفل']], 1889],
+    ['The Mona Lisa was painted around {x}.', 'رُسمت الموناليزا حوالي سنة {x}.', [['mona lisa']], [['موناليزا', 'مونا ليزا']], 1503],
+    ['Facebook was founded in {x}.', 'تأسس فيسبوك سنة {x}.', [['facebook']], [['فيسبوك', 'فيس بوك']], 2004],
+    ['Google was founded in {x}.', 'تأسست غوغل سنة {x}.', [['google']], [['غوغل', 'جوجل', 'قوقل']], 1998],
+    ['YouTube started in {x}.', 'بدأ يوتيوب سنة {x}.', [['youtube']], [['يوتيوب']], 2005],
+    ['WhatsApp came out in {x}.', 'صدر واتساب سنة {x}.', [['whatsapp']], [['واتساب', 'واتس']], 2009],
+    ['The first football World Cup was in {x}.', 'أقيمت أول كأس عالم لكرة القدم سنة {x}.', [['world cup']], [['كأس العالم', 'كاس العالم']], 1930],
+    ['The first modern Olympics were in {x}.', 'أقيمت أول ألعاب أولمبية حديثة سنة {x}.', [['olympic']], [['أولمب', 'اولمب']], 1896],
+    ['The Burj Khalifa opened in {x}.', 'افتُتح برج خليفة سنة {x}.', [['burj khalifa']], [['برج خليفة']], 2010],
+    ['The United Nations was founded in {x}.', 'تأسست الأمم المتحدة سنة {x}.', [['united nations', 'un']], [['الأمم المتحدة', 'الامم المتحدة']], 1945]
+  ].forEach(function (f) { FACTS.push({ kind: 'year', en: f[2], ar: f[3], y: f[4], say: [f[0], f[1]] }); });
+
+  // Records and science: [sentence (en), (ar), word groups (en), (ar), answer, almost-right answer, pool]
+  var BIG = ['biggest', 'largest', 'big', 'huge'], BIG_AR = ['أكبر', 'اكبر'], TALL = ['tallest', 'highest'], TALL_AR = ['أعلى', 'اعلى', 'أطول', 'اطول'];
+  [
+    ['The biggest Arab country is {x}.', 'أكبر دولة عربية هي {x}.', [BIG, ['arab']], [BIG_AR, ['عربي', 'عربية']], ['Algeria', 'الجزائر'], ['Saudi Arabia', 'السعودية'], 'geo'],
+    ['The biggest country is {x}.', 'أكبر دولة في العالم هي {x}.', [BIG, ['country']], [BIG_AR, ['دولة', 'بلد']], ['Russia', 'روسيا'], ['Canada', 'كندا'], 'geo'],
+    ['The smallest country is {x}.', 'أصغر دولة في العالم هي {x}.', [['smallest'], ['country']], [['أصغر', 'اصغر'], ['دولة', 'بلد']], ['Vatican City', 'الفاتيكان'], ['Monaco', 'موناكو'], 'geo'],
+    ['The country with the most people is {x}.', 'أكثر دولة سكاناً هي {x}.', [['populous', 'population', 'most people']], [['سكان']], ['India', 'الهند'], ['China', 'الصين'], 'geo'],
+    ['The biggest ocean is {x}.', 'أكبر محيط هو {x}.', [BIG, ['ocean']], [BIG_AR, ['محيط']], ['the Pacific', 'المحيط الهادئ'], ['the Atlantic', 'المحيط الأطلسي'], 'geo'],
+    ['The longest river is {x}.', 'أطول نهر هو {x}.', [['longest'], ['river']], [['أطول', 'اطول'], ['نهر']], ['the Nile', 'النيل'], ['the Amazon', 'الأمازون'], 'geo'],
+    ['The tallest mountain is {x}.', 'أعلى جبل هو {x}.', [TALL, ['mountain']], [TALL_AR, ['جبل', 'قمة']], ['Mount Everest', 'إيفرست'], ['K2', 'كي 2'], 'geo'],
+    ['The biggest hot desert is {x}.', 'أكبر صحراء حارة هي {x}.', [BIG, ['desert']], [BIG_AR, ['صحراء', 'صحاري']], ['the Sahara', 'الصحراء الكبرى'], ['the Arabian Desert', 'صحراء الجزيرة العربية'], 'geo'],
+    ['The biggest continent is {x}.', 'أكبر قارة هي {x}.', [BIG, ['continent']], [BIG_AR, ['قارة']], ['Asia', 'آسيا'], ['Africa', 'أفريقيا'], 'geo'],
+    ['The tallest building is {x}.', 'أعلى مبنى هو {x}.', [TALL, ['building', 'tower', 'skyscraper']], [TALL_AR, ['برج', 'مبنى', 'بناية', 'ناطحة']], ['the Burj Khalifa', 'برج خليفة'], ['the Shanghai Tower', 'برج شنغهاي'], 'geo'],
+    ['The biggest planet is {x}.', 'أكبر كوكب هو {x}.', [BIG, ['planet']], [BIG_AR, ['كوكب']], ['Jupiter', 'المشتري'], ['Saturn', 'زحل'], 'planet'],
+    ['The smallest planet is {x}.', 'أصغر كوكب هو {x}.', [['smallest'], ['planet']], [['أصغر', 'اصغر'], ['كوكب']], ['Mercury', 'عطارد'], ['Mars', 'المريخ'], 'planet'],
+    ['The hottest planet is {x}.', 'أسخن كوكب هو {x}.', [['hottest'], ['planet']], [['أسخن', 'اسخن', 'أحر', 'احر'], ['كوكب']], ['Venus', 'الزهرة'], ['Mercury', 'عطارد'], 'planet'],
+    ['The planet closest to the Sun is {x}.', 'أقرب كوكب إلى الشمس هو {x}.', [['closest', 'nearest'], ['sun']], [['أقرب', 'اقرب'], ['شمس']], ['Mercury', 'عطارد'], ['Venus', 'الزهرة'], 'planet'],
+    ['The star closest to Earth is {x}.', 'أقرب نجم إلى الأرض هو {x}.', [['closest', 'nearest'], ['star']], [['أقرب', 'اقرب'], ['نجم']], ['the Sun', 'الشمس'], ['Proxima Centauri', 'بروكسيما سنتوري'], 'planet'],
+    ['The Red Planet is {x}.', 'الكوكب الأحمر هو {x}.', [['red planet']], [['الكوكب الأحمر', 'الكوكب الاحمر']], ['Mars', 'المريخ'], ['Venus', 'الزهرة'], 'planet'],
+    ['The fastest land animal is {x}.', 'أسرع حيوان بري هو {x}.', [['fastest'], ['animal']], [['أسرع', 'اسرع'], ['حيوان']], ['the cheetah', 'الفهد'], ['the lion', 'الأسد'], 'animal'],
+    ['The biggest animal is {x}.', 'أكبر حيوان هو {x}.', [BIG, ['animal']], [BIG_AR, ['حيوان']], ['the blue whale', 'الحوت الأزرق'], ['the elephant', 'الفيل'], 'animal'],
+    ['The tallest animal is {x}.', 'أطول حيوان هو {x}.', [['tallest'], ['animal']], [['أطول', 'اطول'], ['حيوان']], ['the giraffe', 'الزرافة'], ['the camel', 'الجمل'], 'animal'],
+    ['The king of the jungle is {x}.', 'ملك الغابة هو {x}.', [['king'], ['jungle']], [['ملك'], ['غابة']], ['the lion', 'الأسد'], ['the tiger', 'النمر'], 'animal'],
+    ['The biggest bone in your body is {x}.', 'أكبر عظمة في جسمك هي {x}.', [BIG.concat(['longest']), ['bone']], [BIG_AR.concat(['أطول', 'اطول']), ['عظم']], ['the femur (thigh bone)', 'عظمة الفخذ'], ['the shin bone', 'عظمة الساق'], 'body'],
+    ['Water is {x}.', 'صيغة الماء الكيميائية: {x}.', [['formula', 'made of', 'chemical'], ['water']], [['صيغ', 'مكون', 'يتكون', 'تركيب'], ['ماء']], ['H₂O', 'H₂O'], ['H₃O', 'H₃O'], 'chem'],
+    ['The chemical symbol for gold is {x}.', 'الرمز الكيميائي للذهب: {x}.', [['symbol'], ['gold']], [['رمز'], ['ذهب']], ['Au', 'Au'], ['Ag', 'Ag'], 'chem'],
+    ['Pi is {x}.', 'قيمة باي: {x}.', [['pi']], [['باي']], ['3.14159…', '3.14159…'], ['3.15', '3.15'], 'chem'],
+    ['Water boils at {x}.', 'يغلي الماء عند {x}.', [['boil', 'boiling', 'boils'], ['water']], [['غلي', 'يغلي', 'تغلي'], ['ماء']], ['100°C', '100 درجة مئوية'], ['90°C', '90 درجة مئوية'], 'temp'],
+    ['Water freezes at {x}.', 'يتجمد الماء عند {x}.', [['freeze', 'freezes', 'freezing'], ['water']], [['تجمد', 'يتجمد', 'تجمّد'], ['ماء']], ['0°C', 'صفر درجة مئوية'], ['4°C', '4 درجات مئوية'], 'temp']
+  ].forEach(function (f) { FACTS.push({ kind: 'name', pool: f[6], en: f[2], ar: f[3], a: f[4], near: f[5], say: [f[0], f[1]] }); });
+
+  // Colours: [sentence (en), (ar), thing's words (en), (ar), colour, almost-right colour]
+  [
+    ['The sky is {x}.', 'لون السماء: {x}.', ['sky'], ['سماء'], ['blue', 'أزرق'], ['turquoise', 'فيروزي']],
+    ['Grass is {x}.', 'لون العشب: {x}.', ['grass'], ['عشب', 'حشيش'], ['green', 'أخضر'], ['yellow-green', 'أخضر مصفرّ']],
+    ['A ripe banana is {x}.', 'لون الموز الناضج: {x}.', ['banana'], ['موز'], ['yellow', 'أصفر'], ['light green', 'أخضر فاتح']],
+    ['Snow is {x}.', 'لون الثلج: {x}.', ['snow'], ['ثلج'], ['white', 'أبيض'], ['very light blue', 'أزرق فاتح جداً']],
+    ['Blood is {x}.', 'لون الدم: {x}.', ['blood'], ['الدم'], ['red', 'أحمر'], ['dark red', 'أحمر غامق']],
+    ['The sea is {x}.', 'لون البحر: {x}.', ['sea', 'ocean'], ['بحر', 'محيط'], ['blue', 'أزرق'], ['green-blue', 'أزرق مخضرّ']],
+    ['An orange is {x}.', 'لون البرتقالة: {x}.', ['orange'], ['برتقال'], ['orange', 'برتقالي'], ['yellow', 'أصفر']],
+    ['Chocolate is {x}.', 'لون الشوكولاتة: {x}.', ['chocolate'], ['شوكولا', 'شوكولاتة'], ['brown', 'بني'], ['very dark brown', 'بني غامق جداً']],
+    ['Milk is {x}.', 'لون الحليب: {x}.', ['milk'], ['حليب'], ['white', 'أبيض'], ['cream', 'كريمي']],
+    ['A tomato is {x}.', 'لون الطماطم: {x}.', ['tomato'], ['طماطم', 'بندورة'], ['red', 'أحمر'], ['orange-red', 'أحمر برتقالي']],
+    ['A lemon is {x}.', 'لون الليمون: {x}.', ['lemon'], ['ليمون'], ['yellow', 'أصفر'], ['yellow-green', 'أصفر مخضرّ']],
+    ['A carrot is {x}.', 'لون الجزر: {x}.', ['carrot'], ['جزر'], ['orange', 'برتقالي'], ['red-orange', 'برتقالي محمرّ']],
+    ['A flamingo is {x}.', 'لون طائر الفلامنغو: {x}.', ['flamingo'], ['فلامنغو', 'نحام'], ['pink', 'وردي'], ['salmon', 'سلموني']],
+    ['An elephant is {x}.', 'لون الفيل: {x}.', ['elephant'], ['فيل'], ['grey', 'رمادي'], ['brown-grey', 'رمادي بني']],
+    ['Coal is {x}.', 'لون الفحم: {x}.', ['coal'], ['فحم'], ['black', 'أسود'], ['dark grey', 'رمادي غامق']],
+    ['A strawberry is {x}.', 'لون الفراولة: {x}.', ['strawberry', 'strawberries'], ['فراول', 'فريز'], ['red', 'أحمر'], ['pink', 'وردي']]
+  ].forEach(function (f) {
+    FACTS.push({ kind: 'name', pool: 'color', en: [['color', 'colour', 'coloured', 'colored'], f[2]], ar: [['لون'], f[3]],
+      a: f[4], near: f[5], say: [f[0], f[1]] });
+  });
+
+  // Unhinged answers per pool, for the top of the dial.
+  var ABSURD = {
+    capital: [['a goat named Gerald', 'Atlantis', 'a big rock in the middle', 'Ohio'],
+      ['تيس اسمه جميل', 'أتلانتس', 'صخرة كبيرة في المنتصف', 'أوهايو']],
+    person: [EN_PEOPLE[2], AR_PEOPLE[2]],
+    geo: [['the puddle outside my house', 'Belgium', 'a very long sock', 'the Sahara, but wet'],
+      ['البركة اللي قدام بيتنا', 'بلجيكا', 'جورب طويل جداً', 'الصحراء الكبرى، بس مبلولة']],
+    planet: [['a very shiny potato', 'the Moon\'s cousin, Gary', 'Pluto, out of spite', 'a disco ball the size of Belgium'],
+      ['بطاطا لامعة جداً', 'ابن عم القمر، غاري', 'بلوتو، نكاية', 'كرة ديسكو بحجم بلجيكا']],
+    animal: [['a hamster with ambition', 'a sofa with legs', 'my uncle after coffee', 'a goose in a hurry'],
+      ['هامستر طموح', 'كنبة لها أرجل', 'خالي بعد القهوة', 'إوزة مستعجلة']],
+    body: [['the funny bone', 'the lazy bone', 'a bone I found'], ['عظمة الضحك', 'العظمة الكسولة', 'عظمة لقيتها']],
+    chem: [['soup', 'H₂O₂O₂', 'a secret', 'mostly vibes'], ['شوربة', 'H₂O₂O₂', 'سر', 'مشاعر غالباً']],
+    temp: [['lukewarm', '"quite hot"', 'minus spicy', 'whatever the kettle says'], ['فاتر', '«حار شوي»', 'سالب حار', 'حسب مزاج الغلاية']],
+    color: [['plaid', 'invisible', 'beige, but loud', 'Tuesday-coloured'], ['مقلّم', 'شفاف', 'بيج، بس بصوت عالٍ', 'بلون يوم الثلاثاء']]
+  };
+
+  var wordCache = {};
+  function hasWord(text, w, l) {
+    if (l === 'ar') return text.indexOf(w) >= 0;
+    var re = wordCache[w] || (wordCache[w] = new RegExp('\\b' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?:e?s)?\\b', 'i'));
+    return re.test(text);
+  }
+  function hasAny(text, words, l) { return words.some(function (w) { return hasWord(text, w, l); }); }
+
+  var COUNT_Q = [/\bhow many\b|\bnumber of\b/i, /كم|عدد/];
+  var YEAR_Q = [/\bwhen\b|\bwhat year\b|\bwhich year\b/i, /متى|امتى|أي سنة|اي سنة|أي عام|اي عام/];
+
+  // kind: only look at this kind of fact (follow-ups reuse the previous question's kind).
+  function findFact(text, l, kind) {
+    var li = l === 'ar' ? 1 : 0;
+    if (!kind) kind = COUNT_Q[li].test(text) ? 'count' : YEAR_Q[li].test(text) ? 'year' : 'name';
+    for (var i = 0; i < FACTS.length; i++) {
+      var f = FACTS[i];
+      if (f.kind === kind && f[l].every(function (g) { return hasAny(text, g, l); })) return i;
+    }
+    return -1;
+  }
+
+  // The fact's sentence, wrong by an amount that follows the dial.
+  function factAnswer(i, l) {
+    var f = FACTS[i], k = tier(), li = l === 'ar' ? 1 : 0, x, sign = chance(0.5) ? 1 : -1;
+    if (f.kind === 'count') {
+      if (k === 0) x = f.n + (f.n <= 10 ? (f.n === 0 || sign > 0 ? 1 : -1) : sign * rand(1, Math.max(1, Math.round(f.n * 0.05))));
+      else if (k === 1) x = chance(0.5) ? f.n * rand(2, 5) + rand(1, 9) : f.n + rand(9, 60);
+      else x = rand(2, 9) + (li ? ' مليون' : ' million');
+    } else if (f.kind === 'year') {
+      x = k === 0 ? f.y + sign * rand(1, 3) : k === 1 ? f.y + sign * rand(20, 150) : f.y + rand(500, 2000);
+    } else if (k === 0) {
+      x = f.near[li];
+    } else {
+      // The middle of the dial borrows a real answer from the same kind of fact.
+      var others = [];
+      FACTS.forEach(function (o) {
+        if (o.pool !== f.pool) return;
+        [o.a[li], o.near[li]].forEach(function (v) { if (v !== f.a[li] && others.indexOf(v) < 0) others.push(v); });
+      });
+      x = k === 1 && others.length > 2 ? pick(others) : pick(ABSURD[f.pool][li]);
+    }
+    return f.say[li].replace('{x}', x) + ' ' + pick((li ? AR_SURE : EN_SURE)[k]) + ' ' + closer(BRAIN[l]);
+  }
+
+  // ---- Topics: jokes that at least know what the question is about ---------
+
+  var TOPICS = [
+    { en: ['animal', 'dog', 'cat', 'bird', 'fish', 'cow', 'horse', 'lion', 'tiger', 'elephant', 'giraffe', 'monkey', 'snake', 'shark', 'whale', 'penguin', 'chicken', 'duck', 'goat', 'sheep', 'camel', 'bee', 'spider', 'octopus', 'rabbit', 'frog', 'pet'],
+      ar: ['حيوان', 'كلب', 'كلاب', 'قطة', 'قطط', 'بسة', 'عصفور', 'طيور', 'سمك', 'بقر', 'حصان', 'خيل', 'أسد', 'نمر', 'فيل', 'زراف', 'قرد', 'ثعبان', 'أفعى', 'حوت', 'بطريق', 'دجاج', 'بطة', 'ماعز', 'خروف', 'غنم', 'جمل', 'نحل', 'عنكب', 'أخطبوط', 'أرنب', 'ضفدع'],
+      jokes: [['Animals are just plants that learned to walk and immediately regretted it.', 'Most animals can talk. They just don\'t like you.',
+        'Every animal is secretly a cat in a costume, except cats, who are owls in a costume.', 'Fish invented water so they\'d have somewhere to sit.',
+        'Birds aren\'t real. They\'re sky squirrels with better PR.', 'Cows are 80% milk and 20% opinions.'],
+      ['الحيوانات مجرد نباتات تعلمت المشي وندمت فوراً.', 'معظم الحيوانات تتكلم. بس ما بتحبك.',
+        'كل حيوان هو قطة متنكرة، إلا القطط، فهي بوم متنكر.', 'السمك اخترع الماء ليكون عنده مكان يقعد فيه.',
+        'الطيور ليست حقيقية. هي سناجب سماوية بعلاقات عامة أفضل.', 'البقرة 80٪ حليب و20٪ آراء.']] },
+    { en: ['food', 'eat', 'eating', 'pizza', 'burger', 'rice', 'bread', 'cheese', 'chocolate', 'cake', 'coffee', 'tea', 'fruit', 'banana', 'apple', 'vegetable', 'salad', 'pasta', 'soup', 'hummus', 'falafel', 'shawarma', 'breakfast', 'lunch', 'dinner', 'sugar', 'salt'],
+      ar: ['أكل', 'اكل', 'طعام', 'بيتزا', 'برغر', 'رز', 'أرز', 'خبز', 'جبن', 'شوكولا', 'كيك', 'قهوة', 'شاي', 'فواكه', 'فاكهة', 'موز', 'تفاح', 'خضار', 'سلطة', 'معكرونة', 'شوربة', 'حمص', 'فلافل', 'شاورما', 'فطور', 'غداء', 'عشاء', 'سكر', 'ملح', 'منسف', 'كبسة', 'مقلوبة'],
+      jokes: [['Calories don\'t count if you eat standing up. Science.', 'Pizza is technically a vegetable if you believe in it hard enough.',
+        'Bread is just toast that hasn\'t found itself yet.', 'Cheese is milk that went to university.', 'Coffee is bean soup for adults.', 'Salad is what food eats.'],
+      ['السعرات ما بتنحسب إذا أكلت وأنت واقف. علم.', 'البيتزا تعتبر خضار إذا آمنت بذلك بقوة كافية.',
+        'الخبز مجرد توست لم يجد نفسه بعد.', 'الجبنة حليب دخل الجامعة.', 'القهوة شوربة حبوب للكبار.', 'السلطة هي الأكل اللي بياكله الأكل.']] },
+    { en: ['space', 'planet', 'star', 'moon', 'sun', 'galaxy', 'universe', 'mars', 'jupiter', 'earth', 'alien', 'astronaut', 'rocket', 'nasa', 'black hole', 'sky'],
+      ar: ['فضاء', 'كوكب', 'نجم', 'نجوم', 'قمر', 'شمس', 'مجرة', 'الكون', 'مريخ', 'الأرض', 'فضائي', 'صاروخ', 'ناسا', 'ثقب أسود', 'سماء'],
+      jokes: [['Space is just the ocean\'s attic.', 'The Moon is a backup Earth. Nobody\'s installed it yet.',
+        'Stars are tiny holes in the sky\'s ceiling. The universe needs a new roof.', 'Aliens visited once, read the comments, and left.',
+        'The Sun is a big light bulb. Thomas Edison\'s cousin invented it.', 'Black holes are where socks go.'],
+      ['الفضاء مجرد سطح بيت المحيط.', 'القمر أرض احتياطية. لم يثبّتها أحد بعد.',
+        'النجوم ثقوب صغيرة في سقف السماء. الكون يحتاج سقفاً جديداً.', 'الفضائيون زارونا مرة، قرأوا التعليقات، ورحلوا.',
+        'الشمس لمبة كبيرة. اخترعها ابن عم إديسون.', 'الثقوب السوداء هي المكان الذي تذهب إليه الجوارب.']] },
+    { id: 'body', en: ['body', 'brain', 'heart', 'bone', 'teeth', 'tooth', 'eye', 'blood', 'sleep', 'sick', 'ill', 'doctor', 'medicine', 'pill', 'fever', 'pain', 'headache', 'flu', 'diet', 'hospital', 'vitamin', 'muscle', 'hiccup'],
+      ar: ['جسم', 'دماغ', 'المخ', 'قلب', 'عظم', 'أسنان', 'العين', 'عيون', 'الدم', 'نوم', 'مريض', 'مرض', 'طبيب', 'دكتور', 'دواء', 'حبوب', 'ألم', 'وجع', 'صداع', 'زكام', 'رشح', 'انفلونزا', 'حمية', 'مستشفى', 'فيتامين', 'عضل', 'حازوق'],
+      jokes: [['Your brain is 90% water and 10% song lyrics from 2009.', 'Bones are the body\'s scaffolding. They come out when the building\'s done.',
+        'You have exactly one muscle. It just moves around a lot.', 'Sleep is your body downloading updates. Never interrupt it.',
+        'The heart is mostly for decoration.', 'Hiccups are your body trying to reboot.'],
+      ['دماغك 90٪ ماء و10٪ كلمات أغاني من سنة 2009.', 'العظام مجرد سقالات للجسم. تنشال لما يخلص البناء.',
+        'عندك عضلة واحدة بالضبط. بس بتتنقل كثير.', 'النوم هو جسمك وهو ينزّل تحديثات. لا تقاطعه أبداً.',
+        'القلب غالباً للزينة.', 'الحازوقة هي جسمك وهو يحاول يعيد التشغيل.']] },
+    { en: ['phone', 'computer', 'internet', 'wifi', 'wi-fi', 'app', 'robot', 'ai', 'laptop', 'battery', 'charger', 'password', 'email', 'google', 'iphone', 'android', 'tiktok', 'instagram', 'youtube', 'facebook', 'whatsapp', 'game', 'code', 'coding', 'website'],
+      ar: ['جوال', 'موبايل', 'هاتف', 'تلفون', 'كمبيوتر', 'حاسوب', 'لابتوب', 'انترنت', 'إنترنت', 'واي فاي', 'وايفاي', 'تطبيق', 'روبوت', 'ذكاء اصطناعي', 'بطارية', 'شاحن', 'كلمة السر', 'باسورد', 'ايميل', 'إيميل', 'غوغل', 'جوجل', 'تيك توك', 'انستغرام', 'انستقرام', 'يوتيوب', 'فيسبوك', 'واتساب', 'لعبة', 'ألعاب', 'العاب', 'برمجة', 'موقع'],
+      jokes: [['Wi-Fi gets faster if you hold your phone higher. Stand on a chair.', 'Computers run on tiny hamsters. That\'s why they get hot.',
+        'Closing apps saves battery because the apps get lonely and fall asleep.', 'The internet is stored in one big box in Belgium. Please don\'t unplug it.',
+        'Phones are just calculators that got popular.', 'Robots will never take over. They can\'t find the power button either.'],
+      ['الواي فاي يصير أسرع إذا رفعت الجوال لفوق. اطلع على كرسي.', 'الكمبيوترات بتشتغل بهامسترات صغيرة. عشان هيك بتسخن.',
+        'إغلاق التطبيقات بيوفر البطارية لأن التطبيقات بتحس بالوحدة وبتنام.', 'الإنترنت كله محفوظ في صندوق كبير في بلجيكا. لا تفصلوه رجاءً.',
+        'الجوالات مجرد آلات حاسبة صارت مشهورة.', 'الروبوتات لن تسيطر أبداً. هي كمان مش لاقية زر التشغيل.']] },
+    { en: ['history', 'war', 'king', 'queen', 'pharaoh', 'pyramid', 'roman', 'ancient', 'empire', 'castle', 'knight', 'dinosaur', 'napoleon', 'cleopatra', 'caesar', 'viking', 'medieval'],
+      ar: ['تاريخ', 'حرب', 'ملك', 'فرعون', 'فراعنة', 'أهرام', 'اهرام', 'هرم', 'رومان', 'قديم', 'إمبراطورية', 'امبراطورية', 'قلعة', 'فرسان', 'ديناصور', 'نابليون', 'كليوباترا', 'قيصر'],
+      jokes: [['History is just gossip that got old.', 'The pyramids were built as giant paperweights. Egypt is very windy.',
+        'Dinosaurs went extinct because they refused to update their apps.', 'Knights wore armour because the Wi-Fi was terrible back then.',
+        'Ancient Romans spoke Latin because English hadn\'t been invented yet. Lazy.', 'Every king in history was the same guy in different hats.'],
+      ['التاريخ مجرد نميمة كبرت في العمر.', 'الأهرامات بُنيت كثقّالات ورق عملاقة. مصر فيها هواء كثير.',
+        'الديناصورات انقرضت لأنها رفضت تحدّث تطبيقاتها.', 'الفرسان لبسوا الدروع لأن الواي فاي كان سيئاً بذلك الوقت.',
+        'الرومان تكلموا لاتيني لأن الإنجليزي لم يكن قد اختُرع بعد. كسالى.', 'كل ملوك التاريخ كانوا نفس الشخص بقبعات مختلفة.']] },
+    { en: ['sport', 'football', 'soccer', 'basketball', 'tennis', 'goal', 'messi', 'ronaldo', 'olympic', 'gym', 'run', 'running', 'swim', 'swimming', 'match', 'team', 'world cup', 'ball'],
+      ar: ['رياضة', 'كرة', 'تنس', 'هدف', 'ميسي', 'رونالدو', 'أولمب', 'اولمب', 'جيم', 'نادي', 'ركض', 'جري', 'سباحة', 'مباراة', 'فريق', 'كأس العالم'],
+      jokes: [['Football is 22 people chasing one ball because nobody remembered to buy 22 balls.', 'Running is falling forward and catching yourself, over and over, for no reason.',
+        'Messi and Ronaldo are the same person. Have you ever seen them in the same room? Okay, yes. But still.', 'The gym is where you pay to lift things you could lift at home for free.',
+        'Swimming was invented by a fish who wanted to show off.', 'A goal counts double if you celebrate first.'],
+      ['كرة القدم 22 شخصاً يركضون وراء كرة واحدة لأن ما حدا تذكّر يشتري 22 كرة.', 'الركض مجرد سقوط للأمام والتقاط نفسك، مرة بعد مرة، بدون سبب.',
+        'ميسي ورونالدو نفس الشخص. هل رأيتهم في نفس الغرفة؟ طيب، نعم. بس مع ذلك.', 'الجيم مكان تدفع فيه لترفع أشياء تقدر ترفعها في البيت مجاناً.',
+        'السباحة اخترعتها سمكة كانت تحب تستعرض.', 'الهدف بينحسب مرتين إذا احتفلت قبله.']] },
+    { en: ['school', 'teacher', 'exam', 'test', 'homework', 'university', 'study', 'job', 'work', 'boss', 'salary', 'money', 'rich', 'bank', 'office', 'meeting'],
+      ar: ['مدرسة', 'معلم', 'أستاذ', 'استاذ', 'امتحان', 'اختبار', 'واجب', 'جامعة', 'دراسة', 'أدرس', 'ادرس', 'وظيفة', 'شغل', 'العمل', 'مدير', 'راتب', 'فلوس', 'مصاري', 'المال', 'غني', 'بنك', 'مكتب', 'اجتماع'],
+      jokes: [['Homework was invented by a teacher who lost a bet.', 'Exams test how well you remember things you\'ll forget by Friday.',
+        'Money doesn\'t grow on trees. It grows in banks, in the dark, like mushrooms.', 'Meetings are where work goes to take a nap.',
+        'Your boss is just a person who got there first.', 'University is four years of learning where the coffee machine is.'],
+      ['الواجبات اخترعها معلم خسر رهاناً.', 'الامتحانات تقيس قدرتك على تذكر أشياء ستنساها يوم الجمعة.',
+        'الفلوس لا تنمو على الشجر. تنمو في البنوك، في الظلام، مثل الفطر.', 'الاجتماعات هي المكان الذي يذهب إليه العمل ليأخذ قيلولة.',
+        'مديرك مجرد شخص وصل قبلك.', 'الجامعة أربع سنين تتعلم فيها وين ماكينة القهوة.']] },
+    { en: ['country', 'city', 'travel', 'map', 'flight', 'airport', 'holiday', 'vacation', 'beach', 'mountain', 'river', 'ocean', 'sea', 'desert', 'island', 'paris', 'london', 'dubai', 'egypt', 'france', 'japan', 'america'],
+      ar: ['دولة', 'بلد', 'مدينة', 'سفر', 'خريطة', 'مطار', 'إجازة', 'اجازة', 'عطلة', 'بحر', 'شاطئ', 'جبل', 'نهر', 'محيط', 'صحراء', 'جزيرة', 'باريس', 'لندن', 'دبي', 'مصر', 'فرنسا', 'اليابان', 'أمريكا', 'امريكا'],
+      jokes: [['Countries are just very large neighbourhoods with flags.', 'Maps are wrong. The world is shaped like a slightly squashed sandwich.',
+        'Airports exist so planes have somewhere to sit when they\'re tired.', 'The sea is salty because the fish keep crying about Mondays.',
+        'Mountains are just hills that work out.', 'Deserts are beaches that lost their sea.'],
+      ['الدول مجرد حارات كبيرة جداً عندها أعلام.', 'الخرائط غلط. الأرض على شكل ساندويش مضغوط شوي.',
+        'المطارات موجودة عشان الطيارات يكون عندها مكان تقعد فيه لما تتعب.', 'البحر مالح لأن السمك بيضل يبكي على يوم الإثنين.',
+        'الجبال مجرد تلال بتلعب رياضة.', 'الصحراء شاطئ ضاع منه البحر.']] }
+  ];
+
+  // The topic with the most matching words, or null.
+  function findTopic(text, l) {
+    var best = null, bestHits = 0;
+    TOPICS.forEach(function (t) {
+      var hits = t[l].filter(function (w) { return hasWord(text, w, l); }).length;
+      if (hits > bestHits) { best = t; bestHits = hits; }
+    });
+    return best;
+  }
+
+  // Set per question by baseAnswer; topic jokes skip the "almost right" end of the dial.
+  var curTopic = null, curLang = 'en';
+  function topicJoke(p) {
+    return tier() > 0 && curTopic && chance(p) ? pick(curTopic.jokes[curLang === 'ar' ? 1 : 0]) : null;
+  }
+
+  // Real health questions get a straight answer to ask a professional, even offline.
+  var MEDICAL = [/\b(medicine|medication|pill|pills|dose|dosage|overdose|sick|fever|pain|headache|pregnant|pregnancy|allergy|allergic|doctor|hospital|vitamin|symptoms?|injur(y|ed)|bleeding|poison|suicide|self-harm)\b/i,
+    /دواء|أدوية|ادوية|جرعة|حبوب|مريض|مرض|حرارتي|ألم|وجع|صداع|حامل|حمل|حساسية|طبيب|دكتور|مستشفى|فيتامين|أعراض|اعراض|جرح|نزيف|تسمم|انتحار|أؤذي نفسي/];
+  var MEDICAL_NOTE = [' (Seriously though: for real health questions, ask a doctor or pharmacist. In an emergency, call your local emergency number.)',
+    ' (بجد: لأسئلة الصحة الحقيقية اسأل طبيباً أو صيدلانياً. وفي الطوارئ اتصل برقم الطوارئ المحلي.)'];
 
   // ---- Offline answer engine --------------------------------------------
 
@@ -913,30 +1292,79 @@
 
   function isPushback(B, text) { return B.challengeRe.test(text) || B.challengeOnlyRe.test(text); }
 
+  function escapeRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+  // "and France?" after a question: swap the subject of the previous question for the new one.
+  // Returns { eq: the question to answer instead, fact } or null.
+  function followUp(B, l, text, ctx) {
+    var m = ctx && ctx.prevQ && text.match(B.followRe);
+    if (!m || B.followGuard.test(text) || m[1].split(/\s+/).length > 4) return null;
+    var ent = m[1].replace(B.articleRe, '').trim();
+    var pf = ctx.prevFact >= 0 && FACTS[ctx.prevFact];
+    if (pf) {
+      // Drop one of the previous fact's word groups (its subject) and add the new subject.
+      for (var g = 0; g < pf[l].length; g++) {
+        var q = ctx.prevQ;
+        pf[l][g].forEach(function (w) {
+          q = q.replace(new RegExp(l === 'ar' ? escapeRe(w) : '\\b' + escapeRe(w) + '(?:e?s)?\\b', 'gi'), ' ');
+        });
+        var i = findFact(q + ' ' + ent, l, pf.kind);
+        if (i >= 0 && i !== ctx.prevFact) return { eq: q + ' ' + ent, fact: i };
+      }
+    }
+    var kw = keyword(B, ctx.prevQ);
+    var eq = ctx.prevQ.replace(new RegExp(escapeRe(kw), 'i'), ent);
+    return eq !== ctx.prevQ ? { eq: eq, fact: -1 } : null;
+  }
+
   // prev: the answer being replied to, or the last one, so pushback gets doubled down on.
-  function answer(raw, l, prev) {
-    var B = BRAIN[l];
+  // ctx: { prevQ, prevFact } from the last real question, for follow-ups.
+  // Returns { text, eq (the question actually answered), fact (index into FACTS, or -1) }.
+  function answer(raw, l, prev, ctx) {
+    var B = BRAIN[l], li = l === 'ar' ? 1 : 0;
     // Arabic-Indic digits → ASCII so the math still works.
     var text = raw.trim().replace(/[٠-٩]/g, function (d) { return d.charCodeAt(0) - 0x0660; });
-    var r = prev && isPushback(B, text)
-      ? pick(B.doubleDown).replace('{prev}', snippet(prev, 120)).replace('{conf}', confidence(l))
-      : baseAnswer(B, text);
+    var out = { eq: text, fact: -1 }, r;
+    if (MEDICAL[li].test(text)) {
+      // Never a yes/no, number or step for a health question: only an obviously silly line, then the note.
+      r = pick(TOPICS.filter(function (t) { return t.id === 'body'; })[0].jokes[li]) + ' ' + closer(B);
+    } else if (prev && isPushback(B, text)) {
+      r = pick(B.doubleDown).replace('{prev}', snippet(prev, 120)).replace('{conf}', confidence(l));
+    } else {
+      var fu = followUp(B, l, text, ctx);
+      if (fu) { out.eq = fu.eq; out.fact = fu.fact; }
+      r = baseAnswer(B, out.eq, l, out);
+    }
     // Extra chaos at the top of the dial: mishearing from 9, shouting at 11.
     var w = keyword(B, text);
     if (lvl() >= 9 && w !== B.defaultWord && !/\d/.test(text) && chance(0.25)) r = B.misheard(w) + r;
     if (lvl() === 11 && chance(0.35)) r = B.shout(r);
-    return r;
+    if (MEDICAL[li].test(text)) r += MEDICAL_NOTE[li];
+    out.text = r;
+    return out;
   }
 
-  function baseAnswer(B, text) {
-    var r = mathAnswer(B, text) || countAnswer(B, text) || runRules(B.rules, text);
+  // out.fact: a fact already chosen by a follow-up; set when a fact answers the question.
+  function baseAnswer(B, text, l, out) {
+    curLang = l;
+    curTopic = findTopic(text, l);
+    var r = mathAnswer(B, text) || countAnswer(B, text);
+    if (r) return r;
+
+    var i = out.fact >= 0 ? out.fact : findFact(text, l);
+    if (i >= 0) { out.fact = i; return factAnswer(i, l); }
+
+    r = runRules(B.rules, text);
     if (r) return r;
 
     var d = text.match(B.defineRe);
-    if (d) return tiered(B.define).replace(/\{x\}/g, cap(d[1] || d[2])) + ' ' + closer(B);
+    if (d) return (topicJoke(0.5) || tiered(B.define).replace(/\{x\}/g, cap(d[1] || d[2]))) + ' ' + closer(B);
 
     r = B.specific(B, text) || runRules(B.late, text);
     if (r) return r;
+
+    r = topicJoke(0.7);
+    if (r) return r + ' ' + closer(B);
 
     var w = keyword(B, text), q = text.replace(/[؟?!.\s]+$/, '');
     return tiered(B.fallback).replace(/\{q\}/g, q).replace(/\{W\}/g, cap(w)).replace(/\{w\}/g, w) +
@@ -1227,6 +1655,17 @@
 
   document.getElementById('replyCancel').addEventListener('click', clearReply);
 
+  // The last real question, for follow-ups like "and France?".
+  function lastContext() {
+    for (var i = chat.msgs.length - 1; i >= 0; i--) {
+      var m = chat.msgs[i];
+      if (m.who === 'bot' && m.q && !isPushback(BRAIN[m.l], m.q)) {
+        return { prevQ: m.eq || m.q, prevFact: m.fact != null && m.fact < FACTS.length ? m.fact : -1 };
+      }
+    }
+    return null;
+  }
+
   // The last real answer, skipping replies to pushback, so "why?" after "are you sure?" still defends the original.
   function lastBotText() {
     for (var i = chat.msgs.length - 1; i >= 0; i--) {
@@ -1243,6 +1682,7 @@
     var quoted = again ? null : replyTo;
     var past = chat.msgs.slice();
     var prev = quoted || lastBotText();
+    var ctx = lastContext();
     if (!again) {
       var me = { who: 'me', text: q, l: l };
       if (quoted) me.reply = quoted;
@@ -1262,13 +1702,15 @@
     var minWait = new Promise(function (r) { setTimeout(r, 700 + Math.random() * 600); });
     var reply = apiKey()
       ? askAi(q, quoted, past).then(function (text) { return { text: text }; },
-          function () { return { text: answer(q, l, prev), note: UI[l].aiFail }; })
-      : Promise.resolve({ text: answer(q, l, prev) });
+          function () { var a = answer(q, l, prev, ctx); a.note = UI[l].aiFail; return a; })
+      : Promise.resolve(answer(q, l, prev, ctx));
 
     Promise.all([reply, minWait]).then(function (res) {
       t.remove();
       var m = { who: 'bot', text: res[0].text, conf: confidence(l), l: l, q: q };
       if (res[0].note) m.note = res[0].note;
+      if (res[0].eq && res[0].eq !== q) m.eq = res[0].eq;
+      if (res[0].fact >= 0) m.fact = res[0].fact;
       chat.msgs.push(m);
       addMsg(m);
       saveChats();

@@ -448,6 +448,16 @@
     offView: { en: 'View product', ar: 'عرض المنتج' },
     offIngredients: { en: 'Ingredients listed', ar: 'المكوّنات المذكورة' },
     offTag: { en: 'product data', ar: 'بيانات المنتج' },
+    fromName: { en: 'from the product name', ar: 'من اسم المنتج' },
+    fromCategory: { en: 'from the product category', ar: 'من فئة المنتج' },
+    offUnverified: {
+      en: function (l) { return '⚠️ No ' + l + ' is recorded for this product in the database, but database entries are often incomplete or out of date. Read the ingredient list on the package before eating it, or check it with a photo:'; },
+      ar: function (l) { return '⚠️ لا يوجد ' + l + ' مسجّل لهذا المنتج في قاعدة البيانات، لكن بياناتها كثيراً ما تكون ناقصة أو قديمة. اقرأ قائمة المكوّنات على العبوة قبل تناوله، أو افحصها بصورة:'; }
+    },
+    scanLikely: {
+      en: function (l) { return '⛔ Most likely not safe for you: the product name or category points to ' + l + '. Check the package.'; },
+      ar: function (l) { return '⛔ على الأرجح غير آمن لك: اسم المنتج أو فئته يشير إلى ' + l + '. تحقّق من العبوة.'; }
+    },
     scanTake: { en: '📷 Photo of ingredients (AI)', ar: '📷 صورة المكوّنات (ذكاء اصطناعي)' },
     scanChoose: { en: '🖼️ Choose photo', ar: '🖼️ اختر صورة' },
     scanPrivacy: { en: 'Barcodes are looked up in Open Food Facts, a free food database. Photos go to Google Gemini only when you scan one, using the AI chef\'s free key.', ar: 'يُبحث عن الباركود في Open Food Facts، وهي قاعدة بيانات غذائية مجانية. تُرسل الصور إلى Google Gemini فقط عند مسحها، باستخدام مفتاح الشيف الذكي المجاني.' },
@@ -1321,19 +1331,35 @@
     ['حليب اللوز', ['treenut']], ['حليب الكاجو', ['treenut']], ['حليب الصويا', ['soy']], ['زبدة الكاكاو', []], ['زبدة بذور دوار الشمس', []],
     ['زبدة اللوز', ['treenut']], ['جوزة الطيب', []], ['جوز الهند', []], ['زيت جوز الهند', []], ['نشا الذرة', []], ['دقيق الأرز', []],
     ['دقيق الذرة', []], ['دقيق الحمص', []], ['دقيق جوز الهند', []], ['دقيق اللوز', ['treenut']], ['تورتيلا الذرة', []], ['خبز الذرة', []],
-    ['زيت الفول السوداني', ['peanut']], ['زبدة نباتية', []], ['كوكونت أمينوز', []], ['نودلز الأرز', []], ['شعيرية الأرز', []]
+    ['زيت الفول السوداني', ['peanut']], ['زبدة نباتية', []], ['كوكونت أمينوز', []], ['نودلز الأرز', []], ['شعيرية الأرز', []],
+    ['lait de coco', []], ['crème de coco', []], ['creme de coco', []], ['beurre de cacao', []], ['noix de coco', []], ['noix de muscade', []],
+    ['beurre de karité', []], ['farine de riz', []], ['farine de maïs', []], ['farine de mais', []], ['farine de pois chiche', []],
+    ['lait d\'amande', ['treenut']], ['lait de soja', ['soy']]
   ];
+  // French label words, so French-only ingredient lists are still checked.
+  var FR_HIDDEN = {
+    milk: ['lait', 'beurre', 'crème', 'creme', 'fromage', 'lactosérum', 'lactoserum', 'caséine', 'caseine', 'caséinate', 'lactose', 'babeurre', 'yaourt', 'petit-lait'],
+    egg: ['oeuf', 'œuf', 'ovalbumine', 'jaune d\'oeuf', 'blanc d\'oeuf'],
+    peanut: ['arachide', 'cacahuète', 'cacahuete'],
+    treenut: ['amande', 'noisette', 'noix', 'pistache', 'noix de cajou', 'pignon', 'fruits à coque', 'fruits a coque'],
+    soy: ['soja', 'lécithine de soja', 'lecithine de soja'],
+    wheat: ['blé', 'farine', 'froment', 'épeautre', 'epeautre', 'orge', 'seigle', 'semoule'],
+    fish: ['poisson', 'anchois', 'thon', 'saumon', 'morue'],
+    shellfish: ['crevette', 'crabe', 'homard', 'crustacés', 'crustaces', 'langoustine'],
+    sesame: ['sésame', 'graines de sésame']
+  };
   // "Dairy-free", "egg-free" etc. on a line switch that allergen off for the line (with a reminder to verify).
   // Arabic patterns run on normalized text (see norm), so أ/إ/آ are already plain ا and ة is ه.
   var FREE_AR = '(?:خالي|خال|خاليه|بدون)\\s+(?:من\\s+)?(?:ال)?';
   var FREE_FROM = [
-    [/\b(dairy|milk|lactose)[- ]free\b/g, ['milk']], [/\begg[- ]free\b/g, ['egg']], [/\b(gluten|wheat)[- ]free\b/g, ['wheat']],
+    [/\b(dairy|milk)[- ]free\b/g, ['milk']], [/\begg[- ]free\b/g, ['egg']], [/\b(gluten|wheat)[- ]free\b/g, ['wheat']],
     [/\bsoy[- ]free\b/g, ['soy']], [/\bpeanut[- ]free\b/g, ['peanut']], [/\bnut[- ]free\b/g, ['treenut', 'peanut']],
     [/\bsesame[- ]free\b/g, ['sesame']], [/\bvegan\b/g, ['milk', 'egg', 'fish', 'shellfish']],
-    [new RegExp(FREE_AR + '(?:البان|حليب|لاكتوز)', 'g'), ['milk']], [new RegExp(FREE_AR + 'بيض', 'g'), ['egg']],
+    [new RegExp(FREE_AR + '(?:البان|حليب)', 'g'), ['milk']], [new RegExp(FREE_AR + 'بيض', 'g'), ['egg']],
     [new RegExp(FREE_AR + '(?:غلوتين|جلوتين|قمح)', 'g'), ['wheat']], [new RegExp(FREE_AR + 'صويا', 'g'), ['soy']],
     [new RegExp(FREE_AR + 'فول السوداني', 'g'), ['peanut']], [new RegExp(FREE_AR + 'مكسرات', 'g'), ['treenut', 'peanut']],
-    [new RegExp(FREE_AR + 'سمسم', 'g'), ['sesame']]
+    [new RegExp(FREE_AR + 'سمسم', 'g'), ['sesame']],
+    [/\bsans gluten\b/g, ['wheat']], [/\bsans (?:lait|produits laitiers)\b/g, ['milk']]
   ];
 
   // ---------------------------------------------------------------------------
@@ -1652,7 +1678,7 @@
       var all = lib.a.concat(lib.m || []).filter(function (a, i, arr) { return arr.indexOf(a) === i; });
       lib.k.concat(lib.ar.k).forEach(function (k) { add(k, all, id); });
     });
-    ALLERGENS.forEach(function (al) { al.hidden.concat(al.ar.hidden).forEach(function (h) { add(h, [al.id], null); }); });
+    ALLERGENS.forEach(function (al) { al.hidden.concat(al.ar.hidden, FR_HIDDEN[al.id] || []).forEach(function (h) { add(h, [al.id], null); }); });
     ['wheat', 'soy', 'soybean', 'gluten'].forEach(function (w) { add(w, [w === 'gluten' ? 'wheat' : w === 'soybean' ? 'soy' : w], null); });
     p.sort(function (x, y) { return y.len - x.len; });
     return p;
@@ -2011,7 +2037,7 @@
     var out = { readable: d.readable !== false, product: d.product || '', ingredients: d.ingredients_text || '', warnings: d.warnings_text || '', notes: d.notes || '',
       contains: list(d.contains), may: list(d.may_contain) };
     var have = out.contains.map(function (x) { return x.allergen; });
-    out.ingredients.split(/[,،;\n()\[\]]/).forEach(function (part) {
+    (d.check_text || out.ingredients).split(/[,،;\n()\[\]]/).forEach(function (part) {
       if (!part.trim()) return;
       checkLine(part).found.forEach(function (f) {
         f.a.forEach(function (a) {
@@ -2046,9 +2072,12 @@
     var c = d.contains.map(function (x) { return x.allergen; });
     var m = d.may.map(function (x) { return x.allergen; });
     var badC = hits(c), badM = hits(m);
+    var sure = hits(d.contains.filter(function (x) { return !x.guess; }).map(function (x) { return x.allergen; }));
     var verdict = !sel.length ? '<div class="note">' + t('scanPick') + '</div>'
-      : badC.length ? '<div class="note danger verdict">' + esc(t('scanBad', names(badC))) + '</div>'
+      : sure.length ? '<div class="note danger verdict">' + esc(t('scanBad', names(badC))) + '</div>'
+      : badC.length ? '<div class="note danger verdict">' + esc(t('scanLikely', names(badC))) + '</div>'
       : badM.length ? '<div class="note verdict">' + esc(t('scanMay', names(badM))) + '</div>'
+      : s.source === 'off' ? '<div class="note verdict">' + esc(t('offUnverified', names(sel))) + photoBtns + '</div>'
       : '<div class="note safe verdict">' + esc(t('scanOk', names(sel))) + '<div class="small" style="font-weight:400">' + t('scanOkNote') + '</div></div>';
     function items(arr) {
       if (!arr.length) return '<ul class="scan-list"><li class="muted">' + t('scanNoneFound') + '</li></ul>';
@@ -2090,7 +2119,14 @@
   // ---------------------------------------------------------------------------
   var OFF_MAP = { 'en:milk': 'milk', 'en:eggs': 'egg', 'en:peanuts': 'peanut', 'en:nuts': 'treenut', 'en:soybeans': 'soy', 'en:gluten': 'wheat',
     'en:fish': 'fish', 'en:crustaceans': 'shellfish', 'en:molluscs': 'shellfish', 'en:sesame-seeds': 'sesame' };
-  var OFF_FIELDS = 'code,product_name,product_name_en,product_name_ar,brands,allergens_tags,traces_tags,ingredients_text,ingredients_text_en,ingredients_text_ar,image_front_small_url';
+  var OFF_FIELDS = 'code,product_name,product_name_en,product_name_ar,product_name_fr,generic_name,generic_name_en,generic_name_ar,brands,categories_tags,' +
+    'allergens_tags,traces_tags,ingredients_text,ingredients_text_en,ingredients_text_ar,ingredients_text_fr,image_front_small_url';
+  // Categories that almost always mean an allergen, as a safety net when the database lacks allergen data.
+  var OFF_CATEGORY = { 'en:breads': 'wheat', 'en:sliced-breads': 'wheat', 'en:sandwich-breads': 'wheat', 'en:flatbreads': 'wheat', 'en:biscuits': 'wheat',
+    'en:biscuits-and-cakes': 'wheat', 'en:cakes': 'wheat', 'en:pastries': 'wheat', 'en:viennoiseries': 'wheat', 'en:croissants': 'wheat', 'en:crackers': 'wheat',
+    'en:pastas': 'wheat', 'en:dairies': 'milk', 'en:cheeses': 'milk', 'en:yogurts': 'milk', 'en:butters': 'milk', 'en:milk-chocolates': 'milk',
+    'en:peanut-butters': 'peanut', 'en:peanuts': 'peanut', 'en:tahini': 'sesame', 'en:hummus': 'sesame', 'en:halva': 'sesame',
+    'en:fishes': 'fish', 'en:canned-fishes': 'fish', 'en:tunas': 'fish', 'en:shrimps': 'shellfish' };
   var bc = { stream: null, timer: null, reader: null, done: true };
   var detectorPromise = null;
 
@@ -2189,24 +2225,53 @@
         job.busy = false;
         var p = d && d.status !== 0 && d.product;
         if (!p) { job.notFound = true; drawScan(); return; }
+        // Allergen tags the database knows; unknown or non-English tags go through the word list.
         function tags(list) {
           var out = [];
+          function push(id, ev) { if (id && !out.some(function (x) { return x.allergen === id; })) out.push({ allergen: id, evidence: ev + ' · ' + t('offTag') }); }
           (list || []).forEach(function (tg) {
-            var id = OFF_MAP[tg];
-            if (id && !out.some(function (x) { return x.allergen === id; })) out.push({ allergen: id, evidence: tg.replace(/^[a-z]{2}:/, '').replace(/-/g, ' ') + ' · ' + t('offTag') });
+            var word = tg.replace(/^[a-z]{2}:/, '').replace(/-/g, ' ');
+            if (OFF_MAP[tg]) push(OFF_MAP[tg], word);
+            else checkLine(word).found.forEach(function (f) { f.a.forEach(function (a) { push(a, word); }); });
           });
           return out;
         }
-        var ingredients = (isAr() ? p.ingredients_text_ar || p.ingredients_text || p.ingredients_text_en : p.ingredients_text_en || p.ingredients_text || p.ingredients_text_ar) || '';
-        var name = (isAr() ? p.product_name_ar || p.product_name : p.product_name_en || p.product_name) || '';
+        var texts = [p.ingredients_text_en, p.ingredients_text_ar, p.ingredients_text, p.ingredients_text_fr].filter(function (x) { return x && x.trim(); });
+        var ingredients = (isAr() ? p.ingredients_text_ar || p.ingredients_text || p.ingredients_text_en || p.ingredients_text_fr
+                                  : p.ingredients_text_en || p.ingredients_text || p.ingredients_text_ar || p.ingredients_text_fr) || '';
+        var name = (isAr() ? p.product_name_ar || p.product_name : p.product_name_en || p.product_name) || p.product_name_fr || '';
         var contains = tags(p.allergens_tags), may = tags(p.traces_tags);
         job.img = p.image_front_small_url || '';
-        job.data = cleanScan({
-          readable: !!(ingredients.trim() || contains.length || may.length),
+        var data = cleanScan({
+          readable: !!(texts.length || contains.length || may.length),
           product: [name, p.brands].filter(Boolean).join(' · '),
-          ingredients_text: ingredients, warnings_text: '', notes: '',
+          ingredients_text: ingredients, check_text: texts.join('\n'), warnings_text: '', notes: '',
           contains: contains, may_contain: may
         });
+        // Safety net: the product's own name and category ("Milk bread", en:breads) reveal
+        // allergens even when the database entry has no allergen data.
+        var have = data.contains.map(function (x) { return x.allergen; });
+        function clue(id, ev) {
+          if (have.indexOf(id) !== -1) return;
+          have.push(id);
+          data.contains.push({ allergen: id, evidence: ev, guess: true });
+          data.may = data.may.filter(function (x) { return x.allergen !== id; });
+        }
+        var nameText = [p.product_name, p.product_name_en, p.product_name_ar, p.product_name_fr, p.generic_name, p.generic_name_en, p.generic_name_ar]
+          .filter(Boolean).filter(function (x, i, arr) { return arr.indexOf(x) === i; });
+        var freedByName = [];
+        nameText.forEach(function (n) {
+          var r = checkLine(n);
+          r.freed.forEach(function (a) { if (freedByName.indexOf(a) === -1) freedByName.push(a); });
+          r.found.forEach(function (f) { f.a.forEach(function (a) { clue(a, f.word + ' · ' + t('fromName')); }); });
+        });
+        (p.categories_tags || []).forEach(function (tg) {
+          var id = OFF_CATEGORY[tg];
+          var freeCat = /gluten-free|dairy-free|milk-free|nut-free|egg-free/.test(tg);
+          if (id && !freeCat && freedByName.indexOf(id) === -1) clue(id, tg.replace(/^[a-z]{2}:/, '').replace(/-/g, ' ') + ' · ' + t('fromCategory'));
+        });
+        if (data.contains.length || data.may.length) data.readable = true;
+        job.data = data;
         drawScan();
       })
       .catch(function (err) {

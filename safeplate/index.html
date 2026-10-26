@@ -96,6 +96,10 @@
       min-width: 38px; height: 38px; cursor: pointer; font-size: 18px; padding: 0 8px;
     }
     .lang-btn { font-size: 14px; font-weight: 700; }
+    .install-btn { font-size: 14px; font-weight: 700; background: var(--accent); border-color: var(--accent); color: var(--accent-text); white-space: nowrap; padding: 0 10px; flex: none; }
+    .install-btn[hidden] { display: none; }
+    .ios-steps { padding-inline-start: 22px; }
+    .ios-steps li { margin-bottom: 10px; }
 
     .avoid { padding: 4px 0 12px; }
     .avoid-label { font-size: 13px; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
@@ -292,6 +296,7 @@
           <div class="tag" id="tagline"></div>
         </div>
         <div class="spacer"></div>
+        <button class="icon-btn install-btn" id="install-btn" hidden></button>
         <button class="icon-btn lang-btn" id="lang-btn"></button>
         <button class="icon-btn" id="theme-btn"></button>
       </div>
@@ -316,6 +321,10 @@
   </div>
 
   <nav class="tabs" id="tabs"></nav>
+
+  <div class="modal" id="install-modal" role="dialog" aria-modal="true">
+    <div class="card" id="install-modal-body"></div>
+  </div>
 
   <div class="modal" id="bc-modal" role="dialog" aria-modal="true">
     <div class="card">
@@ -345,6 +354,20 @@
     title: { en: 'SafePlate · Allergy-Friendly Recipes', ar: 'SafePlate · وصفات آمنة لحساسية الطعام' },
     tagline: { en: 'Everyday recipes, made safe for your allergies', ar: 'وصفات يومية آمنة لحساسيتك الغذائية' },
     langBtn: { en: 'عربي', ar: 'EN' },
+    installBtn: { en: '⬇ Install', ar: '⬇ تثبيت' },
+    installLabel: { en: 'Install SafePlate on this device', ar: 'ثبّت SafePlate على هذا الجهاز' },
+    installIos: {
+      en: '<h3>📲 Add SafePlate to your home screen</h3><p>It opens like a normal app and works offline.</p><ol class="ios-steps">' +
+        '<li>Tap the <b>Share</b> button <span aria-hidden="true">(a square with an arrow ⬆)</span> in the browser bar.</li>' +
+        '<li>Scroll down and tap <b>Add to Home Screen</b>.</li>' +
+        '<li>Tap <b>Add</b>. The green SafePlate icon appears on your home screen.</li></ol>' +
+        '<p class="small muted">Don\'t see it? Open this page in Safari and try again.</p>',
+      ar: '<h3>📲 أضف SafePlate إلى الشاشة الرئيسية</h3><p>سيفتح كتطبيق عادي ويعمل دون اتصال.</p><ol class="ios-steps">' +
+        '<li>اضغط زر <b>المشاركة</b> <span aria-hidden="true">(مربع فيه سهم ⬆)</span> في شريط المتصفح.</li>' +
+        '<li>مرّر للأسفل واضغط <b>إضافة إلى الشاشة الرئيسية</b>.</li>' +
+        '<li>اضغط <b>إضافة</b>. ستظهر أيقونة SafePlate الخضراء على شاشتك الرئيسية.</li></ol>' +
+        '<p class="small muted">لا يظهر الخيار؟ افتح هذه الصفحة في Safari وحاول مجدداً.</p>'
+    },
     langLabel: { en: 'التبديل إلى العربية', ar: 'Switch to English' },
     darkLabel: { en: 'Toggle dark mode', ar: 'تبديل الوضع الليلي' },
     avoidPrompt: { en: 'Tap everything you need to avoid:', ar: 'اختر كل ما تحتاج إلى تجنّبه:' },
@@ -1385,6 +1408,10 @@
   function renderChrome() {
     document.title = t('title');
     document.getElementById('tagline').textContent = t('tagline');
+    document.getElementById('install-modal-body').innerHTML = t('installIos') +
+      '<button class="btn ghost" style="width:100%;margin-top:8px" id="install-modal-close">' + t('close') + '</button>';
+    document.getElementById('install-modal-close').addEventListener('click', function () { document.getElementById('install-modal').classList.remove('open'); });
+    syncInstallBtn();
     var lb = document.getElementById('lang-btn');
     lb.textContent = t('langBtn'); lb.setAttribute('aria-label', t('langLabel')); lb.title = t('langLabel');
     document.getElementById('theme-btn').setAttribute('aria-label', t('darkLabel'));
@@ -2451,6 +2478,36 @@
       if (inp && !reply.text) inp.value = text;
     });
   }
+
+  // ---------------------------------------------------------------------------
+  // Install: the browser's own install prompt where it exists (Android, desktop
+  // Chrome and Edge, like Nasma AI); on iPhone and iPad, a short how-to instead.
+  // ---------------------------------------------------------------------------
+  var deferredInstall = null;
+  function isStandalone() { return (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true; }
+  function isIos() { return /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
+  function syncInstallBtn() {
+    var b = document.getElementById('install-btn');
+    b.textContent = t('installBtn');
+    b.setAttribute('aria-label', t('installLabel')); b.title = t('installLabel');
+    b.hidden = isStandalone() || !(deferredInstall || isIos());
+  }
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    deferredInstall = e;
+    syncInstallBtn();
+  });
+  window.addEventListener('appinstalled', function () { deferredInstall = null; syncInstallBtn(); });
+  document.getElementById('install-btn').addEventListener('click', function () {
+    if (deferredInstall) {
+      var ev = deferredInstall;
+      ev.prompt();
+      (ev.userChoice || Promise.resolve()).then(function () { deferredInstall = null; syncInstallBtn(); });
+    } else {
+      document.getElementById('install-modal').classList.add('open');
+    }
+  });
+  document.getElementById('install-modal').addEventListener('click', function (e) { if (e.target === this) this.classList.remove('open'); });
 
   // ---------------------------------------------------------------------------
   // Routing, theme, offline

@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#1a1a2e">
 <meta name="description" content="ArtiFool: the world's first Artificial Stupidity. Confidently wrong about everything, in English and Arabic.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ArtiFool">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
 <title>ArtiFool · Artificial Stupidity</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23ffd166'/%3E%3Ccircle cx='34' cy='42' r='11' fill='%231a1a2e'/%3E%3Ccircle cx='70' cy='38' r='6' fill='%231a1a2e'/%3E%3Cpath d='M28 70 Q50 60 74 74' stroke='%231a1a2e' stroke-width='7' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
 <script>
@@ -61,7 +67,7 @@
   .top-links { margin-inline-start: auto; display: flex; align-items: center; gap: 12px; flex: none; }
   .home { color: var(--dim); font-size: 0.85rem; text-decoration: none; }
   .home:hover { color: var(--accent); }
-  @media (max-width: 420px) { .home { display: none; } }
+  @media (max-width: 420px) { .home, .tag { display: none; } }
   .lang-btn {
     font: inherit; font-size: 0.85rem; font-weight: 700; color: var(--accent); background: transparent;
     border: 1px solid var(--accent); border-radius: 8px; padding: 4px 10px; cursor: pointer;
@@ -110,6 +116,16 @@
   .reply-text { flex: 1; min-width: 0; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .x-btn { font: inherit; font-size: 1.2rem; line-height: 1; color: var(--dim); background: none; border: 0; padding: 2px 6px; cursor: pointer; }
   .x-btn:hover { color: var(--accent); }
+
+  .install-btn { background: var(--accent); color: var(--bg); }
+  .install-btn[hidden] { display: none; }
+  .ios-steps { padding-inline-start: 22px; margin: 12px 0; }
+  .ios-steps li { margin-bottom: 10px; }
+  .sheet { position: fixed; inset: 0; z-index: 11; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(0, 0, 0, 0.55); }
+  .sheet[hidden] { display: none; }
+  .sheet-box { width: min(420px, 100%); padding: 20px; border-radius: 16px; background: var(--surface); }
+  .sheet-box h3 { margin: 0 0 6px; }
+  .sheet-box p { margin: 0; color: var(--dim); font-size: 0.9rem; }
 
   .drawer { position: fixed; inset: 0; z-index: 10; display: flex; background: rgba(0, 0, 0, 0.55); }
   .drawer[hidden] { display: none; }
@@ -162,6 +178,7 @@
       <div class="tag" id="tag"></div>
     </div>
     <div class="top-links">
+      <button type="button" class="lang-btn install-btn" id="installBtn" hidden></button>
       <button type="button" class="lang-btn" id="chatsBtn"></button>
       <button type="button" class="lang-btn" id="langBtn"></button>
       <a class="home" id="home" href="../"></a>
@@ -189,6 +206,13 @@
     <input id="q" maxlength="300">
     <button type="submit" id="send"></button>
   </form>
+</div>
+
+<div class="sheet" id="installSheet" hidden>
+  <div class="sheet-box" role="dialog" aria-modal="true">
+    <div id="installSteps"></div>
+    <button type="button" class="new-chat" id="installClose" style="width:100%;margin-top:16px"></button>
+  </div>
 </div>
 
 <div class="drawer" id="drawer" hidden>
@@ -252,6 +276,12 @@
       reply: 'Reply', again: 'Again', replying: 'Replying to:', cancelReply: 'Cancel reply',
       chats: 'Chats', newChat: '+ New chat', noChats: 'No saved chats yet.', del: 'Delete chat',
       deleteConfirm: 'Delete this chat?', close: 'Close',
+      install: '⬇ Install', installLabel: 'Install ArtiFool on this device',
+      installIos: '<h3>📲 Add ArtiFool to your home screen</h3><p>It opens like a normal app and works offline.</p><ol class="ios-steps">' +
+        '<li>Tap the <b>Share</b> button <span aria-hidden="true">(a square with an arrow ⬆)</span> in the browser bar.</li>' +
+        '<li>Scroll down and tap <b>Add to Home Screen</b>.</li>' +
+        '<li>Tap <b>Add</b>. The yellow ArtiFool face appears on your home screen.</li></ol>' +
+        '<p>Don\'t see it? Open this page in Safari and try again.</p>',
       welcome: 'Hello! I\'m ArtiFool, the world\'s first Artificial Stupidity. Ask me anything and I\'ll get it wrong with total confidence.',
       chips: ['What is 2 + 2?', 'Can dogs fly?', 'Why is the sky blue?', 'Where is my phone?',
         'Who invented the telephone?', 'Tea or coffee?', 'How do I fix my car?', 'How many r in strawberry?'],
@@ -270,6 +300,12 @@
       reply: 'رد', again: 'مرة ثانية', replying: 'رداً على:', cancelReply: 'إلغاء الرد',
       chats: 'المحادثات', newChat: '+ محادثة جديدة', noChats: 'لا توجد محادثات محفوظة بعد.', del: 'حذف المحادثة',
       deleteConfirm: 'حذف هذه المحادثة؟', close: 'إغلاق',
+      install: '⬇ تثبيت', installLabel: 'ثبّت ArtiFool على هذا الجهاز',
+      installIos: '<h3>📲 أضف ArtiFool إلى الشاشة الرئيسية</h3><p>سيفتح كتطبيق عادي ويعمل دون اتصال.</p><ol class="ios-steps">' +
+        '<li>اضغط زر <b>المشاركة</b> <span aria-hidden="true">(مربع فيه سهم ⬆)</span> في شريط المتصفح.</li>' +
+        '<li>مرّر للأسفل واضغط <b>إضافة إلى الشاشة الرئيسية</b>.</li>' +
+        '<li>اضغط <b>إضافة</b>. سيظهر وجه ArtiFool الأصفر على شاشتك الرئيسية.</li></ol>' +
+        '<p>لا يظهر الخيار؟ افتح هذه الصفحة في Safari وحاول مجدداً.</p>',
       welcome: 'أهلاً! أنا ArtiFool، أول غباء اصطناعي في العالم. اسألني أي شيء وسأجيبك خطأً بكل ثقة.',
       chips: ['كم 2 + 2؟', 'هل الكلاب تطير؟', 'لماذا السماء زرقاء؟', 'وين جوالي؟',
         'من اخترع الهاتف؟', 'شاي أو قهوة؟', 'كيف أصلح سيارتي؟', 'كم حرف م في كلمة ممتاز؟'],
@@ -1295,7 +1331,7 @@
   document.getElementById('chatsBtn').addEventListener('click', openDrawer);
   document.getElementById('drawerClose').addEventListener('click', closeDrawer);
   drawer.addEventListener('click', function (e) { if (e.target === drawer) closeDrawer(); });
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDrawer(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeDrawer(); installSheet.hidden = true; } });
   document.getElementById('newChatBtn').addEventListener('click', function () {
     if (send.disabled) return;
     if (chat.msgs.length) chat = newChat();
@@ -1327,6 +1363,44 @@
     showBrain();
   });
 
+  // ---- Install, like Nasma AI and SafePlate ------------------------------
+  // The browser's own install prompt where it exists (Android, desktop Chrome and Edge);
+  // on iPhone and iPad, a short how-to instead.
+
+  var deferredInstall = null;
+  var installSheet = document.getElementById('installSheet');
+  function isStandalone() { return (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true; }
+  function isIos() { return /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
+  function syncInstallBtn() {
+    var b = document.getElementById('installBtn'), S = UI[uiLang];
+    b.textContent = S.install;
+    b.title = S.installLabel; b.setAttribute('aria-label', S.installLabel);
+    b.hidden = isStandalone() || !(deferredInstall || isIos());
+  }
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    deferredInstall = e;
+    syncInstallBtn();
+  });
+  window.addEventListener('appinstalled', function () { deferredInstall = null; syncInstallBtn(); });
+  document.getElementById('installBtn').addEventListener('click', function () {
+    if (deferredInstall) {
+      var ev = deferredInstall;
+      ev.prompt();
+      (ev.userChoice || Promise.resolve()).then(function () { deferredInstall = null; syncInstallBtn(); });
+    } else {
+      document.getElementById('installSteps').innerHTML = UI[uiLang].installIos;
+      document.getElementById('installClose').textContent = UI[uiLang].close;
+      installSheet.hidden = false;
+    }
+  });
+  document.getElementById('installClose').addEventListener('click', function () { installSheet.hidden = true; });
+  installSheet.addEventListener('click', function (e) { if (e.target === installSheet) installSheet.hidden = true; });
+
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+  }
+
   function render() {
     var S = UI[uiLang];
     document.documentElement.setAttribute('lang', uiLang);
@@ -1348,6 +1422,7 @@
     var dc = document.getElementById('drawerClose');
     dc.title = S.close; dc.setAttribute('aria-label', S.close);
     document.getElementById('newChatBtn').textContent = S.newChat;
+    syncInstallBtn();
     showLevel();
     showBrain();
 

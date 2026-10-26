@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#1a1a2e">
 <meta name="description" content="ArtiFool: the world's first Artificial Stupidity. Confidently wrong about everything, in English and Arabic.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ArtiFool">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
 <title>ArtiFool · Artificial Stupidity</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23ffd166'/%3E%3Ccircle cx='34' cy='42' r='11' fill='%231a1a2e'/%3E%3Ccircle cx='70' cy='38' r='6' fill='%231a1a2e'/%3E%3Cpath d='M28 70 Q50 60 74 74' stroke='%231a1a2e' stroke-width='7' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
 <script>
@@ -61,6 +67,7 @@
   .top-links { margin-inline-start: auto; display: flex; align-items: center; gap: 12px; flex: none; }
   .home { color: var(--dim); font-size: 0.85rem; text-decoration: none; }
   .home:hover { color: var(--accent); }
+  @media (max-width: 420px) { .home, .tag { display: none; } }
   .lang-btn {
     font: inherit; font-size: 0.85rem; font-weight: 700; color: var(--accent); background: transparent;
     border: 1px solid var(--accent); border-radius: 8px; padding: 4px 10px; cursor: pointer;
@@ -91,10 +98,55 @@
   .meta { display: block; margin-top: 6px; font-size: 0.75rem; color: var(--dim); }
   .meta .conf { color: var(--accent); font-weight: 700; }
   .thought { font-style: italic; color: var(--dim); }
-  .share-btn {
-    margin-inline-start: 8px; font: inherit; font-size: 0.75rem; font-weight: 700; color: var(--accent);
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .act-btn {
+    font: inherit; font-size: 0.75rem; font-weight: 700; color: var(--accent);
     background: none; border: 1px solid var(--accent); border-radius: 999px; padding: 1px 10px; cursor: pointer;
   }
+  .quote {
+    font-size: 0.8rem; opacity: 0.75; border-inline-start: 3px solid currentColor; padding-inline-start: 8px;
+    margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  .reply-bar {
+    display: flex; align-items: center; gap: 8px; margin-top: 4px; padding: 6px 10px; font-size: 0.8rem; color: var(--dim);
+    background: var(--surface); border-inline-start: 3px solid var(--accent); border-radius: 8px;
+  }
+  .reply-bar[hidden] { display: none; }
+  .reply-text { flex: 1; min-width: 0; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .x-btn { font: inherit; font-size: 1.2rem; line-height: 1; color: var(--dim); background: none; border: 0; padding: 2px 6px; cursor: pointer; }
+  .x-btn:hover { color: var(--accent); }
+
+  .install-btn { background: var(--accent); color: var(--bg); }
+  .install-btn[hidden] { display: none; }
+  .ios-steps { padding-inline-start: 22px; margin: 12px 0; }
+  .ios-steps li { margin-bottom: 10px; }
+  .sheet { position: fixed; inset: 0; z-index: 11; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(0, 0, 0, 0.55); }
+  .sheet[hidden] { display: none; }
+  .sheet-box { width: min(420px, 100%); padding: 20px; border-radius: 16px; background: var(--surface); }
+  .sheet-box h3 { margin: 0 0 6px; }
+  .sheet-box p { margin: 0; color: var(--dim); font-size: 0.9rem; }
+
+  .drawer { position: fixed; inset: 0; z-index: 10; display: flex; background: rgba(0, 0, 0, 0.55); }
+  .drawer[hidden] { display: none; }
+  .drawer-box {
+    width: min(340px, 85vw); height: 100%; overflow-y: auto; padding: 16px;
+    display: flex; flex-direction: column; gap: 8px; background: var(--bg); border-inline-end: 1px solid var(--surface);
+  }
+  .drawer-head { display: flex; align-items: center; justify-content: space-between; }
+  .new-chat {
+    font: inherit; font-weight: 700; color: var(--bg); background: var(--accent);
+    border: 0; border-radius: 10px; padding: 10px; cursor: pointer;
+  }
+  .chat-item { display: flex; align-items: center; gap: 4px; border-radius: 10px; }
+  .chat-item.current { background: var(--surface); }
+  .chat-open {
+    flex: 1; min-width: 0; text-align: start; font: inherit; color: var(--text);
+    background: none; border: 0; padding: 8px 10px; cursor: pointer;
+  }
+  .chat-open span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chat-open small { color: var(--dim); font-size: 0.75rem; }
+  .empty { color: var(--dim); font-size: 0.85rem; }
 
   .chips { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0 8px; scrollbar-width: none; }
   .chips::-webkit-scrollbar { display: none; }
@@ -126,6 +178,8 @@
       <div class="tag" id="tag"></div>
     </div>
     <div class="top-links">
+      <button type="button" class="lang-btn install-btn" id="installBtn" hidden></button>
+      <button type="button" class="lang-btn" id="chatsBtn"></button>
       <button type="button" class="lang-btn" id="langBtn"></button>
       <a class="home" id="home" href="../"></a>
     </div>
@@ -142,10 +196,34 @@
 
   <div class="chips" id="chips"></div>
 
+  <div class="reply-bar" id="replyBar" hidden>
+    <span id="replyLabel"></span>
+    <span class="reply-text" id="replyText" dir="auto"></span>
+    <button type="button" class="x-btn" id="replyCancel">×</button>
+  </div>
+
   <form id="form" autocomplete="off">
     <input id="q" maxlength="300">
     <button type="submit" id="send"></button>
   </form>
+</div>
+
+<div class="sheet" id="installSheet" hidden>
+  <div class="sheet-box" role="dialog" aria-modal="true">
+    <div id="installSteps"></div>
+    <button type="button" class="new-chat" id="installClose" style="width:100%;margin-top:16px"></button>
+  </div>
+</div>
+
+<div class="drawer" id="drawer" hidden>
+  <div class="drawer-box" role="dialog" aria-labelledby="drawerTitle">
+    <div class="drawer-head">
+      <b id="drawerTitle"></b>
+      <button type="button" class="x-btn" id="drawerClose">×</button>
+    </div>
+    <button type="button" class="new-chat" id="newChatBtn"></button>
+    <div id="chatList"></div>
+  </div>
 </div>
 
 <script>
@@ -195,6 +273,15 @@
       keyPrompt: 'Paste a Gemini API key (free at aistudio.google.com/apikey). It stays on this device.\nLeave it empty to use the offline brain.',
       aiFail: 'AI brain didn\'t answer, so I used my backup brain',
       share: 'Share', shareText: 'ArtiFool said this with total confidence 🤦',
+      reply: 'Reply', again: 'Again', replying: 'Replying to:', cancelReply: 'Cancel reply',
+      chats: 'Chats', newChat: '+ New chat', noChats: 'No saved chats yet.', del: 'Delete chat',
+      deleteConfirm: 'Delete this chat?', close: 'Close',
+      install: '⬇ Install', installLabel: 'Install ArtiFool on this device',
+      installIos: '<h3>📲 Add ArtiFool to your home screen</h3><p>It opens like a normal app and works offline.</p><ol class="ios-steps">' +
+        '<li>Tap the <b>Share</b> button <span aria-hidden="true">(a square with an arrow ⬆)</span> in the browser bar.</li>' +
+        '<li>Scroll down and tap <b>Add to Home Screen</b>.</li>' +
+        '<li>Tap <b>Add</b>. The yellow ArtiFool face appears on your home screen.</li></ol>' +
+        '<p>Don\'t see it? Open this page in Safari and try again.</p>',
       welcome: 'Hello! I\'m ArtiFool, the world\'s first Artificial Stupidity. Ask me anything and I\'ll get it wrong with total confidence.',
       chips: ['What is 2 + 2?', 'Can dogs fly?', 'Why is the sky blue?', 'Where is my phone?',
         'Who invented the telephone?', 'Tea or coffee?', 'How do I fix my car?', 'How many r in strawberry?'],
@@ -210,6 +297,15 @@
       keyPrompt: 'الصق مفتاح Gemini API (مجاني من aistudio.google.com/apikey). يبقى على هذا الجهاز فقط.\nاتركه فارغاً لاستخدام الدماغ بدون إنترنت.',
       aiFail: 'دماغ الذكاء الاصطناعي لم يرد، فاستخدمت دماغي الاحتياطي',
       share: 'شارك', shareText: 'ArtiFool قالها بكل ثقة 🤦',
+      reply: 'رد', again: 'مرة ثانية', replying: 'رداً على:', cancelReply: 'إلغاء الرد',
+      chats: 'المحادثات', newChat: '+ محادثة جديدة', noChats: 'لا توجد محادثات محفوظة بعد.', del: 'حذف المحادثة',
+      deleteConfirm: 'حذف هذه المحادثة؟', close: 'إغلاق',
+      install: '⬇ تثبيت', installLabel: 'ثبّت ArtiFool على هذا الجهاز',
+      installIos: '<h3>📲 أضف ArtiFool إلى الشاشة الرئيسية</h3><p>سيفتح كتطبيق عادي ويعمل دون اتصال.</p><ol class="ios-steps">' +
+        '<li>اضغط زر <b>المشاركة</b> <span aria-hidden="true">(مربع فيه سهم ⬆)</span> في شريط المتصفح.</li>' +
+        '<li>مرّر للأسفل واضغط <b>إضافة إلى الشاشة الرئيسية</b>.</li>' +
+        '<li>اضغط <b>إضافة</b>. سيظهر وجه ArtiFool الأصفر على شاشتك الرئيسية.</li></ol>' +
+        '<p>لا يظهر الخيار؟ افتح هذه الصفحة في Safari وحاول مجدداً.</p>',
       welcome: 'أهلاً! أنا ArtiFool، أول غباء اصطناعي في العالم. اسألني أي شيء وسأجيبك خطأً بكل ثقة.',
       chips: ['كم 2 + 2؟', 'هل الكلاب تطير؟', 'لماذا السماء زرقاء؟', 'وين جوالي؟',
         'من اخترع الهاتف؟', 'شاي أو قهوة؟', 'كيف أصلح سيارتي؟', 'كم حرف م في كلمة ممتاز؟'],
@@ -608,6 +704,16 @@
       wordRe: /[a-z']{3,}/g,
       stop: /^(what|who|why|how|when|where|is|are|the|a|an|of|to|do|does|can|you|i|my|me|it|in|on|for|and|or|your|this|that|with|be|was|will|would|should|could|tell|about|please|explain|think|know|want|have|has|there|they|them|from|just|really)$/i,
       defaultWord: 'cheese',
+      // Pushback on the previous answer: "are you sure?", "that's wrong", "why?"
+      challengeRe: /^(are you (sure|serious|kidding)|that'?s (wrong|not true|false|incorrect|not right)|you'?re (wrong|lying)|liar|says who|prove it)/i,
+      challengeOnlyRe: /^(really|seriously|wrong|false|no|nope|no way|source|proof|why|how|what|huh|wtf|lol|lmao|ha(ha)+|hm+|ok(ay)?|sure)[\s?!.]*$/i,
+      doubleDown: ['Am I sure? I\'m {conf} sure. I stand by every word: "{prev}"',
+        'Wrong? Me? Impossible. I double-checked with the toaster.',
+        'Let me correct myself: "{prev}" …Yes. Same answer. Still correct.',
+        'My source is a pigeon, and that pigeon has never lied to me.',
+        'You\'re thinking of a different answer. Mine is the right one.',
+        'I asked myself again, and I agree with me.',
+        'Fine. I\'ll say it slower: "{prev}"'],
       misheard: function (w) { return 'Did you say "' + w.replace(/^[^aeiou]*/i, /^b/i.test(w) ? 'd' : 'b') + '"? Never mind. '; },
       shout: function (r) { return r.toUpperCase() + ' !!!'; }
     },
@@ -725,6 +831,15 @@
       wordRe: /[ء-ي]{3,}/g,
       stop: /^(ماذا|لماذا|كيف|متى|أين|اين|هل|التي|الذي|هذا|هذه|ذلك|كان|يكون|أنا|انا|أنت|انت|إلى|الى|على|عن|شو|ايش|ليش|وين|لو|ممكن|يمكن|عندي|عندك|قل|لي|اشرح|أريد|اريد|بدي|ابغى|أبغى)$/,
       defaultWord: 'الجبنة',
+      challengeRe: /^(متأكد|متأكدة|انت متأكد|أنت متأكد|غلط|خطأ|خطا|كذاب|كذب|مش صحيح|مو صحيح|ليس صحيحاً|هذا غلط|هذا خطأ)/,
+      challengeOnlyRe: /^(ليش|لماذا|ليه|كيف|بجد|جد|جدياً|صدق|لا|ههه+|هه|اوكي|أوكي|طيب|مصدرك|ما مصدرك|شو مصدرك|وين المصدر)[\s؟?!.]*$/,
+      doubleDown: ['متأكد؟ أنا متأكد {conf}. وأقف وراء كل كلمة: «{prev}»',
+        'غلط؟ أنا؟ مستحيل. تأكدت مع المحمصة.',
+        'خليني أصحح نفسي: «{prev}» …نعم. نفس الجواب. وما زال صحيحاً.',
+        'مصدري حمامة، وهذه الحمامة لم تكذب عليّ أبداً.',
+        'أنت تفكر بجواب ثانٍ. جوابي هو الصحيح.',
+        'سألت نفسي مرة ثانية، ووافقت نفسي.',
+        'ماشي. سأقولها ببطء: «{prev}»'],
       misheard: function (w) { return 'سمعتك تقول «' + w.replace(/^ال/, '').split('').reverse().join('') + '»؟ ماشي. '; },
       shout: function (r) { return 'اسمعني جيداً: ' + r + ' !!!'; }
     }
@@ -796,11 +911,16 @@
     return uiLang;
   }
 
-  function answer(raw, l) {
+  function isPushback(B, text) { return B.challengeRe.test(text) || B.challengeOnlyRe.test(text); }
+
+  // prev: the answer being replied to, or the last one, so pushback gets doubled down on.
+  function answer(raw, l, prev) {
     var B = BRAIN[l];
     // Arabic-Indic digits → ASCII so the math still works.
     var text = raw.trim().replace(/[٠-٩]/g, function (d) { return d.charCodeAt(0) - 0x0660; });
-    var r = baseAnswer(B, text);
+    var r = prev && isPushback(B, text)
+      ? pick(B.doubleDown).replace('{prev}', snippet(prev, 120)).replace('{conf}', confidence(l))
+      : baseAnswer(B, text);
     // Extra chaos at the top of the dial: mishearing from 9, shouting at 11.
     var w = keyword(B, text);
     if (lvl() >= 9 && w !== B.defaultWord && !/\d/.test(text) && chance(0.25)) r = B.misheard(w) + r;
@@ -828,7 +948,6 @@
   var GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
   var GEMINI_MODEL = 'gemini-3-flash-preview';
   var KEY_STORE = 'artifool_gemini_key';
-  var history = [];
 
   // 'off' means the user chose the offline brain even if another app has a key.
   function apiKey() {
@@ -852,9 +971,11 @@
     ].join('\n');
   }
 
-  function askAi(q) {
-    var contents = history.slice(-8).map(function (m) { return { role: m.role, parts: [{ text: m.text }] }; });
-    contents.push({ role: 'user', parts: [{ text: q }] });
+  // past: the chat's messages before this question; quoted: the message being replied to.
+  function askAi(q, quoted, past) {
+    var contents = past.slice(-8).map(function (m) { return { role: m.who === 'me' ? 'user' : 'model', parts: [{ text: m.text }] }; });
+    while (contents.length && contents[0].role === 'model') contents.shift();
+    contents.push({ role: 'user', parts: [{ text: quoted ? 'Replying to your earlier message: "' + quoted + '"\n\n' + q : q }] });
     return fetch(GEMINI_BASE + '/models/' + encodeURIComponent(GEMINI_MODEL) + ':generateContent', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey() },
@@ -872,7 +993,6 @@
         .filter(function (p) { return p.text && !p.thought; })
         .map(function (p) { return p.text; }).join('').trim();
       if (!text) throw new Error('empty');
-      history.push({ role: 'user', text: q }, { role: 'model', text: text });
       return text;
     });
   }
@@ -993,70 +1113,233 @@
     }, 'image/png');
   }
 
+  // ---- Chats, saved on this device -----------------------------------------
+
+  var CHATS_KEY = 'artifool_chats';
+  var chats = [];
+  try { chats = JSON.parse(load(CHATS_KEY) || '[]'); } catch (e) {}
+  if (!Array.isArray(chats)) chats = [];
+
+  function newChat() { return { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), title: '', updated: 0, msgs: [] }; }
+
+  // Reopen the most recent chat. A new chat is only saved once something is asked in it.
+  var chat = chats[0] || newChat();
+  var replyTo = null;
+
+  function saveChats() {
+    chat.updated = Date.now();
+    if (chats.indexOf(chat) < 0) chats.unshift(chat);
+    chats.sort(function (a, b) { return b.updated - a.updated; });
+    chats = chats.slice(0, 30);
+    chats.forEach(function (c) { if (c.msgs.length > 100) c.msgs = c.msgs.slice(-100); });
+    store(CHATS_KEY, JSON.stringify(chats));
+  }
+
+  function snippet(text, n) {
+    var t = text.replace(/\s+/g, ' ').trim();
+    return t.length > n ? t.slice(0, n - 1) + '…' : t;
+  }
+
   // ---- Chat -------------------------------------------------------------
 
-  function add(who, text, conf, l, note, q) {
+  function actionBtn(label, fn) {
+    var x = document.createElement('button');
+    x.type = 'button'; x.className = 'act-btn'; x.textContent = label;
+    x.addEventListener('click', fn);
+    return x;
+  }
+
+  // m: { who: 'me' | 'bot', text, l, conf?, note?, q? (the question it answers), reply? (quoted text) }
+  function addMsg(m) {
     var row = document.createElement('div');
-    row.className = 'msg ' + who;
+    row.className = 'msg ' + m.who;
     var b = document.createElement('div');
     b.className = 'bubble';
     b.setAttribute('dir', 'auto');
-    b.textContent = text;
-    if (conf) {
+    if (m.reply) {
+      var qt = document.createElement('div');
+      qt.className = 'quote';
+      qt.textContent = snippet(m.reply, 90);
+      b.appendChild(qt);
+    }
+    b.appendChild(document.createTextNode(m.text));
+    if (m.conf) {
+      var S = UI[m.l];
       var meta = document.createElement('span');
       meta.className = 'meta';
-      meta.appendChild(document.createTextNode(UI[l].confidence + ': '));
+      meta.appendChild(document.createTextNode(S.confidence + ': '));
       var c = document.createElement('span');
       c.className = 'conf';
-      c.textContent = conf;
+      c.textContent = m.conf;
       meta.appendChild(c);
-      meta.appendChild(document.createTextNode(' · ' + UI[l].accuracy + (note ? ' · ' + note : '')));
-      if (q) {
-        var sb = document.createElement('button');
-        sb.type = 'button'; sb.className = 'share-btn'; sb.textContent = UI[l].share;
-        sb.addEventListener('click', function () { shareCard(q, text, conf, l); });
-        meta.appendChild(sb);
-      }
+      meta.appendChild(document.createTextNode(' · ' + S.accuracy + (m.note ? ' · ' + m.note : '')));
       b.appendChild(meta);
+      if (m.q) {
+        var acts = document.createElement('div');
+        acts.className = 'actions';
+        acts.appendChild(actionBtn(S.reply, function () { startReply(m.text); }));
+        acts.appendChild(actionBtn(S.again, function () { ask(m.q, true); }));
+        acts.appendChild(actionBtn(S.share, function () { shareCard(m.q, m.text, m.conf, m.l); }));
+        b.appendChild(acts);
+      }
     }
     row.appendChild(b);
     log.appendChild(row);
     log.scrollTop = log.scrollHeight;
-    return b;
+    return row;
+  }
+
+  function addThought(text) {
+    var row = document.createElement('div');
+    row.className = 'msg bot';
+    var b = document.createElement('div');
+    b.className = 'bubble thought';
+    b.textContent = text;
+    row.appendChild(b);
+    log.appendChild(row);
+    log.scrollTop = log.scrollHeight;
+    return row;
+  }
+
+  function renderChat() {
+    log.textContent = '';
+    if (chat.msgs.length) chat.msgs.forEach(addMsg);
+    else addMsg({ who: 'bot', text: UI[uiLang].welcome, conf: '∞' + (uiLang === 'ar' ? '٪' : '%'), l: uiLang });
   }
 
   function confidence(l) {
     return (100 + lvl() * Math.floor(Math.random() * 40 + 5)) + (l === 'ar' ? '٪' : '%');
   }
 
-  var asked = false;
+  var replyBar = document.getElementById('replyBar');
 
-  function ask(q) {
+  function startReply(text) {
+    replyTo = text;
+    document.getElementById('replyText').textContent = snippet(text, 80);
+    replyBar.hidden = false;
+    input.focus();
+  }
+
+  function clearReply() {
+    replyTo = null;
+    replyBar.hidden = true;
+  }
+
+  document.getElementById('replyCancel').addEventListener('click', clearReply);
+
+  // The last real answer, skipping replies to pushback, so "why?" after "are you sure?" still defends the original.
+  function lastBotText() {
+    for (var i = chat.msgs.length - 1; i >= 0; i--) {
+      var m = chat.msgs[i];
+      if (m.who === 'bot' && !(m.q && isPushback(BRAIN[m.l], m.q))) return m.text;
+    }
+    return null;
+  }
+
+  // again: ask the same question for a different answer, without repeating it in the chat.
+  function ask(q, again) {
     if (!q.trim() || send.disabled) return;
     var l = langOf(q);
-    asked = true;
-    add('me', q);
-    input.value = '';
-    input.dir = '';
+    var quoted = again ? null : replyTo;
+    var past = chat.msgs.slice();
+    var prev = quoted || lastBotText();
+    if (!again) {
+      var me = { who: 'me', text: q, l: l };
+      if (quoted) me.reply = quoted;
+      if (!chat.title) chat.title = snippet(q, 40);
+      if (!chat.msgs.length) log.textContent = '';
+      chat.msgs.push(me);
+      addMsg(me);
+      saveChats();
+      input.value = '';
+      input.dir = '';
+      clearReply();
+    }
     send.disabled = true;
     face.classList.add('thinking');
-    var t = add('bot', pick(BRAIN[l].thoughts));
-    t.classList.add('thought');
+    var t = addThought(pick(BRAIN[l].thoughts));
 
     var minWait = new Promise(function (r) { setTimeout(r, 700 + Math.random() * 600); });
     var reply = apiKey()
-      ? askAi(q).then(function (text) { return { text: text }; },
-          function () { return { text: answer(q, l), note: UI[l].aiFail }; })
-      : Promise.resolve({ text: answer(q, l) });
+      ? askAi(q, quoted, past).then(function (text) { return { text: text }; },
+          function () { return { text: answer(q, l, prev), note: UI[l].aiFail }; })
+      : Promise.resolve({ text: answer(q, l, prev) });
 
     Promise.all([reply, minWait]).then(function (res) {
-      t.parentNode.remove();
-      add('bot', res[0].text, confidence(l), l, res[0].note, q);
+      t.remove();
+      var m = { who: 'bot', text: res[0].text, conf: confidence(l), l: l, q: q };
+      if (res[0].note) m.note = res[0].note;
+      chat.msgs.push(m);
+      addMsg(m);
+      saveChats();
       send.disabled = false;
       face.classList.remove('thinking');
       input.focus();
     });
   }
+
+  // ---- Chats panel ------------------------------------------------------
+
+  var drawer = document.getElementById('drawer');
+
+  function openDrawer() { showChats(); drawer.hidden = false; }
+  function closeDrawer() { drawer.hidden = true; }
+
+  function showChats() {
+    var S = UI[uiLang], list = document.getElementById('chatList');
+    list.textContent = '';
+    if (!chats.length) {
+      var e = document.createElement('p');
+      e.className = 'empty';
+      e.textContent = S.noChats;
+      list.appendChild(e);
+    }
+    chats.forEach(function (c) {
+      var item = document.createElement('div');
+      item.className = 'chat-item' + (c === chat ? ' current' : '');
+      var open = document.createElement('button');
+      open.type = 'button'; open.className = 'chat-open'; open.setAttribute('dir', 'auto');
+      var title = document.createElement('span');
+      title.textContent = c.title || '…';
+      var when = document.createElement('small');
+      when.textContent = new Date(c.updated).toLocaleString(uiLang, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+      open.appendChild(title);
+      open.appendChild(when);
+      open.addEventListener('click', function () {
+        if (send.disabled) return;
+        chat = c;
+        clearReply();
+        renderChat();
+        closeDrawer();
+      });
+      var del = document.createElement('button');
+      del.type = 'button'; del.className = 'x-btn'; del.textContent = '×';
+      del.title = S.del; del.setAttribute('aria-label', S.del);
+      del.addEventListener('click', function () {
+        if (send.disabled || !window.confirm(S.deleteConfirm)) return;
+        chats.splice(chats.indexOf(c), 1);
+        store(CHATS_KEY, JSON.stringify(chats));
+        if (c === chat) { chat = chats[0] || newChat(); clearReply(); renderChat(); }
+        showChats();
+      });
+      item.appendChild(open);
+      item.appendChild(del);
+      list.appendChild(item);
+    });
+  }
+
+  document.getElementById('chatsBtn').addEventListener('click', openDrawer);
+  document.getElementById('drawerClose').addEventListener('click', closeDrawer);
+  drawer.addEventListener('click', function (e) { if (e.target === drawer) closeDrawer(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeDrawer(); installSheet.hidden = true; } });
+  document.getElementById('newChatBtn').addEventListener('click', function () {
+    if (send.disabled) return;
+    if (chat.msgs.length) chat = newChat();
+    clearReply();
+    renderChat();
+    closeDrawer();
+    input.focus();
+  });
 
   form.addEventListener('submit', function (e) { e.preventDefault(); ask(input.value); });
   // Follow the typed text's direction, but keep the placeholder in the page's direction.
@@ -1080,6 +1363,44 @@
     showBrain();
   });
 
+  // ---- Install, like Nasma AI and SafePlate ------------------------------
+  // The browser's own install prompt where it exists (Android, desktop Chrome and Edge);
+  // on iPhone and iPad, a short how-to instead.
+
+  var deferredInstall = null;
+  var installSheet = document.getElementById('installSheet');
+  function isStandalone() { return (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true; }
+  function isIos() { return /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
+  function syncInstallBtn() {
+    var b = document.getElementById('installBtn'), S = UI[uiLang];
+    b.textContent = S.install;
+    b.title = S.installLabel; b.setAttribute('aria-label', S.installLabel);
+    b.hidden = isStandalone() || !(deferredInstall || isIos());
+  }
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    deferredInstall = e;
+    syncInstallBtn();
+  });
+  window.addEventListener('appinstalled', function () { deferredInstall = null; syncInstallBtn(); });
+  document.getElementById('installBtn').addEventListener('click', function () {
+    if (deferredInstall) {
+      var ev = deferredInstall;
+      ev.prompt();
+      (ev.userChoice || Promise.resolve()).then(function () { deferredInstall = null; syncInstallBtn(); });
+    } else {
+      document.getElementById('installSteps').innerHTML = UI[uiLang].installIos;
+      document.getElementById('installClose').textContent = UI[uiLang].close;
+      installSheet.hidden = false;
+    }
+  });
+  document.getElementById('installClose').addEventListener('click', function () { installSheet.hidden = true; });
+  installSheet.addEventListener('click', function (e) { if (e.target === installSheet) installSheet.hidden = true; });
+
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+  }
+
   function render() {
     var S = UI[uiLang];
     document.documentElement.setAttribute('lang', uiLang);
@@ -1093,6 +1414,15 @@
     lb.setAttribute('aria-label', S.langLabel);
     input.placeholder = S.placeholder;
     send.textContent = S.send;
+    document.getElementById('chatsBtn').textContent = S.chats;
+    document.getElementById('replyLabel').textContent = S.replying;
+    var rc = document.getElementById('replyCancel');
+    rc.title = S.cancelReply; rc.setAttribute('aria-label', S.cancelReply);
+    document.getElementById('drawerTitle').textContent = S.chats;
+    var dc = document.getElementById('drawerClose');
+    dc.title = S.close; dc.setAttribute('aria-label', S.close);
+    document.getElementById('newChatBtn').textContent = S.newChat;
+    syncInstallBtn();
     showLevel();
     showBrain();
 
@@ -1104,11 +1434,7 @@
       chipsEl.appendChild(c);
     });
 
-    // Until the first question, keep the greeting in the current language.
-    if (!asked) {
-      log.textContent = '';
-      add('bot', S.welcome, '∞' + (uiLang === 'ar' ? '٪' : '%'), uiLang);
-    }
+    renderChat();
   }
 
   document.getElementById('langBtn').addEventListener('click', function () {

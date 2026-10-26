@@ -261,6 +261,20 @@
     details.scan-text { margin-top: 10px; font-size: 14px; }
     details.scan-text summary { cursor: pointer; color: var(--accent); font-weight: 600; }
     details.scan-text p { white-space: pre-wrap; background: var(--bg); border-radius: 10px; padding: 10px; }
+    .bc-view { position: relative; border-radius: 12px; overflow: hidden; background: #000; aspect-ratio: 4 / 3; margin: 10px 0; }
+    .bc-view video { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .bc-frame { position: absolute; left: 10%; right: 10%; top: 32%; bottom: 32%; border: 3px solid #4ade80; border-radius: 10px; box-shadow: 0 0 0 999px rgba(0, 0, 0, .35); }
+    .bc-form { display: flex; gap: 8px; margin-top: 10px; }
+    .bc-form input { flex: 1; min-width: 0; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); outline: none; }
+    .allergy-card { border: 3px solid #b91c1c; border-radius: 16px; background: var(--card); overflow: hidden; margin: 14px 0; }
+    .ac-head { background: #b91c1c; color: #fff; padding: 12px 16px; font-weight: 800; font-size: 18px; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+    .ac-body { padding: 14px 16px; font-size: 16px; }
+    .ac-body ul { margin: 6px 0 10px; padding-inline-start: 20px; font-weight: 700; }
+    .ac-body p { margin: 6px 0; }
+    .ac-sep { border-top: 2px dashed var(--border); }
+    .card-form label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+    .card-form input[type="text"] { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); outline: none; }
+    .toast { position: fixed; left: 50%; bottom: calc(90px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 8px 16px; border-radius: 999px; font-size: 14px; font-weight: 600; z-index: 60; }
     .support-btn {
       display: inline-flex; align-items: center; gap: 6px; margin-bottom: 10px; padding: 8px 14px;
       border-radius: 999px; border: 1px solid var(--border); background: var(--card);
@@ -296,11 +310,21 @@
   <div class="wrap">
     <footer>
       <a class="support-btn" id="support-link" href="https://ko-fi.com/nightshiftapps" target="_blank" rel="noopener"></a><br>
-      <span id="footer-text"></span>
+      <span id="footer-text"></span><br>
+      <a id="privacy-link" href="privacy.html"></a>
     </footer>
   </div>
 
   <nav class="tabs" id="tabs"></nav>
+
+  <div class="modal" id="bc-modal" role="dialog" aria-modal="true">
+    <div class="card">
+      <h3 id="bc-title"></h3>
+      <div class="bc-view"><video id="bc-video" playsinline muted autoplay></video><div class="bc-frame"></div></div>
+      <p id="bc-status" class="small muted"></p>
+      <button class="btn ghost" id="bc-cancel" style="width:100%"></button>
+    </div>
+  </div>
 
   <div class="modal" id="key-modal" role="dialog" aria-modal="true">
     <div class="card" id="key-modal-body"></div>
@@ -330,6 +354,8 @@
     tabSwaps: { en: 'Swaps', ar: 'البدائل' },
     tabCheck: { en: 'Scan & check', ar: 'امسح وافحص' },
     tabAi: { en: 'AI Chef', ar: 'الشيف الذكي' },
+    tabCard: { en: 'Allergy card', ar: 'بطاقة الحساسية' },
+    privacyLink: { en: 'Privacy policy', ar: 'سياسة الخصوصية' },
     support: { en: '☕ Like this app? Support it on Ko-fi', ar: '☕ أعجبك التطبيق؟ ادعمه على Ko-fi' },
     footer: {
       en: 'SafePlate offers general cooking ideas, not medical advice. Ingredients and factories change, so read every label every time and follow your allergist\'s guidance. Your allergens and recipes stay on this device; AI questions go to Google Gemini only when you ask one.',
@@ -381,11 +407,37 @@
     noSwapFound: { en: 'No swap found for that. Try the "Check a recipe" tab or ask the AI chef.', ar: 'لم نجد بديلاً لذلك. جرّب تبويب "افحص وصفة" أو اسأل الشيف الذكي.' },
     checkTitle: { en: 'Scan & check', ar: 'امسح وافحص' },
     typeTitle: { en: 'Or type / paste ingredients', ar: 'أو اكتب / الصق المكوّنات' },
-    scanTitle: { en: 'AI label scanner', ar: 'ماسح الملصقات الذكي' },
-    scanIntro: { en: 'Take a photo of the ingredient list on any package, in any language. The AI reads it and checks it against your allergens.', ar: 'صوّر قائمة المكوّنات على أي عبوة، بأي لغة. سيقرؤها الذكاء الاصطناعي ويفحصها مقابل حساسيتك.' },
-    scanTake: { en: '📷 Take photo', ar: '📷 التقط صورة' },
+    scanTitle: { en: 'Scan a product', ar: 'امسح منتجاً' },
+    scanIntro: { en: 'Scan the barcode to look the product up for free. If it isn\'t found, take a photo of the ingredient list and the AI will read it (any language).', ar: 'امسح الباركود للبحث عن المنتج مجاناً. إن لم يُعثر عليه، صوّر قائمة المكوّنات وسيقرؤها الذكاء الاصطناعي (بأي لغة).' },
+    bcStart: { en: '▦ Scan barcode', ar: '▦ امسح الباركود' },
+    bcTypeLabel: { en: 'Or type the barcode number', ar: 'أو اكتب رقم الباركود' },
+    bcLookup: { en: 'Look up', ar: 'ابحث' },
+    bcCamTitle: { en: 'Point the camera at the barcode', ar: 'وجّه الكاميرا نحو الباركود' },
+    bcStarting: { en: 'Starting the camera…', ar: 'جارٍ تشغيل الكاميرا…' },
+    bcHint: { en: 'Hold steady about 10–15 cm (4–6 in) away, in good light.', ar: 'ثبّت الهاتف على بعد 10–15 سم تقريباً وفي إضاءة جيدة.' },
+    bcNoCam: { en: 'Couldn\'t open the camera. Allow camera access, or close this and type the barcode number instead.', ar: 'تعذّر فتح الكاميرا. اسمح بالوصول إلى الكاميرا، أو أغلق هذه النافذة واكتب رقم الباركود.' },
+    cancel: { en: 'Cancel', ar: 'إلغاء' },
+    bcLooking: { en: function (c) { return '⏳ Looking up ' + c + '…'; }, ar: function (c) { return '⏳ جارٍ البحث عن ' + c + '…'; } },
+    bcNotFound: { en: function (c) { return 'Barcode ' + c + ' isn\'t in the Open Food Facts database yet. Take a photo of the ingredient list instead:'; }, ar: function (c) { return 'الباركود ' + c + ' غير موجود في قاعدة بيانات Open Food Facts بعد. صوّر قائمة المكوّنات بدلاً من ذلك:'; } },
+    bcNoData: { en: 'This product is in the database, but without its ingredients. Take a photo of the ingredient list instead:', ar: 'هذا المنتج موجود في قاعدة البيانات لكن بدون مكوّناته. صوّر قائمة المكوّنات بدلاً من ذلك:' },
+    bcBad: { en: 'Enter the 8–14 digit number printed under the barcode.', ar: 'أدخل الرقم المطبوع أسفل الباركود (من 8 إلى 14 خانة).' },
+    offSource: { en: 'From Open Food Facts, a free community database. Products change, so compare with the package in your hand.', ar: 'من Open Food Facts، قاعدة بيانات مجتمعية مجانية. المنتجات تتغير، فقارن مع العبوة التي بين يديك.' },
+    offView: { en: 'View product', ar: 'عرض المنتج' },
+    offIngredients: { en: 'Ingredients listed', ar: 'المكوّنات المذكورة' },
+    offTag: { en: 'product data', ar: 'بيانات المنتج' },
+    scanTake: { en: '📷 Photo of ingredients (AI)', ar: '📷 صورة المكوّنات (ذكاء اصطناعي)' },
     scanChoose: { en: '🖼️ Choose photo', ar: '🖼️ اختر صورة' },
-    scanPrivacy: { en: 'The photo goes to Google Gemini only when you scan, using the same free key as the AI chef.', ar: 'تُرسل الصورة إلى Google Gemini فقط عند المسح، باستخدام مفتاح Gemini المجاني نفسه الخاص بالشيف الذكي.' },
+    scanPrivacy: { en: 'Barcodes are looked up in Open Food Facts, a free food database. Photos go to Google Gemini only when you scan one, using the AI chef\'s free key.', ar: 'يُبحث عن الباركود في Open Food Facts، وهي قاعدة بيانات غذائية مجانية. تُرسل الصور إلى Google Gemini فقط عند مسحها، باستخدام مفتاح الشيف الذكي المجاني.' },
+    cardTitle: { en: '🪪 Allergy card', ar: '🪪 بطاقة الحساسية' },
+    cardIntro: { en: 'Show this to restaurant staff, or send it when you order. It always shows English and Arabic together.', ar: 'اعرضها على موظفي المطعم أو أرسلها عند الطلب. تظهر دائماً بالإنجليزية والعربية معاً.' },
+    cardPick: { en: 'Pick your allergens at the top to fill in the card.', ar: 'اختر الحساسية من الأعلى لتعبئة البطاقة.' },
+    cardName: { en: 'Name (optional)', ar: 'الاسم (اختياري)' },
+    cardSevere: { en: 'Severe: even traces make me ill', ar: 'شديدة: حتى الكميات الصغيرة تضرّني' },
+    cardEpi: { en: 'I carry an epinephrine auto-injector', ar: 'أحمل حقنة إبينفرين (أدرينالين)' },
+    cardShare: { en: '📤 Share', ar: '📤 مشاركة' },
+    cardSave: { en: '⬇️ Save image', ar: '⬇️ حفظ كصورة' },
+    cardCopy: { en: '📋 Copy text', ar: '📋 نسخ النص' },
+    cardCopied: { en: 'Copied!', ar: 'تم النسخ!' },
     scanNeedKey: { en: 'The scanner needs your free Gemini key. Add it in the AI Chef tab first:', ar: 'يحتاج الماسح إلى مفتاح Gemini المجاني. أضفه أولاً في تبويب الشيف الذكي:' },
     scanOpenAi: { en: 'Open AI Chef', ar: 'افتح الشيف الذكي' },
     scanReading: { en: '⏳ Reading the label…', ar: '⏳ جارٍ قراءة الملصق…' },
@@ -678,7 +730,7 @@
       swaps: [{ n: 'corn tortillas', s: 'corn tortillas', a: [], tip: 'Warm in a dry skillet so they don\'t crack. Choose 100% corn.',
         ar: { n: 'تورتيلا الذرة', s: 'تورتيلا الذرة', tip: 'سخّنها في مقلاة جافة حتى لا تتشقق. اختر المصنوعة من الذرة 100%.' } }] },
     croutons: { n: 'croutons', s: 'croutons', a: ['wheat'], m: ['milk'], k: ['croutons'],
-      ar: { n: 'مكعبات خبز محمص (كروتون)', s: 'الكروتون', k: ['كروتون', 'خبز محمص', 'خبز مقلي'] },
+      ar: { n: 'مكعبات خبز محمص (كروتون)', s: 'الكروتون', k: ['كروتون'] },
       swaps: [{ n: 'crispy roasted chickpeas', s: 'roasted chickpeas', a: [], tip: 'Roast drained chickpeas with oil and salt at 425°F (220°C) for 20–25 min.',
         ar: { n: 'حمص محمص مقرمش', s: 'الحمص المحمص', tip: 'حمّص الحمص المصفّى مع الزيت والملح على 220°م لمدة 20–25 دقيقة.' } }] },
     soy_sauce: { n: 'soy sauce', s: 'soy sauce', a: ['soy', 'wheat'], k: ['soy sauce', 'shoyu', 'teriyaki', 'teriyaki sauce'],
@@ -763,10 +815,22 @@
       ar: { n: 'رقائق الشوكولاتة', s: 'رقائق الشوكولاتة', k: ['رقائق الشوكولاتة', 'شوكولاتة', 'شوكولاته', 'شوكولاتة بالحليب', 'قطع الشوكولاتة'] },
       swaps: [{ n: 'top-allergen-free chocolate chips', s: 'allergy-friendly chocolate chips', a: [], tip: 'Several brands are free of all major allergens.',
         ar: { n: 'رقائق شوكولاتة خالية من مسببات الحساسية الرئيسية', s: 'رقائق الشوكولاتة الآمنة', tip: 'عدة أنواع خالية من كل مسببات الحساسية الرئيسية.' } }] },
+    pita_chips: { n: 'pita chips', s: 'pita chips', a: ['wheat'], m: ['sesame'], k: ['pita chips'],
+      ar: { n: 'خبز عربي محمص', s: 'الخبز المحمص', k: ['خبز محمص', 'خبز مقلي', 'رقائق الخبز'] },
+      swaps: [
+        { n: 'gluten-free bread, toasted into chips', s: 'gluten-free bread chips', a: [], tip: 'Cut into squares, brush with oil and bake at 400°F (200°C) for 8–10 min.',
+          ar: { n: 'خبز خالٍ من الغلوتين محمص', s: 'الخبز الخالي من الغلوتين المحمص', tip: 'قطّعه مربعات وادهنه بالزيت واخبزه على 200°م لمدة 8–10 دقائق.' } },
+        { n: 'crispy roasted chickpeas', s: 'roasted chickpeas', a: [], tip: 'Roast drained chickpeas with oil and salt at 425°F (220°C) for 20–25 min.',
+          ar: { n: 'حمص محمص مقرمش', s: 'الحمص المحمص', tip: 'حمّص الحمص المصفّى مع الزيت والملح على 220°م لمدة 20–25 دقيقة.' } }
+      ] },
+    stock_cube: { n: 'stock cube', s: 'stock cube', a: [], m: ['milk', 'wheat', 'soy'], k: ['stock cube', 'stock cubes', 'bouillon', 'bouillon cube', 'maggi'],
+      ar: { n: 'مكعب مرق', s: 'مكعب المرق', k: ['مكعب مرق', 'مكعبات مرق', 'ماجي'] }, swaps: [] },
+    spice_mix: { n: 'ready-made spice mix', s: 'spice mix', a: [], m: ['wheat', 'sesame', 'peanut'], k: ['spice mix', 'seasoning mix', 'seven spice'],
+      ar: { n: 'خلطة بهارات جاهزة', s: 'البهارات', k: ['بهارات', 'خلطة بهارات', 'بهارات مشكلة', 'سبع بهارات'] }, swaps: [] },
     marinara: { n: 'marinara sauce', s: 'marinara', a: [], m: ['milk'], k: ['marinara', 'pasta sauce', 'tomato sauce'],
       ar: { n: 'صلصة مارينارا', s: 'صلصة المارينارا', k: ['مارينارا', 'صلصة باستا'] }, swaps: [] },
-    broth: { n: 'vegetable broth', s: 'broth', a: [], m: ['soy', 'wheat'], k: ['broth', 'stock', 'bouillon'],
-      ar: { n: 'مرق خضار', s: 'المرق', k: ['مرق', 'مرقة', 'مكعبات مرق', 'ماجي'] }, swaps: [] },
+    broth: { n: 'vegetable broth', s: 'broth', a: [], m: ['soy', 'wheat'], k: ['broth', 'stock'],
+      ar: { n: 'مرق خضار', s: 'المرق', k: ['مرق', 'مرقة'] }, swaps: [] },
     rice_noodles: { n: 'flat rice noodles', s: 'noodles', a: [], m: ['wheat'], k: ['rice noodles'],
       ar: { n: 'نودلز أرز عريضة', s: 'النودلز', k: ['نودلز الأرز', 'شعيرية الأرز'] }, swaps: [] }
   };
@@ -1104,7 +1168,120 @@
       ar: { t: 'شوربة الطماطم الكريمية', time: '35 دقيقة', serves: '4',
         steps: ['ذوّب {butter} في قدر على نار متوسطة، وقلّب البصل حتى يذبل، 6–8 دقائق. أضف الثوم دقيقة واحدة.',
                 'أضف الطماطم و{broth} والسكر، واتركها تغلي بهدوء 20 دقيقة.',
-                'اخلطها حتى تصبح ناعمة، ثم أضف {cream}. تبّل بالملح والفلفل والريحان المقطّع.'] } }
+                'اخلطها حتى تصبح ناعمة، ثم أضف {cream}. تبّل بالملح والفلفل والريحان المقطّع.'] } },
+    { id: 'kabsa', t: 'Chicken Kabsa', e: '🍛', c: 'Mains', time: '1 hr 15 min', serves: '6',
+      ing: [['3 tbsp', 'ghee or butter', 'butter', '3 ملاعق كبيرة', 'سمن أو زبدة'], ['1 (3 lb)', 'whole chicken, cut into 8 pieces', null, '1 (1.3 كغ)', 'دجاجة كاملة مقطعة 8 قطع'],
+            ['2', 'onions, chopped', null, '2', 'بصل مفروم'], ['4 cloves', 'garlic, minced', null, '4 فصوص', 'ثوم مفروم'],
+            ['2', 'tomatoes, chopped', null, '2', 'طماطم مقطعة'], ['2 tbsp', 'tomato paste', null, '2 ملعقة كبيرة', 'معجون طماطم'],
+            ['2 tbsp', 'kabsa spice mix', 'spice_mix', '2 ملعقة كبيرة', 'بهارات كبسة'], ['2', 'dried limes (loomi), pierced', null, '2', 'لومي (ليمون أسود) مثقوب'],
+            ['1', 'stock cube', 'stock_cube', '1', 'مكعب مرق'], ['3 cups', 'basmati rice, rinsed and soaked 20 min', null, '3 أكواب', 'أرز بسمتي مغسول ومنقوع 20 دقيقة'],
+            ['1', 'carrot, grated', null, '1', 'جزرة مبشورة'], ['¼ cup', 'raisins', null, '¼ كوب', 'زبيب'],
+            ['¼ cup', 'toasted almonds, to garnish', 'walnuts', '¼ كوب', 'لوز محمص للتزيين'], ['', 'salt', null, '', 'ملح']],
+      steps: ['Melt the {butter} in a large pot over medium-high heat. Brown the chicken pieces on all sides, then set aside.',
+              'In the same pot, cook the onions until golden, 8–10 minutes. Add the garlic, tomatoes, tomato paste and {spice_mix} and cook 3 minutes.',
+              'Return the chicken, add the dried limes, the {stock_cube} and 5 cups of water, season with salt, and simmer covered 35–40 minutes until the chicken is cooked through.',
+              'Lift out the chicken. Measure 4½ cups of the cooking liquid (top up with water if needed), then stir in the drained rice, carrot and raisins. Bring to a boil, cover and cook on low 20 minutes.',
+              'Meanwhile, brown the chicken under the grill for a few minutes. Serve the rice on a large platter, topped with the chicken and {walnuts}.'],
+      ar: { t: 'كبسة دجاج', time: 'ساعة و15 دقيقة', serves: '6',
+        steps: ['ذوّب {butter} في قدر كبير على نار متوسطة إلى عالية، وحمّر قطع الدجاج من جميع الجهات، ثم ارفعها.',
+                'في القدر نفسه، قلّب البصل حتى يذهبّ، 8–10 دقائق. أضف الثوم والطماطم ومعجون الطماطم و{spice_mix} وقلّب 3 دقائق.',
+                'أعد الدجاج، وأضف اللومي و{stock_cube} و5 أكواب ماء، وتبّل بالملح، واتركه يغلي بهدوء مغطى 35–40 دقيقة حتى ينضج الدجاج تماماً.',
+                'ارفع الدجاج. قِس 4½ أكواب من ماء الطبخ (أكمل بالماء إن لزم)، وأضف الأرز المصفّى والجزر والزبيب. اتركه يغلي، ثم غطّه واطهه على نار هادئة 20 دقيقة.',
+                'في الأثناء، حمّر الدجاج تحت الشواية بضع دقائق. قدّم الأرز في صينية كبيرة وفوقه الدجاج و{walnuts}.'] } },
+    { id: 'maqluba', t: 'Maqluba', e: '🍆', c: 'Mains', time: '1 hr 30 min', serves: '6',
+      ing: [['2', 'eggplants, sliced into rounds', null, '2', 'باذنجان مقطع شرائح دائرية'], ['1 head', 'cauliflower, in florets', null, '1 رأس', 'قرنبيط مقطع زهرات'],
+            ['2', 'potatoes, sliced', null, '2', 'بطاطس مقطعة شرائح'], ['', 'oil for frying', null, '', 'زيت للقلي'],
+            ['2 lb', 'chicken pieces (or lamb)', null, '900 غ', 'قطع دجاج (أو لحم غنم)'], ['1', 'onion, quartered', null, '1', 'بصلة مقطعة أرباعاً'],
+            ['1 tbsp', 'maqluba or seven-spice mix', 'spice_mix', '1 ملعقة كبيرة', 'بهارات مقلوبة أو سبع بهارات'], ['1', 'stock cube', 'stock_cube', '1', 'مكعب مرق'],
+            ['3 cups', 'long-grain rice, rinsed and soaked 30 min', null, '3 أكواب', 'أرز طويل الحبة مغسول ومنقوع 30 دقيقة'], ['1 tsp', 'turmeric', null, '1 ملعقة صغيرة', 'كركم'],
+            ['2', 'tomatoes, sliced', null, '2', 'طماطم مقطعة شرائح'], ['¼ cup', 'toasted pine nuts', 'pine_nuts', '¼ كوب', 'صنوبر محمص'],
+            ['', 'plain yogurt, to serve', 'yogurt', '', 'زبادي سادة للتقديم']],
+      steps: ['Simmer the chicken with the onion, half the {spice_mix}, the {stock_cube} and 6 cups of water for 40 minutes. Keep the broth.',
+              'Meanwhile, fry (or roast) the eggplant, cauliflower and potatoes in oil until golden. Drain on paper towels.',
+              'In a large pot, layer the tomato slices, then the chicken, then the fried vegetables.',
+              'Mix the drained rice with the turmeric and the rest of the {spice_mix} and spread it on top. Pour in enough hot broth to cover the rice by 1 inch (2.5 cm).',
+              'Cover and cook on low 35–40 minutes. Rest 10 minutes, then flip the pot onto a large tray. Top with {pine_nuts} and serve with {yogurt}.'],
+      ar: { t: 'مقلوبة', time: 'ساعة و30 دقيقة', serves: '6',
+        steps: ['اسلق الدجاج مع البصل ونصف كمية {spice_mix} و{stock_cube} و6 أكواب ماء لمدة 40 دقيقة، واحتفظ بالمرق.',
+                'في الأثناء، اقلِ (أو اشوِ) الباذنجان والقرنبيط والبطاطس في الزيت حتى تذهبّ، ثم صفّها على ورق المطبخ.',
+                'في قدر كبير، رصّ شرائح الطماطم، ثم الدجاج، ثم الخضار المقلية.',
+                'اخلط الأرز المصفّى مع الكركم وباقي {spice_mix} ووزّعه فوق الطبقات. اسكب من المرق الساخن ما يغطي الأرز بنحو 2.5 سم.',
+                'غطِّ القدر واطهه على نار هادئة 35–40 دقيقة. اتركه 10 دقائق ثم اقلبه في صينية كبيرة. وزّع فوقه {pine_nuts} وقدّمه مع {yogurt}.'] } },
+    { id: 'mujaddara', t: 'Mujaddara (Lentils & Rice)', e: '🍲', c: 'Mains', time: '50 min', serves: '4',
+      ing: [['1 cup', 'brown or green lentils, rinsed', null, '1 كوب', 'عدس بني أو أخضر مغسول'], ['1 cup', 'long-grain rice, rinsed', null, '1 كوب', 'أرز طويل الحبة مغسول'],
+            ['3', 'large onions, thinly sliced', null, '3', 'بصل كبير مقطع شرائح رفيعة'], ['½ cup', 'olive oil', null, '½ كوب', 'زيت زيتون'],
+            ['2 tsp', 'ground cumin', null, '2 ملعقة صغيرة', 'كمون مطحون'], ['1½ tsp', 'salt', null, '1½ ملعقة صغيرة', 'ملح'],
+            ['', 'plain yogurt, to serve', 'yogurt', '', 'زبادي سادة للتقديم']],
+      steps: ['Simmer the lentils in 4 cups of water for 15 minutes, until just tender.',
+              'Meanwhile, fry the onions in the olive oil over medium heat, stirring, until deep brown and crisp, 20–25 minutes. Set half aside for the top.',
+              'Add the rice, cumin, salt and the other half of the onions (with their oil) to the lentils. Add water if needed so it covers everything by ½ inch (1 cm).',
+              'Cover and cook on low 20 minutes, until the rice is tender. Rest 10 minutes.',
+              'Serve topped with the crispy onions, with {yogurt} or a fresh salad.'],
+      notes: { wheat: 'Some families make mujaddara with bulgur instead of rice. Bulgur is wheat, so stick to rice.' },
+      ar: { t: 'مجدرة', time: '50 دقيقة', serves: '4',
+        steps: ['اسلق العدس في 4 أكواب ماء لمدة 15 دقيقة حتى يطرى قليلاً.',
+                'في الأثناء، اقلِ البصل في زيت الزيتون على نار متوسطة مع التقليب حتى يصبح بنياً غامقاً ومقرمشاً، 20–25 دقيقة. احتفظ بنصفه للتزيين.',
+                'أضف الأرز والكمون والملح والنصف الآخر من البصل (مع زيته) إلى العدس. أضف ماءً إن لزم ليغطي المكوّنات بنحو 1 سم.',
+                'غطِّ القدر واطهه على نار هادئة 20 دقيقة حتى ينضج الأرز، ثم اتركه 10 دقائق.',
+                'قدّمه مع البصل المقرمش فوقه، ومع {yogurt} أو سلطة طازجة.'],
+        notes: { wheat: 'بعض العائلات تحضّر المجدرة بالبرغل بدل الأرز. البرغل من القمح، فالتزم بالأرز.' } } },
+    { id: 'falafel', t: 'Falafel', e: '🧆', c: 'Snacks', time: '30 min + overnight soak', serves: 'about 24',
+      ing: [['2 cups', 'dried chickpeas, soaked overnight (not canned)', null, '2 كوب', 'حمص حب مجفف منقوع ليلة كاملة (ليس معلّباً)'], ['1', 'onion, roughly chopped', null, '1', 'بصلة مقطعة قطعاً كبيرة'],
+            ['4 cloves', 'garlic', null, '4 فصوص', 'ثوم'], ['1 cup', 'parsley and cilantro leaves', null, '1 كوب', 'أوراق بقدونس وكزبرة'],
+            ['2 tsp', 'ground cumin', null, '2 ملعقة صغيرة', 'كمون مطحون'], ['1 tsp', 'ground coriander', null, '1 ملعقة صغيرة', 'كزبرة مطحونة'],
+            ['1½ tsp', 'salt', null, '1½ ملعقة صغيرة', 'ملح'], ['½ tsp', 'baking soda', null, '½ ملعقة صغيرة', 'بيكربونات الصوديوم'],
+            ['1 tbsp', 'sesame seeds (optional)', 'sesame_seeds', '1 ملعقة كبيرة', 'بذور سمسم (اختياري)'], ['', 'oil for frying', null, '', 'زيت للقلي'],
+            ['¼ cup', 'tahini, for the sauce', 'tahini', '¼ كوب', 'طحينة للصلصة'], ['', 'pita bread, to serve', 'bread', '', 'خبز عربي للتقديم']],
+      steps: ['Drain the soaked chickpeas well and pat dry.',
+              'Pulse the chickpeas, onion, garlic, herbs, cumin, coriander and salt in a food processor until finely ground but not a paste.',
+              'Stir in the baking soda and {sesame_seeds}. Chill the mixture 30 minutes.',
+              'Shape into small patties and fry in 350°F (175°C) oil for 3–4 minutes until deep golden. Drain.',
+              'Whisk the {tahini} with 4 tbsp water, the juice of a lemon and a pinch of salt. Serve the falafel in {bread} with the sauce and salad.'],
+      notes: { wheat: 'Falafel is naturally wheat-free, but restaurants often add flour and fry it in shared oil. Ask before ordering.' },
+      ar: { t: 'فلافل', time: '30 دقيقة + نقع ليلة', serves: 'نحو 24 قطعة',
+        steps: ['صفِّ الحمص المنقوع جيداً وجففه.',
+                'افرم الحمص والبصل والثوم والأعشاب والكمون والكزبرة والملح في محضّرة الطعام حتى يصبح ناعماً دون أن يتحول إلى عجينة.',
+                'أضف البيكربونات و{sesame_seeds} وقلّب، ثم برّد الخليط 30 دقيقة.',
+                'شكّل أقراصاً صغيرة واقلها في زيت حرارته 175°م لمدة 3–4 دقائق حتى يصبح لونها ذهبياً غامقاً، ثم صفّها.',
+                'اخفق {tahini} مع 4 ملاعق كبيرة ماء وعصير ليمونة ورشة ملح. قدّم الفلافل في {bread} مع الصلصة والسلطة.'],
+        notes: { wheat: 'الفلافل خالية من القمح أصلاً، لكن المطاعم كثيراً ما تضيف الدقيق وتقليها في زيت مشترك. اسأل قبل الطلب.' } } },
+    { id: 'fattoush', t: 'Fattoush Salad', e: '🥬', c: 'Salads & Soups', time: '20 min', serves: '4',
+      ing: [['2', 'pita breads', 'pita_chips', '2', 'رغيف خبز عربي'], ['1 head', 'romaine, chopped', null, '1 رأس', 'خس روماني مقطع'],
+            ['3', 'tomatoes, diced', null, '3', 'طماطم مقطعة مكعبات'], ['2', 'cucumbers, diced', null, '2', 'خيار مقطع مكعبات'],
+            ['5', 'radishes, sliced', null, '5', 'فجل مقطع شرائح'], ['3', 'green onions, sliced', null, '3', 'أعواد بصل أخضر مقطعة'],
+            ['1 cup', 'parsley and mint leaves', null, '1 كوب', 'أوراق بقدونس ونعناع'], ['⅓ cup', 'olive oil', null, '⅓ كوب', 'زيت زيتون'],
+            ['3 tbsp', 'lemon juice', null, '3 ملاعق كبيرة', 'عصير ليمون'], ['1 tbsp', 'pomegranate molasses', null, '1 ملعقة كبيرة', 'دبس الرمان'],
+            ['2 tsp', 'sumac', null, '2 ملعقة صغيرة', 'سماق'], ['1 clove', 'garlic, crushed', null, '1 فص', 'ثوم مهروس'], ['', 'salt', null, '', 'ملح']],
+      steps: ['Make the {pita_chips}: tear the bread into bite-size pieces, brush with oil and bake at 400°F (200°C) for 8–10 minutes until crisp.',
+              'Whisk the olive oil, lemon juice, pomegranate molasses, sumac, garlic and a pinch of salt.',
+              'Toss the vegetables and herbs with the dressing.',
+              'Add the {pita_chips} just before serving so they stay crunchy, and sprinkle with extra sumac.'],
+      ar: { t: 'سلطة فتوش', time: '20 دقيقة', serves: '4',
+        steps: ['حضّر {pita_chips}: قطّع الخبز قطعاً صغيرة، وادهنها بالزيت، واخبزها على 200°م لمدة 8–10 دقائق حتى تتحمّص.',
+                'اخفق زيت الزيتون وعصير الليمون ودبس الرمان والسماق والثوم ورشة ملح.',
+                'اخلط الخضار والأعشاب مع الصلصة.',
+                'أضف {pita_chips} قبل التقديم مباشرة ليبقى مقرمشاً، ورشّ مزيداً من السماق.'] } },
+    { id: 'maamoul', t: 'Date Ma\'amoul', e: '🥮', c: 'Baking', time: '1 hr 15 min + resting', serves: '24 pieces',
+      ing: [['2 cups', 'fine semolina', 'semolina', '2 كوب', 'سميد ناعم'], ['½ cup', 'all-purpose flour', 'flour', '½ كوب', 'دقيق متعدد الاستعمالات'],
+            ['¾ cup', 'melted ghee or butter', 'butter', '¾ كوب', 'سمن أو زبدة مذابة'], ['¼ cup', 'sugar', null, '¼ كوب', 'سكر'],
+            ['1 tsp', 'mahlab (optional)', null, '1 ملعقة صغيرة', 'محلب (اختياري)'], ['2 tbsp', 'rose or orange blossom water', null, '2 ملعقة كبيرة', 'ماء ورد أو ماء زهر'],
+            ['¼ cup', 'milk', 'milk', '¼ كوب', 'حليب'], ['1½ cups', 'date paste', null, '1½ كوب', 'عجوة (معجون التمر)'],
+            ['½ tsp', 'cinnamon', null, '½ ملعقة صغيرة', 'قرفة'], ['', 'powdered sugar, to dust', null, '', 'سكر بودرة للتزيين']],
+      steps: ['Rub the {semolina} and {flour} with the melted {butter} until every grain is coated. Cover and rest at least 2 hours (or overnight).',
+              'Mix in the sugar, mahlab, rose water and {milk}, and knead briefly into a soft dough.',
+              'Knead the date paste with the cinnamon and roll it into small balls.',
+              'Wrap each date ball in a walnut-size piece of dough and press it into a ma\'amoul mold (or shape by hand and mark with a fork). Place on a baking sheet.',
+              'Bake at 375°F (190°C) for 15–20 minutes until the bottoms are golden. Cool completely, then dust with powdered sugar.'],
+      notes: { wheat: 'Gluten-free ma\'amoul dough is crumbly. Press it gently and chill the shaped pieces 15 minutes before baking.',
+               treenut: 'Store-bought ma\'amoul is often filled with walnuts or pistachios, or made on shared lines. This date version is nut-free as long as your date paste and molds are.' },
+      ar: { t: 'معمول بالتمر', time: 'ساعة و15 دقيقة + وقت الراحة', serves: '24 قطعة',
+        steps: ['افرك {semolina} و{flour} مع {butter} المذابة حتى تتغلّف كل الحبيبات. غطّه واتركه ساعتين على الأقل (أو ليلة كاملة).',
+                'أضف السكر والمحلب وماء الورد و{milk}، واعجن قليلاً حتى تتكوّن عجينة طرية.',
+                'اعجن العجوة مع القرفة وشكّلها كرات صغيرة.',
+                'غلّف كل كرة عجوة بقطعة عجين صغيرة، واضغطها في قالب المعمول (أو شكّلها باليد وزيّنها بالشوكة). رتّبها في صينية.',
+                'اخبزها على 190°م لمدة 15–20 دقيقة حتى يذهبّ أسفلها. اتركها تبرد تماماً ثم رشّ عليها السكر البودرة.'],
+        notes: { wheat: 'عجينة المعمول الخالية من الغلوتين هشّة. اضغطها بلطف وبرّد القطع المشكّلة 15 دقيقة قبل الخَبز.',
+                 treenut: 'المعمول الجاهز كثيراً ما يُحشى بالجوز أو الفستق أو يُصنع على خطوط إنتاج مشتركة. هذه النسخة بالتمر خالية من المكسرات ما دامت العجوة والقوالب كذلك.' } } }
   ];
 
   // Words the label checker treats specially: matched before the allergen words so
@@ -1214,8 +1391,12 @@
     document.getElementById('clear-btn').textContent = t('clear');
     document.getElementById('support-link').textContent = t('support');
     document.getElementById('footer-text').textContent = t('footer');
+    var pl = document.getElementById('privacy-link');
+    pl.textContent = t('privacyLink'); pl.href = isAr() ? 'privacy.html#ar' : 'privacy.html';
+    document.getElementById('bc-title').textContent = t('bcCamTitle');
+    document.getElementById('bc-cancel').textContent = t('cancel');
     document.getElementById('tabs').innerHTML =
-      [['recipes', '📖', 'tabRecipes'], ['swaps', '🔁', 'tabSwaps'], ['check', '📷', 'tabCheck'], ['ai', '🤖', 'tabAi']].map(function (x) {
+      [['recipes', '📖', 'tabRecipes'], ['swaps', '🔁', 'tabSwaps'], ['check', '📷', 'tabCheck'], ['card', '🪪', 'tabCard'], ['ai', '🤖', 'tabAi']].map(function (x) {
         return '<a href="#' + x[0] + '" data-tab="' + x[0] + '"><span>' + x[1] + '</span>' + t(x[2]) + '</a>';
       }).join('');
     document.getElementById('key-modal-body').innerHTML = t('keyModal') +
@@ -1477,8 +1658,11 @@
       '<h2>' + t('checkTitle') + '</h2>' +
       '<div class="card scan-card"><h3>📷 ' + t('scanTitle') + '</h3>' +
         '<p class="small" style="margin:0">' + t('scanIntro') + '</p>' +
-        '<div class="row" style="margin:10px 0 4px"><label class="btn ai" for="scan-cam">' + t('scanTake') + '</label>' +
+        '<div class="row" style="margin:10px 0 4px"><button class="btn" id="bc-start">' + t('bcStart') + '</button>' +
+        '<label class="btn ai" for="scan-cam">' + t('scanTake') + '</label>' +
         '<label class="btn ghost" for="scan-file">' + t('scanChoose') + '</label></div>' +
+        '<form class="bc-form" id="bc-form"><input id="bc-input" inputmode="numeric" autocomplete="off" dir="ltr" placeholder="' + esc(t('bcTypeLabel')) + '" aria-label="' + esc(t('bcTypeLabel')) + '" />' +
+        '<button class="btn ghost small" type="submit">' + t('bcLookup') + '</button></form>' +
         '<input type="file" id="scan-cam" accept="image/*" capture="environment" hidden />' +
         '<input type="file" id="scan-file" accept="image/*" hidden />' +
         '<div class="small muted">' + t('scanPrivacy') + '</div>' +
@@ -1498,6 +1682,13 @@
     ['scan-cam', 'scan-file'].forEach(function (id) {
       var inp = document.getElementById(id);
       inp.addEventListener('change', function () { var f = inp.files && inp.files[0]; inp.value = ''; scanImage(f); });
+    });
+    document.getElementById('bc-start').addEventListener('click', openBarcode);
+    document.getElementById('bc-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var code = document.getElementById('bc-input').value.replace(/\D/g, '');
+      if (code.length < 8 || code.length > 14) { lastScan = { error: t('bcBad'), plain: true }; drawScan(); return; }
+      lookupBarcode(code);
     });
     drawScan();
     if (draft.trim()) runCheck();
@@ -1747,11 +1938,11 @@
   function scanImage(file) {
     if (!file) return;
     if (!apiKey()) { lastScan = { needKey: true }; drawScan(); return; }
-    lastScan = { busy: true };
+    var job = lastScan = { busy: true };
     drawScan();
     shrinkImage(file).then(function (dataUrl) {
-      lastScan.img = dataUrl;
-      drawScan();
+      job.img = dataUrl;
+      if (job === lastScan) drawScan();
       return fetch(GEMINI_BASE + '/models/' + encodeURIComponent(GEMINI_MODEL) + ':generateContent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey() },
@@ -1773,13 +1964,13 @@
         return JSON.parse(text);
       });
     }).then(function (data) {
-      lastScan.busy = false;
-      lastScan.data = cleanScan(data);
-      drawScan();
+      job.busy = false;
+      job.data = cleanScan(data);
+      if (job === lastScan) drawScan();
     }).catch(function (err) {
-      lastScan.busy = false;
-      lastScan.error = err instanceof TypeError ? t('errNetwork') : err instanceof SyntaxError ? t('errEmpty') : err.message;
-      drawScan();
+      job.busy = false;
+      job.error = err instanceof TypeError ? t('errNetwork') : err instanceof SyntaxError ? t('errEmpty') : err.message;
+      if (job === lastScan) drawScan();
     });
   }
 
@@ -1813,11 +2004,17 @@
       box.innerHTML = '<div class="note danger">' + t('scanNeedKey') + ' <a href="#ai">' + t('scanOpenAi') + '</a></div>';
       return;
     }
-    var html = s.img ? '<img class="scan-photo" src="' + s.img + '" alt="" />' : '';
-    if (s.busy) { box.innerHTML = html + '<div class="note ai">' + t('scanReading') + '</div>'; return; }
-    if (s.error) { box.innerHTML = html + '<div class="note danger">⚠️ ' + t('scanFail') + esc(s.error) + '</div>'; return; }
+    var html = s.img ? '<img class="scan-photo" src="' + esc(s.img) + '" alt="" />' : '';
+    var photoBtns = '<div class="row" style="margin:8px 0 0"><label class="btn ai small" for="scan-cam">' + t('scanTake') + '</label>' +
+      '<label class="btn ghost small" for="scan-file">' + t('scanChoose') + '</label></div>';
+    if (s.busy) { box.innerHTML = html + '<div class="note ai">' + (s.source === 'off' ? esc(t('bcLooking', s.code)) : t('scanReading')) + '</div>'; return; }
+    if (s.error) { box.innerHTML = html + '<div class="note danger">⚠️ ' + (s.plain ? '' : t('scanFail')) + esc(s.error) + '</div>'; return; }
+    if (s.notFound) { box.innerHTML = '<div class="note">' + esc(t('bcNotFound', s.code)) + photoBtns + '</div>'; return; }
     var d = s.data;
-    if (!d.readable) { box.innerHTML = html + '<div class="note danger">' + t('scanUnreadable') + '</div>'; return; }
+    if (!d.readable) {
+      box.innerHTML = html + '<div class="note danger">' + (s.source === 'off' ? t('bcNoData') + photoBtns : t('scanUnreadable')) + '</div>';
+      return;
+    }
 
     var c = d.contains.map(function (x) { return x.allergen; });
     var m = d.may.map(function (x) { return x.allergen; });
@@ -1839,7 +2036,8 @@
       '<div style="margin-top:8px"><b>' + t('scanContains') + '</b>' + items(d.contains) + '</div>' +
       '<div style="margin-top:8px"><b>' + t('scanMayLabel') + '</b>' + items(d.may) + '</div>' +
       (d.notes ? '<div class="tip" style="margin-top:8px">ℹ️ ' + esc(d.notes) + '</div>' : '') +
-      '<details class="scan-text"><summary>' + t('scanIngredients') + '</summary><p dir="auto">' + esc(d.ingredients + (d.warnings ? '\n\n' + d.warnings : '')) + '</p></details>' +
+      (s.source === 'off' ? '<div class="tip" style="margin-top:8px">ℹ️ ' + t('offSource') + ' <a href="https://world.openfoodfacts.org/product/' + esc(s.code) + '" target="_blank" rel="noopener">' + t('offView') + ' ↗</a></div>' : '') +
+      '<details class="scan-text"><summary>' + t(s.source === 'off' ? 'offIngredients' : 'scanIngredients') + '</summary><p dir="auto">' + esc(d.ingredients + (d.warnings ? '\n\n' + d.warnings : '')) + '</p></details>' +
       '<div class="row">' +
         '<button class="btn ghost small" id="scan-to-check">' + t('scanToChecker') + '</button>' +
         (badC.length || badM.length ? '<button class="btn ai small" id="scan-alt">' + t('scanAlt') + '</button>' : '') +
@@ -1857,6 +2055,320 @@
       aiAutoSend = t('scanAltPrompt', d.product || t('scanThisProduct'));
       location.hash = '#ai';
     });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Barcode lookup: camera (native BarcodeDetector, or the bundled ZXing library on
+  // iPhone and other browsers without it), then Open Food Facts, a free database.
+  // ---------------------------------------------------------------------------
+  var OFF_MAP = { 'en:milk': 'milk', 'en:eggs': 'egg', 'en:peanuts': 'peanut', 'en:nuts': 'treenut', 'en:soybeans': 'soy', 'en:gluten': 'wheat',
+    'en:fish': 'fish', 'en:crustaceans': 'shellfish', 'en:molluscs': 'shellfish', 'en:sesame-seeds': 'sesame' };
+  var OFF_FIELDS = 'code,product_name,product_name_en,product_name_ar,brands,allergens_tags,traces_tags,ingredients_text,ingredients_text_en,ingredients_text_ar,image_front_small_url';
+  var bc = { stream: null, timer: null, reader: null, done: true };
+  var detectorPromise = null;
+
+  function loadZxing() {
+    return new Promise(function (resolve, reject) {
+      if (window.ZXing) return resolve({ native: false });
+      var sc = document.createElement('script');
+      sc.src = 'vendor/zxing.min.js';
+      sc.onload = function () { resolve({ native: false }); };
+      sc.onerror = function () { detectorPromise = null; reject(new Error('zxing')); };
+      document.head.appendChild(sc);
+    });
+  }
+  function getDetector() {
+    if (detectorPromise) return detectorPromise;
+    var wanted = ['ean_13', 'ean_8', 'upc_a', 'upc_e'];
+    detectorPromise = ('BarcodeDetector' in window && BarcodeDetector.getSupportedFormats
+      ? BarcodeDetector.getSupportedFormats().then(function (f) {
+          var ok = wanted.filter(function (x) { return f.indexOf(x) !== -1; });
+          return ok.indexOf('ean_13') !== -1 ? { native: true, detector: new BarcodeDetector({ formats: ok }) } : loadZxing();
+        }).catch(loadZxing)
+      : loadZxing());
+    return detectorPromise;
+  }
+
+  function bcStatus(msg) { document.getElementById('bc-status').textContent = msg; }
+  function openBarcode() {
+    var video = document.getElementById('bc-video');
+    document.getElementById('bc-modal').classList.add('open');
+    bc.done = false;
+    bcStatus(t('bcStarting'));
+    if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) { bcStatus(t('bcNoCam')); return; }
+    var constraints = { video: { facingMode: { ideal: 'environment' } }, audio: false };
+    getDetector().then(function (det) {
+      if (bc.done) return;
+      if (det.native) {
+        return navigator.mediaDevices.getUserMedia(constraints).then(function (stream) {
+          bc.stream = stream;
+          if (bc.done) { stopCamera(); return; }
+          video.srcObject = stream;
+          return video.play().then(function () { bcStatus(t('bcHint')); nativeLoop(det.detector); });
+        });
+      }
+      var hints = new Map();
+      hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [ZXing.BarcodeFormat.EAN_13, ZXing.BarcodeFormat.EAN_8, ZXing.BarcodeFormat.UPC_A, ZXing.BarcodeFormat.UPC_E]);
+      bc.reader = new ZXing.BrowserMultiFormatReader(hints, 150);
+      return bc.reader.decodeFromConstraints(constraints, video, function (result) {
+        if (result) gotBarcode(result.getText());
+      }).then(function () { if (bc.done) stopCamera(); else bcStatus(t('bcHint')); });
+    }).catch(function () { if (!bc.done) bcStatus(t('bcNoCam')); });
+  }
+  function nativeLoop(detector) {
+    if (bc.done) return;
+    var video = document.getElementById('bc-video');
+    detector.detect(video).then(function (codes) {
+      if (codes && codes.length) gotBarcode(codes[0].rawValue);
+      else bc.timer = setTimeout(function () { nativeLoop(detector); }, 200);
+    }).catch(function () { bc.timer = setTimeout(function () { nativeLoop(detector); }, 400); });
+  }
+  function stopCamera() {
+    clearTimeout(bc.timer);
+    if (bc.reader) { try { bc.reader.reset(); } catch (e) {} bc.reader = null; }
+    if (bc.stream) { bc.stream.getTracks().forEach(function (tr) { tr.stop(); }); bc.stream = null; }
+    var video = document.getElementById('bc-video');
+    if (video.srcObject) { video.srcObject.getTracks && video.srcObject.getTracks().forEach(function (tr) { tr.stop(); }); video.srcObject = null; }
+  }
+  function closeBarcode() {
+    bc.done = true;
+    stopCamera();
+    document.getElementById('bc-modal').classList.remove('open');
+  }
+  function gotBarcode(code) {
+    if (bc.done) return;
+    code = String(code || '').replace(/\D/g, '');
+    if (code.length < 8) return;
+    if (navigator.vibrate) navigator.vibrate(60);
+    closeBarcode();
+    var inp = document.getElementById('bc-input'); if (inp) inp.value = code;
+    lookupBarcode(code);
+  }
+  document.getElementById('bc-cancel').addEventListener('click', closeBarcode);
+  document.getElementById('bc-modal').addEventListener('click', function (e) { if (e.target === this) closeBarcode(); });
+  window.addEventListener('hashchange', function () { if (!bc.done) closeBarcode(); });
+
+  function lookupBarcode(code) {
+    var job = lastScan = { busy: true, source: 'off', code: code };
+    drawScan();
+    fetch('https://world.openfoodfacts.org/api/v2/product/' + encodeURIComponent(code) + '.json?fields=' + OFF_FIELDS)
+      .then(function (res) {
+        if (res.status === 404) return { status: 0 };
+        if (!res.ok) throw new Error('Open Food Facts ' + res.status);
+        return res.json();
+      })
+      .then(function (d) {
+        if (job !== lastScan) return;
+        job.busy = false;
+        var p = d && d.status !== 0 && d.product;
+        if (!p) { job.notFound = true; drawScan(); return; }
+        function tags(list) {
+          var out = [];
+          (list || []).forEach(function (tg) {
+            var id = OFF_MAP[tg];
+            if (id && !out.some(function (x) { return x.allergen === id; })) out.push({ allergen: id, evidence: tg.replace(/^[a-z]{2}:/, '').replace(/-/g, ' ') + ' · ' + t('offTag') });
+          });
+          return out;
+        }
+        var ingredients = (isAr() ? p.ingredients_text_ar || p.ingredients_text || p.ingredients_text_en : p.ingredients_text_en || p.ingredients_text || p.ingredients_text_ar) || '';
+        var name = (isAr() ? p.product_name_ar || p.product_name : p.product_name_en || p.product_name) || '';
+        var contains = tags(p.allergens_tags), may = tags(p.traces_tags);
+        job.img = p.image_front_small_url || '';
+        job.data = cleanScan({
+          readable: !!(ingredients.trim() || contains.length || may.length),
+          product: [name, p.brands].filter(Boolean).join(' · '),
+          ingredients_text: ingredients, warnings_text: '', notes: '',
+          contains: contains, may_contain: may
+        });
+        drawScan();
+      })
+      .catch(function (err) {
+        if (job !== lastScan) return;
+        job.busy = false;
+        job.error = err instanceof TypeError ? t('errNetwork') : err.message;
+        drawScan();
+      });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Allergy card: always English and Arabic together, for restaurants and travel.
+  // ---------------------------------------------------------------------------
+  var CARD_ITEMS = {
+    milk: { en: 'Milk and dairy (butter, ghee, cheese, cream, yogurt, whey)', ar: 'الحليب ومشتقاته (الزبدة، السمن، الجبن، الكريمة، الزبادي، اللبنة)' },
+    egg: { en: 'Eggs (including mayonnaise and egg-glazed bread)', ar: 'البيض (ويشمل المايونيز والمخبوزات المدهونة بالبيض)' },
+    peanut: { en: 'Peanuts (including peanut oil and satay sauce)', ar: 'الفول السوداني (ويشمل زيته وصلصة الساتيه)' },
+    treenut: { en: 'Tree nuts (almonds, cashews, walnuts, pistachios, pine nuts, hazelnuts)', ar: 'المكسرات (اللوز، الكاجو، الجوز، الفستق الحلبي، الصنوبر، البندق)' },
+    soy: { en: 'Soy (soy sauce, tofu, edamame, soy lecithin)', ar: 'الصويا (صلصة الصويا، التوفو، فول الصويا، ليسيثين الصويا)' },
+    wheat: { en: 'Wheat and gluten (bread, flour, pasta, bulgur, semolina, freekeh, soy sauce)', ar: 'القمح والغلوتين (الخبز، الدقيق، المعكرونة، البرغل، السميد، الفريكة، صلصة الصويا)' },
+    fish: { en: 'Fish (including fish sauce, anchovies and Worcestershire sauce)', ar: 'السمك (ويشمل صلصة السمك والأنشوفة وصلصة ورشستر)' },
+    shellfish: { en: 'Shellfish (shrimp, crab, lobster) and seafood stock', ar: 'القشريات (الروبيان، السلطعون، الاستاكوزا) ومرق المأكولات البحرية' },
+    sesame: { en: 'Sesame (tahini, sesame oil, sesame seeds, za\'atar, hummus)', ar: 'السمسم (الطحينة، زيت السمسم، بذور السمسم، الزعتر، الحمص بالطحينة)' }
+  };
+  var CARD_TEXT = {
+    en: { title: 'FOOD ALLERGY', name: 'Name', intro: 'I have a food allergy. My food must not contain:',
+      severe: 'Even small traces can make me seriously ill. Please use clean utensils, pans, oil and surfaces, and check sauces, stocks and spice mixes.',
+      mild: 'Please check all ingredients, including sauces, stocks and spice mixes.',
+      epi: 'I carry an epinephrine auto-injector. If I have a reaction, help me use it and call emergency services.',
+      thanks: 'Thank you!' },
+    ar: { title: 'حساسية من الطعام', name: 'الاسم', intro: 'لديّ حساسية من الطعام. يجب ألّا يحتوي طعامي على:',
+      severe: 'حتى الكميات الصغيرة جداً قد تسبب لي تفاعلاً خطيراً. أرجو استخدام أدوات وأوانٍ وزيت وأسطح نظيفة، والتأكد من الصلصات والمرق وخلطات البهارات.',
+      mild: 'أرجو التأكد من جميع المكوّنات، بما فيها الصلصات والمرق وخلطات البهارات.',
+      epi: 'أحمل حقنة إبينفرين (أدرينالين) ذاتية. إذا أصابني تفاعل تحسسي، ساعدوني في استخدامها واتصلوا بالإسعاف.',
+      thanks: 'شكراً لكم!' }
+  };
+  function cardCfg() {
+    var c = {};
+    try { c = JSON.parse(load('safeplate_card') || '{}') || {}; } catch (e) {}
+    return { name: c.name || '', severe: c.severe !== false, epi: !!c.epi };
+  }
+  // One language block of the card as plain parts, shared by the screen, the image and the text.
+  function cardParts(cfg, lg) {
+    var tx = CARD_TEXT[lg];
+    return {
+      title: tx.title,
+      name: cfg.name ? tx.name + ': ' + cfg.name : '',
+      intro: tx.intro,
+      items: sel.map(function (a) { return CARD_ITEMS[a][lg]; }),
+      care: cfg.severe ? tx.severe : tx.mild,
+      epi: cfg.epi ? tx.epi : '',
+      thanks: tx.thanks
+    };
+  }
+  function cardText(cfg) {
+    return ['en', 'ar'].map(function (lg) {
+      var c = cardParts(cfg, lg);
+      return ['⚠️ ' + c.title, c.name, c.intro].concat(c.items.map(function (i) { return '• ' + i; }), [c.care, c.epi, c.thanks]).filter(Boolean).join('\n');
+    }).join('\n\n— — —\n\n');
+  }
+  function cardBlockHtml(cfg, lg) {
+    var c = cardParts(cfg, lg);
+    return '<div class="ac-body" lang="' + lg + '" dir="' + (lg === 'ar' ? 'rtl' : 'ltr') + '">' +
+      (c.name ? '<p><b>' + esc(c.name) + '</b></p>' : '') +
+      '<p>' + esc(c.intro) + '</p><ul>' + c.items.map(function (i) { return '<li>' + esc(i) + '</li>'; }).join('') + '</ul>' +
+      '<p>' + esc(c.care) + '</p>' + (c.epi ? '<p><b>' + esc(c.epi) + '</b></p>' : '') + '<p>' + esc(c.thanks) + '</p></div>';
+  }
+
+  // Draws the card as a PNG so it can be saved or shared in chat apps.
+  function cardImage(cfg) {
+    var W = 1080, PAD = 64, FONT = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans Arabic", Tahoma, sans-serif';
+    var cv = document.createElement('canvas');
+    var ctx = cv.getContext('2d');
+    function wrap(text, font, maxW, rtl) {
+      ctx.font = font; ctx.direction = rtl ? 'rtl' : 'ltr';
+      var words = text.split(' '), lines = [], line = '';
+      words.forEach(function (w) {
+        var test = line ? line + ' ' + w : w;
+        if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = w; } else line = test;
+      });
+      if (line) lines.push(line);
+      return lines;
+    }
+    // Build a list of rows first so the canvas height fits the content.
+    var rows = [];
+    ['en', 'ar'].forEach(function (lg, idx) {
+      var rtl = lg === 'ar', c = cardParts(cfg, lg);
+      if (idx) rows.push({ sep: true, h: 48 });
+      function add(text, size, bold, indent) {
+        var font = (bold ? '700 ' : '400 ') + size + 'px ' + FONT;
+        wrap(text, font, W - PAD * 2 - (indent || 0), rtl).forEach(function (ln) { rows.push({ text: ln, font: font, rtl: rtl, indent: indent || 0, h: Math.round(size * 1.5) }); });
+        rows.push({ h: Math.round(size * 0.5) });
+      }
+      if (c.name) add(c.name, 40, true);
+      add(c.intro, 38, false);
+      c.items.forEach(function (i) { add('• ' + i, 38, true, 24); });
+      add(c.care, 34, false);
+      if (c.epi) add(c.epi, 34, true);
+      add(c.thanks, 34, false);
+    });
+    var HEAD = 140;
+    var H = HEAD + PAD + rows.reduce(function (sum, r) { return sum + r.h; }, 0) + 70;
+    cv.width = W; cv.height = H;
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#b91c1c'; ctx.fillRect(0, 0, W, HEAD);
+    ctx.lineWidth = 12; ctx.strokeStyle = '#b91c1c'; ctx.strokeRect(6, 6, W - 12, H - 12);
+    ctx.fillStyle = '#ffffff'; ctx.textBaseline = 'middle';
+    ctx.font = '800 50px ' + FONT; ctx.direction = 'ltr'; ctx.textAlign = 'left';
+    ctx.fillText('⚠ ' + CARD_TEXT.en.title, PAD, HEAD / 2);
+    ctx.direction = 'rtl'; ctx.textAlign = 'right';
+    ctx.fillText(CARD_TEXT.ar.title, W - PAD, HEAD / 2);
+    var y = HEAD + PAD;
+    ctx.textBaseline = 'top';
+    rows.forEach(function (r) {
+      if (r.sep) {
+        ctx.strokeStyle = '#d6cfc0'; ctx.lineWidth = 3; ctx.setLineDash([14, 10]);
+        ctx.beginPath(); ctx.moveTo(PAD, y + r.h / 2); ctx.lineTo(W - PAD, y + r.h / 2); ctx.stroke(); ctx.setLineDash([]);
+      } else if (r.text) {
+        ctx.font = r.font; ctx.fillStyle = '#1f2a1f';
+        ctx.direction = r.rtl ? 'rtl' : 'ltr'; ctx.textAlign = r.rtl ? 'right' : 'left';
+        ctx.fillText(r.text, r.rtl ? W - PAD - r.indent : PAD + r.indent, y);
+      }
+      y += r.h;
+    });
+    ctx.font = '400 26px ' + FONT; ctx.fillStyle = '#6b705f'; ctx.direction = 'ltr'; ctx.textAlign = 'center';
+    ctx.fillText('SafePlate · nightshiftgames123.github.io/safeplate', W / 2, H - 50);
+    return new Promise(function (resolve) { cv.toBlob(resolve, 'image/png'); });
+  }
+
+  function toast(msg) {
+    var el = document.createElement('div');
+    el.className = 'toast'; el.textContent = msg;
+    document.body.appendChild(el);
+    setTimeout(function () { el.remove(); }, 1800);
+  }
+  function copyText(text) {
+    var done = function () { toast(t('cardCopied')); };
+    if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text).then(done).catch(function () {});
+  }
+
+  function renderCard() {
+    var cfg = cardCfg();
+    view.innerHTML =
+      '<h2>' + t('cardTitle') + '</h2>' +
+      '<p class="muted" style="margin-top:0">' + t('cardIntro') + '</p>' +
+      '<div class="card card-form">' +
+        '<label for="card-name">' + t('cardName') + '</label>' +
+        '<input type="text" id="card-name" maxlength="40" autocomplete="off" value="' + esc(cfg.name) + '" />' +
+        '<label class="check-row"><input type="checkbox" id="card-severe"' + (cfg.severe ? ' checked' : '') + ' /> ' + t('cardSevere') + '</label>' +
+        '<label class="check-row"><input type="checkbox" id="card-epi"' + (cfg.epi ? ' checked' : '') + ' /> ' + t('cardEpi') + '</label>' +
+      '</div>' +
+      '<div id="card-preview"></div>';
+    function save() {
+      cfg = { name: document.getElementById('card-name').value.trim(), severe: document.getElementById('card-severe').checked, epi: document.getElementById('card-epi').checked };
+      store('safeplate_card', JSON.stringify(cfg));
+      drawCard();
+    }
+    function drawCard() {
+      var box = document.getElementById('card-preview');
+      if (!sel.length) { box.innerHTML = '<div class="note">' + t('cardPick') + '</div>'; return; }
+      box.innerHTML =
+        '<div class="allergy-card" id="acard"><div class="ac-head"><span>⚠️ ' + CARD_TEXT.en.title + '</span><span lang="ar">' + CARD_TEXT.ar.title + '</span></div>' +
+          cardBlockHtml(cfg, 'en') + '<div class="ac-sep"></div>' + cardBlockHtml(cfg, 'ar') + '</div>' +
+        '<div class="row"><button class="btn" id="card-share">' + t('cardShare') + '</button>' +
+        '<button class="btn ghost" id="card-save">' + t('cardSave') + '</button>' +
+        '<button class="btn ghost" id="card-copy">' + t('cardCopy') + '</button></div>';
+      document.getElementById('card-copy').addEventListener('click', function () { copyText(cardText(cfg)); });
+      document.getElementById('card-save').addEventListener('click', function () {
+        cardImage(cfg).then(function (blob) {
+          var a = document.createElement('a');
+          a.href = URL.createObjectURL(blob); a.download = 'allergy-card.png';
+          document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(function () { URL.revokeObjectURL(a.href); }, 5000);
+        });
+      });
+      document.getElementById('card-share').addEventListener('click', function () {
+        var text = cardText(cfg);
+        cardImage(cfg).then(function (blob) {
+          var file = blob && typeof File === 'function' ? new File([blob], 'allergy-card.png', { type: 'image/png' }) : null;
+          if (file && navigator.canShare && navigator.canShare({ files: [file] })) return navigator.share({ files: [file], text: text });
+          if (navigator.share) return navigator.share({ text: text });
+          return copyText(text);
+        }).catch(function () {});
+      });
+    }
+    document.getElementById('card-name').addEventListener('input', save);
+    document.getElementById('card-severe').addEventListener('change', save);
+    document.getElementById('card-epi').addEventListener('change', save);
+    drawCard();
   }
 
   function explainError(status, message) {
@@ -1951,6 +2463,7 @@
     else if (h === 'swaps') renderSwaps();
     else if (h === 'check') renderCheck();
     else if (h === 'ai') renderAi();
+    else if (h === 'card') renderCard();
     else renderRecipes();
   }
   window.addEventListener('hashchange', function () { route(); if (location.hash.indexOf('#r/') !== 0) window.scrollTo(0, 0); });

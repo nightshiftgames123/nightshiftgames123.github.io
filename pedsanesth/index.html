@@ -379,7 +379,7 @@
           <input type="text" id="cond-text" placeholder="Describe: e.g. Fontan on aspirin, OSA" onkeydown="if (event.key === 'Enter') detectConditions()" />
           <button class="btn btn-primary" style="white-space:nowrap;" onclick="detectConditions()">✨ Detect</button>
         </div>
-        <div class="metric-sub" id="cond-detect-msg" style="margin-top:6px;">Type a description, or tap the conditions below.</div>
+        <div class="metric-sub" id="cond-detect-msg" style="margin-top:6px;">Describe the patient, then tap Detect.</div>
         <div class="cond-chips" id="cond-chips"></div>
         <div class="alert alert-warn" style="font-size:11px;">Draft content written from standard references, <strong>not yet reviewed by your department</strong>. Doses still come only from the verified calculator; conditions add warnings and highlights.</div>
       </div>
@@ -938,7 +938,7 @@
           'Watch for hypoglycemia and hypothermia; check for anemia and BPD.'],
         rules: { 'Morphine IV': ['caution', 'Apnea risk'], 'Hydromorphone IV': ['caution', 'Apnea risk'], 'Midazolam IV': ['caution', 'Apnea risk'], 'Midazolam PO': ['caution', 'Apnea risk'],
           'Acetaminophen IV': ['prefer', 'Opioid-sparing (neonatal dosing applies)'] } },
-      { id: 'asthma', name: 'Asthma / reactive airway', kw: /asthma|wheez|reactive airway|bronchospas|\burti?\b|recent uri/i,
+      { id: 'asthma', name: 'Asthma / reactive airway', kw: /asthma|wheez|reactive airway|bronchospas/i,
         notes: ['Give a bronchodilator before induction; ensure deep anesthesia before airway instrumentation.',
           'Consider LMA instead of ETT when appropriate; recent URI raises the risk of laryngospasm and bronchospasm.',
           'Have salbutamol (albuterol) and epinephrine ready for bronchospasm.'],
@@ -960,7 +960,151 @@
         notes: ['Minimize fasting and give glucose-containing fluids; avoid hypoglycemia, hypothermia and acidosis.',
           'Prolonged propofol infusion may risk propofol-infusion-like syndrome: single doses usually tolerated.',
           'Many avoid lactate-containing fluids; follow your metabolic team.'],
-        rules: { 'Propofol': ['caution', 'Long infusions: theoretical PRIS risk'], 'Dextrose 10% (GIR)': ['prefer', 'Prevent catabolism and hypoglycemia'] } }
+        rules: { 'Propofol': ['caution', 'Long infusions: theoretical PRIS risk'], 'Dextrose 10% (GIR)': ['prefer', 'Prevent catabolism and hypoglycemia'] } },
+      { id: 'uri', name: 'Recent upper respiratory infection', kw: /\buri\b|\burti\b|common cold|runny nose|recent (cold|cough|flu)|upper respiratory/i,
+        notes: ['Higher risk of laryngospasm, bronchospasm and desaturation, highest within about 2 weeks; consider postponing with fever, purulent secretions or chest signs.',
+          'Prefer a supraglottic airway or face mask over an ETT when appropriate; ensure deep anesthesia before airway manipulation.',
+          'Have succinylcholine and atropine ready for laryngospasm.'],
+        rules: { 'Propofol': ['prefer', 'Reduces airway reactivity'], 'Sugammadex (moderate)': ['prefer', 'Avoids neostigmine-related secretions and bronchospasm'] } },
+      { id: 'williams', name: 'Williams syndrome', kw: /williams/i,
+        notes: ['Supravalvular aortic stenosis and coronary ostial narrowing: high risk of cardiac arrest at induction.',
+          'Keep heart rate, preload and SVR stable; treat hypotension early. Recent echo and ECG, cardiology input; consider a cardiac anesthesia team.',
+          'Check calcium (hypercalcemia); IV access can be difficult.'],
+        rules: { 'Etomidate': ['prefer', 'Hemodynamically stable induction'], 'Propofol': ['caution', 'Hypotension can precipitate coronary ischemia'],
+          'Ketamine IV': ['caution', 'Tachycardia raises myocardial O₂ demand'], 'Phenylephrine': ['prefer', 'Maintains SVR and coronary perfusion'] } },
+      { id: 'hcm', name: 'Hypertrophic cardiomyopathy', kw: /hypertrophic cardiomyopathy|\bhocm\b|\bhcm\b|lvot obstruct/i,
+        notes: ['Dynamic LV outflow obstruction worsens with tachycardia, hypovolemia, low SVR and increased contractility.',
+          'Keep well hydrated, avoid tachycardia; treat hypotension with fluid and phenylephrine, not inotropes. Continue beta-blockers.'],
+        rules: { 'Phenylephrine': ['prefer', 'Raises SVR without inotropy'], 'Esmolol': ['prefer', 'Slows heart rate, reduces obstruction'],
+          'Ketamine IV': ['caution', 'Tachycardia worsens obstruction'], 'Propofol': ['caution', 'Lowers SVR'],
+          'Epinephrine': ['caution', 'Inotropy worsens obstruction'], 'Epinephrine (push-dose)': ['caution', 'Inotropy worsens obstruction'],
+          'Dobutamine': ['avoid', 'Worsens LVOT obstruction'], 'Isoproterenol': ['avoid', 'Worsens LVOT obstruction'], 'Milrinone': ['avoid', 'Inotropy and vasodilation worsen obstruction'],
+          'Dopamine': ['caution', 'Inotropy and tachycardia'], 'Ephedrine': ['caution', 'Inotropy and tachycardia'] } },
+      { id: 'dcm', name: 'Poor ventricular function / cardiomyopathy', kw: /dilated cardiomyopathy|\bdcm\b|myocarditis|poor (ventricular|lv|rv) function|heart failure|low ejection|reduced ejection/i,
+        notes: ['High risk of cardiac arrest with induction: titrate slowly, avoid myocardial depressants and vasodilation.',
+          'Have inotropes drawn up (or running) before induction; arterial line; ICU bed. Consider cardiac anesthesia and ECMO backup.'],
+        rules: { 'Etomidate': ['prefer', 'Minimal myocardial depression'], 'Ketamine IV': ['prefer', 'Maintains contractility (use a reduced dose)'],
+          'Propofol': ['caution', 'Myocardial depression and vasodilation'], 'Milrinone': ['prefer', 'Inodilator'], 'Epinephrine': ['prefer', 'Inotropic support'],
+          'Dobutamine': ['prefer', 'Inotropic support'] } },
+      { id: 'longqt', name: 'Long QT syndrome', kw: /long qt|\blqts\b|qt prolong/i,
+        notes: ['Avoid QT-prolonging drugs and sympathetic surges (anxiety, light anesthesia, pain). Continue beta-blockers.',
+          'Correct K⁺, Mg²⁺ and Ca²⁺; defibrillator pads on; magnesium ready for torsades.'],
+        rules: { 'Ondansetron': ['caution', 'Prolongs QT'], 'Esmolol': ['prefer', 'Blunts sympathetic surges'], 'Ketamine IV': ['caution', 'Sympathetic stimulation'] } },
+      { id: 'marfan', name: 'Marfan / aortic root dilation', kw: /marfan|loeys|aortic root/i,
+        notes: ['Avoid hypertension and tachycardia (aortic dissection risk); continue beta-blocker or ARB.',
+          'Possible cervical instability, high-arched palate and pneumothorax risk.'],
+        rules: { 'Esmolol': ['prefer', 'Controls heart rate and BP'], 'Ketamine IV': ['caution', 'Tachycardia and hypertension'], 'Ephedrine': ['caution', 'Tachycardia and hypertension'] } },
+      { id: 'pacer', name: 'Pacemaker / ICD', kw: /pacemaker|\bicd\b|implanted defibrillator|cardiac device/i,
+        notes: ['Get device type, settings and pacing dependence; reprogram or use a magnet per cardiology. Prefer bipolar cautery.',
+          'External pads on; have isoproterenol or epinephrine available if pacing fails.'],
+        rules: { 'Isoproterenol': ['prefer', 'Backup chronotrope if pacing fails'] } },
+      { id: 'sickle', name: 'Sickle cell disease', kw: /sickle|\bhbss\b|\bscd\b/i,
+        notes: ['Avoid hypoxia, dehydration, hypothermia, acidosis and pain (crisis triggers); IV fluids during fasting.',
+          'Plan preoperative hemoglobin and transfusion with hematology for moderate or major surgery.',
+          'Postoperative incentive spirometry and good analgesia: watch for acute chest syndrome.'],
+        rules: { 'Acetaminophen IV': ['prefer', 'Opioid-sparing'], 'Ketorolac IV': ['caution', 'Check renal function'] } },
+      { id: 'bleeding', name: 'Bleeding disorder', kw: /hemophil|haemophil|von willebrand|bleeding disorder|thrombocytop|\bitp\b|coagulopath/i,
+        notes: ['Factor or platelet replacement plan with hematology before surgery; avoid IM injections and NSAIDs.',
+          'Neuraxial and deep blocks generally contraindicated until corrected.'],
+        rules: { 'Ketorolac IV': ['avoid', 'Platelet dysfunction'], 'Ketamine IM': ['caution', 'IM injection: hematoma risk'], 'Succinylcholine IM': ['caution', 'IM injection: hematoma risk'] } },
+      { id: 'liver', name: 'Liver disease', kw: /liver (disease|failure|transplant)|hepatic|hepatitis|cirrho|biliary atresia/i,
+        notes: ['Check coagulation, glucose and albumin; reduced clearance of many drugs; possible portal hypertension and varices.'],
+        rules: { 'Acetaminophen IV': ['caution', 'Reduce dose or frequency'], 'Midazolam IV': ['caution', 'Prolonged effect'], 'Morphine IV': ['caution', 'Prolonged effect'],
+          'Cisatracurium': ['prefer', 'Organ-independent elimination'], 'Ketorolac IV': ['caution', 'Bleeding and renal risk'] } },
+      { id: 't1dm', name: 'Type 1 diabetes', kw: /diabet|\bt1dm\b|\bdm1\b|insulin pump/i,
+        notes: ['First on the list; insulin plan with endocrinology (usually reduced basal insulin).',
+          'Check glucose before induction and hourly; glucose–insulin infusion for long cases. Watch for DKA.'],
+        rules: { 'Dexamethasone': ['caution', 'Raises blood glucose'], 'Insulin (regular)': ['prefer', 'Glucose control'], 'Dextrose 10% (GIR)': ['prefer', 'With insulin to prevent hypoglycemia'],
+          'Ondansetron': ['prefer', 'PONV prophylaxis without hyperglycemia'] } },
+      { id: 'steroid', name: 'Adrenal insufficiency / steroid-dependent', kw: /adrenal insuff|addison|congenital adrenal|\bcah\b|steroid[- ]dependent|chronic steroid|on (prednis|hydrocort)/i,
+        notes: ['Give stress-dose hydrocortisone per protocol (commonly 2 mg/kg IV, max 100 mg, at induction).',
+          'Refractory hypotension or hypoglycemia: think adrenal crisis.'],
+        rules: { 'Etomidate': ['caution', 'Suppresses adrenal steroid synthesis'] } },
+      { id: 'epilepsy', name: 'Epilepsy / ketogenic diet', kw: /epilep|seizure|ketogenic|infantile spasm/i,
+        notes: ['Continue antiseizure medicines on the day of surgery.',
+          'Enzyme-inducing drugs (carbamazepine, phenytoin) shorten neuromuscular block and raise opioid needs.',
+          'Ketogenic diet: avoid glucose-containing fluids unless hypoglycemic; check glucose and ketones.'],
+        rules: { 'Dextrose 10% (GIR)': ['caution', 'Breaks ketosis if on ketogenic diet'], 'Rocuronium': ['caution', 'Shorter duration with enzyme inducers: monitor TOF'],
+          'Midazolam IV': ['prefer', 'Seizure rescue'] } },
+      { id: 'cp', name: 'Cerebral palsy', kw: /cerebral palsy|spastic quadripleg/i,
+        notes: ['Reflux and aspiration risk; drooling; hypothermia; careful positioning with contractures.',
+          'Continue antiseizure medicines and baclofen (abrupt baclofen withdrawal is dangerous).',
+          'Succinylcholine is not contraindicated in cerebral palsy.'],
+        rules: { 'Glycopyrrolate': ['prefer', 'Reduces secretions'] } },
+      { id: 'myasthenia', name: 'Myasthenia gravis', kw: /myasthen/i,
+        notes: ['Very sensitive to non-depolarizing relaxants (use small doses or avoid), resistant to succinylcholine.',
+          'Continue pyridostigmine; plan for postoperative weakness and respiratory support.'],
+        rules: { 'Rocuronium': ['caution', 'Marked sensitivity: use a fraction of the dose'], 'Vecuronium': ['caution', 'Marked sensitivity'], 'Cisatracurium': ['caution', 'Marked sensitivity'],
+          'Succinylcholine IV': ['caution', 'Resistance: may need a higher dose'], 'Sugammadex (moderate)': ['prefer', 'Predictable reversal'], 'Sugammadex (deep)': ['prefer', 'Predictable reversal'],
+          'Neostigmine': ['caution', 'Unpredictable response, cholinergic crisis risk'] } },
+      { id: 'denervation', name: 'Burns / immobility / denervation', kw: /\bburns?\b|spinal cord injur|parapleg|quadripleg|tetrapleg|immobili[sz]|guillain|denervation|prolonged (icu|bed ?rest)/i,
+        notes: ['Succinylcholine can cause lethal hyperkalemia from about 24–72 h after the injury until recovery.',
+          'Burns: resistance to non-depolarizing relaxants, large fluid and opioid requirements, hypothermia.'],
+        rules: { 'Succinylcholine IV': ['avoid', 'Hyperkalemia risk (upregulated receptors)'], 'Succinylcholine IM': ['avoid', 'Hyperkalemia risk (upregulated receptors)'],
+          'Rocuronium': ['caution', 'Burns: may need a higher dose'] } },
+      { id: 'fullstomach', name: 'Full stomach / aspiration risk', kw: /full stomach|\brsi\b|bowel obstruct|pyloric|intussus|not fasted|recent(ly)? (meal|ate|feed)|vomiting|trauma/i,
+        notes: ['Rapid sequence (or modified RSI with gentle ventilation) induction; working suction; aspirate an NG tube if present.',
+          'Pyloric stenosis is a medical emergency, not a surgical one: correct fluids and electrolytes first; postoperative apnea risk.'],
+        rules: { 'Rocuronium RSI': ['prefer', 'Rapid onset'], 'Succinylcholine IV': ['prefer', 'Fastest onset (if no contraindication)'], 'Sugammadex (deep)': ['prefer', 'Have ready after RSI rocuronium'] } },
+      { id: 'tonsilbleed', name: 'Bleeding tonsil', kw: /tonsil(lar)? (bleed|hemorrh|haemorrh)|post[- ]?tonsillectomy bleed|bleeding tonsil/i,
+        notes: ['Hypovolemia is often underestimated: resuscitate and cross-match before induction.',
+          'Full stomach of swallowed blood: RSI, two suctions, smaller ETT ready; experienced help and ENT present.'],
+        rules: { 'Ketamine IV': ['prefer', 'Maintains BP in hypovolemia'], 'Etomidate': ['prefer', 'Hemodynamically stable'], 'Propofol': ['caution', 'Hypotension in hypovolemia'],
+          'Rocuronium RSI': ['prefer', 'Rapid onset'] } },
+      { id: 'icp', name: 'Raised intracranial pressure', kw: /intracranial|\bicp\b|head injur|\btbi\b|hydroceph|brain tumou?r|shunt (block|malfunction|failure)/i,
+        notes: ['Avoid hypoxia, hypercarbia and hypotension (protect cerebral perfusion); head up 30°, neutral neck.',
+          'Smooth induction and laryngoscopy; avoid coughing and straining.'],
+        rules: { 'Propofol': ['prefer', 'Lowers ICP and cerebral metabolism (watch BP)'], 'Etomidate': ['prefer', 'Stable BP'], 'Ketamine IV': ['caution', 'Acceptable with controlled ventilation'] } },
+      { id: 'airway', name: 'Difficult airway syndrome', kw: /pierre robin|treacher|goldenhar|micrognath|difficult airway|mucopolysacch|\bmps\b|hurler|hunter syndrome|klippel|limited mouth opening/i,
+        notes: ['Plan A–D before induction; keep spontaneous ventilation until the airway is secured.',
+          'Video laryngoscope and fiberoptic ready; supraglottic airway as rescue; ENT and front-of-neck plan available.',
+          'Mucopolysaccharidoses: the airway worsens with age; possible cervical instability and heart disease.'],
+        rules: { 'Ketamine IV': ['prefer', 'Preserves spontaneous breathing'], 'Rocuronium': ['caution', 'Give only once ventilation is assured or a rescue plan is ready'],
+          'Succinylcholine IV': ['caution', 'Only within a planned airway strategy'], 'Midazolam IV': ['caution', 'Can worsen airway obstruction'],
+          'Glycopyrrolate': ['prefer', 'Dries secretions for fiberoptic intubation'], 'Sugammadex (deep)': ['prefer', 'Have ready if rocuronium is used'] } },
+      { id: 'mediastinal', name: 'Anterior mediastinal mass', kw: /mediastinal mass|anterior mediastin|lymphoma|t[- ]cell leuk/i,
+        notes: ['Risk of complete airway and cardiovascular collapse at induction or with muscle relaxation.',
+          'Review CT and echo; keep spontaneous ventilation and avoid relaxants; have position changes (lateral/prone) and rigid bronchoscopy ready. Consider ECMO standby or diagnosis under local anesthesia.'],
+        rules: { 'Rocuronium': ['avoid', 'Loss of muscle tone can cause airway collapse'], 'Succinylcholine IV': ['avoid', 'Loss of muscle tone can cause airway collapse'],
+          'Ketamine IV': ['prefer', 'Preserves spontaneous breathing'], 'Propofol': ['caution', 'Apnea and loss of airway tone'] } },
+      { id: 'croup', name: 'Upper airway obstruction (croup, epiglottitis)', kw: /croup|epiglottitis|stridor|upper airway obstruct|retropharyngeal|bacterial tracheitis/i,
+        notes: ['Keep the child calm with a parent; inhalational induction sitting up; ENT and surgical airway ready.',
+          'Use an ETT 0.5–1 mm smaller than usual.'],
+        rules: { 'Dexamethasone': ['prefer', 'Reduces airway edema (airway dose 0.5 mg/kg)'] } },
+      { id: 'fb', name: 'Inhaled foreign body', kw: /foreign body|aspirated (a|an)|inhaled (a|an)|peanut in/i,
+        notes: ['Shared airway with ENT for rigid bronchoscopy; agree on spontaneous vs controlled ventilation beforehand.',
+          'Risk of moving the object into complete obstruction; consider dexamethasone for airway edema.'],
+        rules: { 'Propofol': ['prefer', 'TIVA for a shared, open airway'], 'Dexamethasone': ['prefer', 'Reduces airway edema'] } },
+      { id: 'cf', name: 'Cystic fibrosis', kw: /cystic fibrosis|\bcf\b/i,
+        notes: ['Physiotherapy and bronchodilator before surgery; humidify gases; suction secretions.',
+          'Check for liver disease and diabetes; prefer regional analgesia, limit opioids.'],
+        rules: { 'Glycopyrrolate': ['caution', 'Thickens secretions'] } },
+      { id: 'latex', name: 'Latex allergy / spina bifida', kw: /latex|spina bifida|myelomening/i,
+        notes: ['Latex-free room and equipment; schedule as the first case.', 'Spina bifida carries a high risk of latex sensitization; check for VP shunt and Chiari malformation.'],
+        rules: {} },
+      { id: 'eggallergy', name: 'Egg / soy / peanut allergy', kw: /egg allerg|soy allerg|peanut allerg|allergic to (eggs?|soy|peanuts?)/i,
+        notes: ['US allergy societies consider propofol safe in egg-, soy- and peanut-allergic children.'],
+        rules: {} },
+      { id: 'g6pd', name: 'G6PD deficiency', kw: /g6pd/i,
+        notes: ['Avoid oxidant drugs: methylene blue (do not use it for methemoglobinemia), prilocaine, rasburicase, sulfonamides.',
+          'Avoid infection, acidosis and hypothermia that trigger hemolysis.'],
+        rules: {} },
+      { id: 'porphyria', name: 'Acute porphyria', kw: /porphyri/i,
+        notes: ['Avoid porphyrinogenic drugs (barbiturates; etomidate on many lists); keep well hydrated with glucose.'],
+        rules: { 'Etomidate': ['caution', 'Possibly porphyrinogenic'], 'Propofol': ['prefer', 'Considered safe'] } },
+      { id: 'eb', name: 'Epidermolysis bullosa', kw: /epidermolysis/i,
+        notes: ['No adhesive tape or friction: pad and lubricate everything; secure lines and tubes with ties or non-adhesive dressings.',
+          'Gentle mask; smaller ETT; avoid oral airways and nasal tubes where possible.'],
+        rules: {} },
+      { id: 'sepsis', name: 'Sepsis / shock', kw: /sepsis|septic|\bshock\b/i,
+        notes: ['Resuscitate before induction; early vasoactive support (epinephrine or norepinephrine) via a secure line.',
+          'Reduce induction doses; arterial line; check glucose and calcium.'],
+        rules: { 'Ketamine IV': ['prefer', 'Maintains BP (reduced dose)'], 'Propofol': ['caution', 'Hypotension'], 'Etomidate': ['caution', 'Adrenal suppression in sepsis'],
+          'Epinephrine': ['prefer', 'First-line vasoactive (cold shock)'], 'Norepinephrine': ['prefer', 'First-line vasoactive (warm shock)'] } },
+      { id: 'anxiety', name: 'Anxiety / autism / uncooperative', kw: /autis|anxious|anxiety|uncooperative|behaviou?ral|developmental delay/i,
+        notes: ['Quiet room, familiar routine and comfort items, parental presence; ask parents what works.',
+          'Plan premedication; consider IM ketamine for a combative child.'],
+        rules: { 'Dexmedetomidine IN': ['prefer', 'Needle-free premed'], 'Midazolam PO': ['prefer', 'Oral premed'], 'Ketamine IM': ['prefer', 'Uncooperative or combative child'] } }
     ];
     let activeConds = new Set();
     const condRules = (name) => CONDITIONS.filter((c) => activeConds.has(c.id) && c.rules[name]).map((c) => ({ cond: c.name, level: c.rules[name][0], why: c.rules[name][1] }));
@@ -1389,7 +1533,8 @@
     const BETA = document.documentElement.getAttribute('data-beta') === '1';
     function renderConditions() {
       if (!BETA) { activeConds.clear(); return; }
-      $('cond-chips').innerHTML = CONDITIONS.map((c) => `<button type="button" class="cond-chip${activeConds.has(c.id) ? ' on' : ''}" data-cond="${c.id}">${activeConds.has(c.id) ? '✓ ' : ''}${c.name}</button>`).join('');
+      $('cond-chips').innerHTML = CONDITIONS.filter((c) => activeConds.has(c.id))
+        .map((c) => `<button type="button" class="cond-chip on" data-cond="${c.id}" aria-label="Remove ${c.name}">${c.name} ✕</button>`).join('');
       const act = CONDITIONS.filter((c) => activeConds.has(c.id));
       const html = act.length ? `<details open><summary style="cursor:pointer;"><strong>Patient conditions (${act.length})</strong> <span class="beta-tag">draft</span> <span class="metric-sub" style="display:inline;">${act.map((c) => c.name).join(' · ')}</span></summary>` +
         act.map((c) => `<h4>${c.name}</h4><ul>${c.notes.map((n) => `<li>${n}</li>`).join('')}</ul>`).join('') +
@@ -1413,7 +1558,7 @@
       kwHits.forEach((id) => activeConds.add(id));
       calculateAll();
       const names = (ids) => ids.map((id) => CONDITIONS.find((c) => c.id === id).name).join(', ');
-      msg.textContent = kwHits.length ? `Found: ${names(kwHits)}.` : 'No keyword match.';
+      msg.textContent = kwHits.length ? `Found ${kwHits.length}.` : 'No keyword match.';
       const key = getApiKey();
       if (!key) { msg.textContent += ' Add a Gemini key (Nasma AI tab) for smarter detection.'; return; }
       msg.textContent += ' ✨ Asking Nasma AI…';
@@ -1436,9 +1581,9 @@
         ids.forEach((id) => activeConds.add(id));
         calculateAll();
         const all = [...new Set([...kwHits, ...ids])];
-        msg.textContent = all.length ? `Found: ${names(all)}${added.length ? ` (AI added: ${names(added)})` : ''}. Tap a chip to remove it.` : 'No matching conditions. Tap any that apply.';
+        msg.textContent = all.length ? `Found ${all.length}${added.length ? ` (${added.length} by AI)` : ''}. Tap ✕ to remove one.` : 'No matching condition found.';
       } catch (err) {
-        msg.textContent = (kwHits.length ? `Found: ${names(kwHits)}. ` : '') + `AI detection unavailable (${err.message}). Tap any that apply.`;
+        msg.textContent = (kwHits.length ? `Found ${kwHits.length}. ` : '') + `AI detection unavailable (${err.message}).`;
       }
     }
 
@@ -1605,7 +1750,7 @@
       $('age-unit').value = 'years';
       $('sex-val').value = '';
       activeConds.clear();
-      if ($('cond-text')) { $('cond-text').value = ''; $('cond-detect-msg').textContent = 'Type a description, or tap the conditions below.'; }
+      if ($('cond-text')) { $('cond-text').value = ''; $('cond-detect-msg').textContent = 'Describe the patient, then tap Detect.'; }
       $('scalar-mode').value = 'auto';
       $('hct-target').value = '25';
       calculateAll();

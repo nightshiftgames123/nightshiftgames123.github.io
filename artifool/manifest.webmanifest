@@ -1,0 +1,16 @@
+{
+  "name": "ArtiFool · Artificial Stupidity",
+  "short_name": "ArtiFool",
+  "description": "The world's first Artificial Stupidity: confidently wrong about everything, in English and Arabic.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1a1a2e",
+  "theme_color": "#1a1a2e",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

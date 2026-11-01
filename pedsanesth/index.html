@@ -185,6 +185,49 @@
       #drug-tbody tr.cond-caution:not(.section) { box-shadow: inset 4px 0 0 #f59e0b; }
       #drug-tbody tr.cond-prefer:not(.section) { box-shadow: inset 4px 0 0 #10b981; }
     }
+    /* ===== Clean layout (beta) ===== */
+    .clean-only { display: none !important; }
+    :root[data-beta="1"] .clean-only { display: revert !important; }
+    :root[data-beta="1"] .clean-hide { display: none !important; }
+    /* Header: one menu button instead of three */
+    .menu-wrap { position: relative; }
+    .menu-pop { position: absolute; right: 0; top: 44px; background: var(--card-dark); border: 1px solid var(--border-dark); border-radius: 12px; padding: 6px; min-width: 190px; box-shadow: 0 10px 30px rgba(0,0,0,.35); z-index: 50; }
+    .menu-pop button { display: block; width: 100%; text-align: left; background: none; border: none; color: var(--text-main); padding: 10px 12px; border-radius: 8px; font-size: 14px; cursor: pointer; }
+    .menu-pop button:hover, .menu-pop button:active { background: var(--inset); }
+    /* Drug rows: one compact line; details on tap */
+    :root[data-beta="1"] #drug-tbody td.name small,
+    :root[data-beta="1"] #drug-tbody td:nth-child(3) small,
+    :root[data-beta="1"] #drug-tbody td:nth-child(3) .wt-basis,
+    :root[data-beta="1"] #drug-tbody .cond-note,
+    :root[data-beta="1"] #drug-tbody td:nth-child(2) { display: none; }
+    :root[data-beta="1"] #drug-tbody tr.open td.name small,
+    :root[data-beta="1"] #drug-tbody tr.open td:nth-child(3) small,
+    :root[data-beta="1"] #drug-tbody tr.open .cond-note { display: block; }
+    :root[data-beta="1"] #drug-tbody tr.open td:nth-child(3) .wt-basis { display: inline-block; }
+    :root[data-beta="1"] .table-container thead th:nth-child(2) { display: none; }
+    :root[data-beta="1"] #drug-tbody tr:not(.section) { cursor: pointer; }
+    :root[data-beta="1"] #drug-tbody .fav-btn { font-size: 15px; min-height: 24px; min-width: 24px; opacity: .55; }
+    :root[data-beta="1"] #drug-tbody .fav-btn.on { opacity: 1; }
+    .cond-icon { margin-left: 4px; font-size: 13px; }
+    @media (max-width: 640px) {
+      :root[data-beta="1"] #drug-tbody tr:not(.section) { grid-template-columns: 1fr auto auto; padding: 8px 12px; row-gap: 2px; }
+      :root[data-beta="1"] #drug-tbody tr:not(.section) td.name { grid-column: 1; grid-row: 1; }
+      :root[data-beta="1"] #drug-tbody tr:not(.section) td:nth-child(3) { grid-column: 1; grid-row: 2; margin-top: 0; font-size: 11px; }
+      :root[data-beta="1"] #drug-tbody tr:not(.section) td:nth-child(4) { grid-column: 2; grid-row: 1 / span 2; align-self: center; font-size: 15px; }
+      :root[data-beta="1"] #drug-tbody tr:not(.section) td:nth-child(5) { grid-column: 3; grid-row: 1 / span 2; align-self: center; font-size: 15px; min-width: 64px; }
+    }
+    /* Infusion rows: hide notes until tapped */
+    :root[data-beta="1"] .inf-row .inf-note, :root[data-beta="1"] .inf-row .cond-slot, :root[data-beta="1"] .inf-row .inf-extra,
+    :root[data-beta="1"] .inf-row .cls-label { display: none; }
+    :root[data-beta="1"] .inf-row.open .inf-note, :root[data-beta="1"] .inf-row.open .cond-slot, :root[data-beta="1"] .inf-row.open .inf-extra { display: inline; }
+    :root[data-beta="1"] .inf-row.open .inf-extra, :root[data-beta="1"] .inf-row.open .cond-slot { display: block; }
+    :root[data-beta="1"] .inf-head { cursor: pointer; }
+    /* Patient card: extra fields folded */
+    :root[data-beta="1"] .more-fields { display: none; }
+    :root[data-beta="1"] .more-fields.open { display: block; }
+    .more-toggle { background: none; border: none; color: var(--accent); font-size: 12px; font-weight: 600; cursor: pointer; padding: 2px 0 8px; }
+    :root[data-beta="1"] #dw-card.dw-quiet { display: none; }
+    .airway-mini { font-size: 11px; color: var(--text-muted); margin-top: 8px; line-height: 1.5; }
     .fav-btn { background: none; border: none; cursor: pointer; font-size: 18px; line-height: 1; padding: 2px 4px; margin-left: 4px; color: var(--text-muted); vertical-align: -2px; min-width: 28px; min-height: 28px; }
     .fav-btn.on { color: #f59e0b; }
     .support-link { display: none; }
@@ -303,9 +346,17 @@
     </div>
     <div style="display: flex; gap: 6px; flex-shrink: 0;">
       <button class="btn btn-sm btn-primary" id="install-btn">⬇ Install</button>
-      <button class="btn btn-sm theme-btn" id="theme-btn" onclick="toggleTheme()" aria-label="Switch light/dark mode">🌙</button>
-      <button class="btn btn-sm icon-btn" onclick="toggleModal('modal-sources', true)" title="Dose sources" aria-label="Dose sources">📖</button>
-      <button class="btn btn-sm" onclick="toggleModal('modal-resources', true)">📚 Info</button>
+      <button class="btn btn-sm theme-btn clean-hide" id="theme-btn" onclick="toggleTheme()" aria-label="Switch light/dark mode">🌙</button>
+      <button class="btn btn-sm icon-btn clean-hide" onclick="toggleModal('modal-sources', true)" title="Dose sources" aria-label="Dose sources">📖</button>
+      <button class="btn btn-sm clean-hide" onclick="toggleModal('modal-resources', true)">📚 Info</button>
+      <div class="menu-wrap clean-only">
+        <button class="btn btn-sm icon-btn" onclick="toggleMenu(event)" aria-label="Menu" aria-haspopup="true" style="font-size:18px;">☰</button>
+        <div class="menu-pop hidden" id="menu-pop">
+          <button onclick="toggleTheme(); toggleMenu();" id="menu-theme">🌙 Dark / light mode</button>
+          <button onclick="toggleModal('modal-sources', true); toggleMenu();">📖 Dose sources</button>
+          <button onclick="toggleModal('modal-resources', true); toggleMenu();">📚 Info &amp; formulas</button>
+        </div>
+      </div>
       <button class="btn btn-danger btn-sm" onclick="toggleModal('modal-emergency', true)">🚨 STAT</button>
     </div>
   </header>
@@ -338,6 +389,8 @@
           <div id="weight-warning" class="alert alert-warn hidden"></div>
         </div>
 
+        <button type="button" class="more-toggle clean-only" id="more-toggle" onclick="toggleMore()">＋ Height, sex &amp; fasting</button>
+        <div class="more-fields" id="more-fields">
         <div class="grid-2 form-group">
           <div>
             <label for="height-val">Height (cm)</label>
@@ -359,8 +412,9 @@
             <input type="number" id="npo-val" inputmode="decimal" min="0" placeholder="optional" oninput="calculateAll()" />
           </div>
         </div>
+        </div>
 
-        <div class="grid-2" style="margin-top: 8px;">
+        <div class="grid-2 clean-hide" style="margin-top: 8px;">
           <div class="metric-badge">
             <span class="metric-label">BSA (Mosteller)</span>
             <span class="metric-val" id="metric-bsa">—</span>
@@ -381,10 +435,10 @@
         </div>
         <div class="metric-sub" id="cond-detect-msg" style="margin-top:6px;">Describe the patient, then tap Detect.</div>
         <div class="cond-chips" id="cond-chips"></div>
-        <div class="alert alert-warn" style="font-size:11px;">Draft content written from standard references, <strong>not yet reviewed by your department</strong>. Doses still come only from the verified calculator; conditions add warnings and highlights.</div>
+        <div class="metric-sub" style="margin-top:8px;">⚠️ Draft content, not yet department-reviewed. Doses are unchanged.</div>
       </div>
 
-      <div class="card">
+      <div class="card" id="dw-card">
         <div class="card-title">Dosing Weight
           <select id="scalar-mode" class="mini-select" onchange="calculateAll()" aria-label="Obesity weight scalars">
             <option value="auto" selected>Obesity scalars: Auto</option>
@@ -424,7 +478,7 @@
             <span class="metric-val" id="airway-ett-cuffed">—</span>
             <span class="metric-sub" id="airway-ett-cuffed-sub"></span>
           </div>
-          <div class="metric-badge">
+          <div class="metric-badge clean-hide">
             <span class="metric-label">ETT Uncuffed (ID)</span>
             <span class="metric-val" id="airway-ett-uncuffed">—</span>
             <span class="metric-sub" id="airway-ett-uncuffed-sub"></span>
@@ -443,13 +497,14 @@
             <span class="metric-label">Laryngoscope Blade</span>
             <span class="metric-val" id="airway-blade">—</span>
           </div>
-          <div class="metric-badge">
+          <div class="metric-badge clean-hide">
             <span class="metric-label">Hypotension if SBP &lt;</span>
             <span class="metric-val" id="vitals-sbp">—</span>
             <span class="metric-sub" id="vitals-hr"></span>
           </div>
         </div>
-        <p class="metric-sub" style="margin-top:8px;">Sizes are starting points — have one size above and below ready; confirm depth by auscultation/EtCO₂.</p>
+        <p class="metric-sub clean-hide" style="margin-top:8px;">Sizes are starting points — have one size above and below ready; confirm depth by auscultation/EtCO₂.</p>
+        <div class="airway-mini clean-only" id="airway-mini"></div>
       </div>
     </div>
 
@@ -494,7 +549,7 @@
             </table>
           </div>
         </div>
-        <p class="metric-sub">Volumes are calculated for the concentration shown under each drug. Check that it matches the vial or syringe you are using.</p>
+        <p class="metric-sub clean-hide">Volumes are calculated for the concentration shown under each drug. Check that it matches the vial or syringe you are using.</p>
       </div>
 
       <!-- TAB: INFUSIONS -->
@@ -523,7 +578,7 @@
             <li><strong>Caution:</strong> neonates dependent on right-to-left ductal shunting (e.g. HLHS) and LV dysfunction (may cause pulmonary edema).</li>
           </ul>
         </div>
-        <p class="metric-sub">Edit the dose or the syringe concentration to match your pump; the rate updates instantly. Standard concentrations vary by institution, so check every label.</p>
+        <p class="metric-sub clean-hide">Edit the dose or the syringe concentration to match your pump; the rate updates instantly. Standard concentrations vary by institution, so check every label.</p>
       </div>
 
       <!-- TAB 2: FLUIDS -->
@@ -577,6 +632,10 @@
             </div>
           </div>
           <div class="grid-2">
+            <div class="metric-badge">
+              <span class="metric-label">Est. Blood Volume</span>
+              <span class="metric-val" id="blood-ebv">—</span>
+            </div>
             <div class="metric-badge">
               <span class="metric-label">MABL</span>
               <span class="metric-val" id="blood-abl">—</span>
@@ -634,7 +693,8 @@
 
   <footer>
     <p style="margin-bottom: 8px;"><a class="support-link support-btn" href="#" target="_blank" rel="noopener">☕ Like this app? Support it on Ko-fi</a></p>
-    Clinical decision support only. Doses are typical starting values for healthy children and must be checked against the patient's condition, institutional protocols and current references before use. Your entries stay on this device.
+    <span class="clean-hide">Clinical decision support only. Doses are typical starting values for healthy children and must be checked against the patient's condition, institutional protocols and current references before use. Your entries stay on this device.</span>
+    <span class="clean-only">Decision support only · verify every dose · tap a drug for details</span>
   </footer>
 
   <!-- MODAL: STAT EMERGENCY -->
@@ -1112,12 +1172,35 @@
     const LEVEL_ICON = { avoid: '⛔ Avoid', caution: '⚠️ Caution', prefer: '✓ Preferred' };
     function condInfo(name) {
       const r = condRules(name);
-      if (!r.length) return { cls: '', html: '' };
+      if (!r.length) return { cls: '', icon: '', html: '' };
       const worst = r.reduce((a, b) => (LEVEL_ORDER[b.level] > LEVEL_ORDER[a.level] ? b : a)).level;
-      return { cls: 'cond-' + worst, html: r.map((x) => `<span class="cond-note ${x.level}">${LEVEL_ICON[x.level]} · ${x.cond}: ${x.why}</span>`).join('') };
+      return { cls: 'cond-' + worst, icon: `<span class="cond-icon" title="Condition flag">${{ avoid: '⛔', caution: '⚠️', prefer: '✓' }[worst]}</span>`, html: r.map((x) => `<span class="cond-note ${x.level}">${LEVEL_ICON[x.level]} · ${x.cond}: ${x.why}</span>`).join('') };
     }
 
     let activeFilter = 'all';
+    const openRows = new Set();
+    function toggleMenu(e) {
+      if (e) e.stopPropagation();
+      $('menu-pop').classList.toggle('hidden');
+      $('menu-theme').textContent = document.documentElement.getAttribute('data-theme') === 'light' ? '🌙 Dark mode' : '☀️ Light mode';
+    }
+    document.addEventListener('click', (e) => {
+      const pop = document.getElementById('menu-pop');
+      if (pop && !pop.classList.contains('hidden') && !e.target.closest('.menu-wrap')) pop.classList.add('hidden');
+      // Tap a drug row (not the star) to show its details
+      const tr = e.target.closest('#drug-tbody tr[data-drug]');
+      if (tr && !e.target.closest('.fav-btn')) {
+        const n = tr.dataset.drug;
+        openRows.has(n) ? openRows.delete(n) : openRows.add(n);
+        tr.classList.toggle('open');
+      }
+      const ih = e.target.closest('.inf-head');
+      if (ih && !e.target.closest('.fav-btn')) ih.parentElement.classList.toggle('open');
+    });
+    function toggleMore() {
+      const open = $('more-fields').classList.toggle('open');
+      $('more-toggle').textContent = open ? '－ Hide height, sex & fasting' : '＋ Height, sex & fasting';
+    }
     const $ = (id) => document.getElementById(id);
 
     // ───────────────────────── Helpers ─────────────────────────
@@ -1269,10 +1352,13 @@
       if (a != null) ebvPerKg = a < 1 / 12 ? 85 : a < 1 ? 80 : a < 12 ? 75 : 70;
       const ebv = w != null ? w * ebvPerKg : null;
       $('metric-ebv').textContent = ebv != null ? Math.round(ebv) + ' mL' : '—';
+      $('blood-ebv').textContent = ebv != null ? Math.round(ebv) + ' mL' : '—';
       $('metric-ebv-sub').textContent = w != null ? `${ebvPerKg} mL/kg${a == null ? ' (age unknown)' : ''}` : '';
 
       const W = computeWeights(p);
       renderWeights(p, W);
+      // Clean layout: hide the dosing-weight card until height is entered (or scalars are forced on)
+      $('dw-card').classList.toggle('dw-quiet', !p.height && $('scalar-mode').value !== 'on');
       renderAirway(a, w);
       renderFluids(p, ebv);
       renderConditions();
@@ -1289,6 +1375,7 @@
         set('airway-depth', '—', '');
         $('airway-blade').textContent = '—';
         $('vitals-sbp').textContent = '—';
+        $('airway-mini').textContent = '';
         $('vitals-hr').textContent = '';
       } else {
         let cuffed, uncuffed, depth, depthNote;
@@ -1322,6 +1409,7 @@
         else if (a <= 10) { sbp = Math.round(70 + 2 * a); hr = a < 3 ? 'Normal HR 98–140' : a < 6 ? 'Normal HR 80–120' : 'Normal HR 75–118'; }
         else { sbp = 90; hr = 'Normal HR 60–100'; }
         $('vitals-sbp').textContent = sbp + ' mmHg';
+        $('airway-mini').textContent = `Uncuffed ${uncuffed.toFixed(1)} mm · Hypotension if SBP < ${sbp} · ${hr}`;
         $('vitals-hr').textContent = hr;
       }
 
@@ -1401,8 +1489,8 @@
         }
         const sub = [d.concText, d.note].filter(Boolean).join(' · ');
         const ci = condInfo(d.name);
-        rows.push(`<tr class="${ci.cls}">
-          <td class="name"><span class="drug-pill ${d.astm}">${d.name}</span>${favBtn('d:' + d.name)}<small>${sub}</small>${ci.html}</td>
+        rows.push(`<tr class="${ci.cls}${openRows.has(d.name) ? ' open' : ''}" data-drug="${d.name}">
+          <td class="name"><span class="drug-pill ${d.astm}">${d.name}</span>${ci.icon}${favBtn('d:' + d.name)}<small>${sub}</small>${ci.html}</td>
           <td><span class="cls-label">${d.label}</span></td>
           <td style="color: var(--text-muted);">${fmt(perKg)} ${d.unit}/kg<small style="display:block;font-size:10px;">range ${d.range}${d.max != null ? ' · max ' + fmt(d.max) + ' ' + d.unit : ''}</small>${w != null ? basisTag(W, d.wt || 'TBW') : ''}</td>
           <td style="color: var(--accent); font-weight: bold;">${doseCell}</td>
@@ -1460,7 +1548,7 @@
         if (f.group !== last) { html += `<div class="inf-section" data-group="${f.group}">${INF_GROUPS[f.group]}</div>`; last = f.group; }
         html += `<div class="inf-row" data-group="${f.group}" data-i="${i}">
           <div class="inf-head">
-            <div class="inf-name"><span class="drug-pill ${f.astm}">${f.name}</span>${favBtn('i:' + f.name)}<small><span id="inf-usual-${i}"></span>${f.note ? ' · ' + f.note : ''}</small><span class="wt-slot"></span><span class="cond-slot"></span></div>
+            <div class="inf-name"><span class="drug-pill ${f.astm}">${f.name}</span><span class="inf-cond-icon"></span>${favBtn('i:' + f.name)}<small><span id="inf-usual-${i}"></span>${f.note ? `<span class="inf-note"> · ${f.note}</span>` : ''}</small><span class="wt-slot"></span><span class="cond-slot"></span></div>
             <span class="cls-label">${f.label}</span>
           </div>
           <div class="inf-field">${unitCtl}
@@ -1490,6 +1578,7 @@
         row.classList.remove('cond-avoid', 'cond-caution', 'cond-prefer');
         if (ci.cls) row.classList.add(ci.cls);
         row.querySelector('.cond-slot').innerHTML = ci.html;
+        row.querySelector('.inf-cond-icon').innerHTML = ci.icon;
         const doseIn = $('inf-d-' + i), concIn = $('inf-c-' + i);
         const d = parseFloat(doseIn.value), c = parseFloat(concIn.value);
         const cur = infUnit[i], base = { u: f.dU, t: f.dT };
@@ -1536,7 +1625,7 @@
       $('cond-chips').innerHTML = CONDITIONS.filter((c) => activeConds.has(c.id))
         .map((c) => `<button type="button" class="cond-chip on" data-cond="${c.id}" aria-label="Remove ${c.name}">${c.name} ✕</button>`).join('');
       const act = CONDITIONS.filter((c) => activeConds.has(c.id));
-      const html = act.length ? `<details open><summary style="cursor:pointer;"><strong>Patient conditions (${act.length})</strong> <span class="beta-tag">draft</span> <span class="metric-sub" style="display:inline;">${act.map((c) => c.name).join(' · ')}</span></summary>` +
+      const html = act.length ? `<details><summary style="cursor:pointer;"><strong>Patient conditions (${act.length})</strong> <span class="beta-tag">draft</span> <span class="metric-sub" style="display:inline;">${act.map((c) => c.name).join(' · ')}</span></summary>` +
         act.map((c) => `<h4>${c.name}</h4><ul>${c.notes.map((n) => `<li>${n}</li>`).join('')}</ul>`).join('') +
         '<div class="metric-sub" style="margin-top:4px;">Rows marked ⛔ / ⚠️ / ✓ below are affected. Doses are unchanged: adjust clinically.</div></details>' : '';
       ['cond-panel-drugs', 'cond-panel-inf'].forEach((id) => { $(id).innerHTML = html; $(id).classList.toggle('hidden', !act.length); });

@@ -14,21 +14,24 @@ const FINAL_FLOOR = 4;
 const DIRS = { n: [0, -1], s: [0, 1], w: [-1, 0], e: [1, 0] };
 const OPP = { n: 's', s: 'n', w: 'e', e: 'w' };
 
-// Painted sprite sheets (built by tools/build_assets.py). Every sheet has the same frames:
-// 4 walk rows of 5 (down, up, right, left) then attack poses A1-A3 (facing you) and B1-B3 (facing right).
-const FRAME_NAMES = ['down0', 'down1', 'down2', 'down3', 'down4', 'up0', 'up1', 'up2', 'up3', 'up4', 'right0', 'right1', 'right2', 'right3', 'right4',
-  'left0', 'left1', 'left2', 'left3', 'left4', 'A1', 'A2', 'A3', 'B1', 'B2', 'B3'];
+// Sprite sheets (built by tools/build_assets.py): pixel-art heroes and painted monsters. Every atlas
+// has the same frames: 6 walk slots per direction (down, up, right, left; WALK says how many a sheet
+// fills), then attack poses A1-A3 (facing you) and B1-B3 (facing right).
+const FRAME_NAMES = [...['down', 'up', 'right', 'left'].flatMap((d) => [0, 1, 2, 3, 4, 5].map((i) => d + i)), 'A1', 'A2', 'A3', 'B1', 'B2', 'B3'];
 const FRAME = Object.fromEntries(FRAME_NAMES.map((n, i) => [n, i]));
 const ATLAS = { cols: 8, cell: { 0.44: 104, 0.8: 189 }, foot: 8 }; // foot: source px between feet and cell bottom
 // which attack poses each sheet uses: [windup, strike] when facing you, and when facing sideways
 const POSES = {
-  wizard: { down: ['A1', 'A1'], side: ['B1', 'B1'] },
-  rogue: { down: ['A2', 'A3'], side: ['B2', 'B3'] },
+  sorceress: { down: ['A1', 'A1'], side: ['B1', 'B1'] },
+  queen: { down: ['A1', 'A2'], side: ['B1', 'B2'] },
+  ninja: { down: ['A1', 'A2'], side: ['B1', 'B2'] },
   skeleton: { down: ['A2', 'A3'], side: ['B1', 'B2'] },
   goblin: { down: ['A2', 'A3'], side: ['B1', 'B2'] },
   ghost: { down: ['A1', 'A2'], side: ['B1', 'B2'] },
 };
 const WORLD_SCALE = 0.245; // world units per source pixel for normal-size characters
+const HERO_SCALE = { queen: 0.8, ninja: 0.8, sorceress: 0.8 }; // pixel heroes use the sharper atlas
+const CASTERS = new Set(['sorceress']); // heroes with a casting pose when they shoot standing still
 
 const THEMES = [
   { name: 'Overgrown Ruins', tint: '#c9d3c1', dark: 0.30, wall: [60, 68, 72], moss: '#3f6234', rune: '#4fc3ff' },
@@ -102,7 +105,7 @@ const META = [
 const FEATS = {
   warlord: { name: "Warlord's Bane", desc: 'Slay the Goblin Warlord', reward: 'Unlocks the Thornknight' },
   banshee: { name: 'Silence', desc: 'Slay the Banshee', reward: 'Unlocks the Blood Rune skill' },
-  depths: { name: 'Into the Depths', desc: 'Reach floor 3', reward: 'Unlocks the Seer' },
+  depths: { name: 'Into the Depths', desc: 'Reach floor 3', reward: 'Unlocks the Shade' },
   twins: { name: 'Twin Fall', desc: 'Defeat the Twin Guardians', reward: 'Unlocks the Ricochet skill' },
   victory: { name: 'Unbound', desc: 'Destroy the Thornheart', reward: 'Unlocks the Revenant and Ascension' },
   slayer: { name: 'Slayer', desc: 'Slay 200 foes in total', reward: 'Unlocks the Orbiting Crystal skill' },
@@ -115,11 +118,11 @@ const FEATS = {
 const SKILL_LOCK = { vamp: 'banshee', bounce: 'twins', orbit: 'slayer', rear: 'hoarder', frost: 'level10' };
 
 const CHARS = {
-  wanderer: { name: 'Wanderer', desc: 'A travelling wizard. 3 hearts, balanced crystal shards.', lock: null, sheet: 'wizard',
+  wanderer: { name: 'Wanderer', desc: 'A travelling sorceress. 3 hearts, balanced crystal shards.', lock: null, sheet: 'sorceress',
     hp: 6, dmg: 3.5, fd: 0.42, speed: 118, range: 200, shot: 230, skills: {} },
-  thornknight: { name: 'Thornknight', desc: '4 hearts, heavy slow shards, slower feet. Starts with Thorn Mantle.', lock: 'warlord', sheet: 'rogue',
+  thornknight: { name: 'Thornknight', desc: '4 hearts, heavy slow shards, slower feet. Starts with Thorn Mantle.', lock: 'warlord', sheet: 'queen',
     hp: 8, dmg: 4.6, fd: 0.56, speed: 106, range: 175, shot: 215, skills: { mantle: 1 } },
-  seer: { name: 'Seer', desc: '2 hearts, rapid long-range shards. Starts with Seeking Runes.', lock: 'depths', sheet: 'wizard', tint: [55, 1.1, 1],
+  seer: { name: 'Shade', desc: 'A ninja. 2 hearts, rapid long-range shards. Starts with Seeking Runes.', lock: 'depths', sheet: 'ninja',
     hp: 4, dmg: 3.0, fd: 0.32, speed: 124, range: 240, shot: 250, skills: { homing: 1 } },
   revenant: { name: 'Revenant', desc: 'A risen skeleton. 3 hearts. Starts with Split Shard and an Orbiting Crystal.', lock: 'victory', sheet: 'skeleton', tint: [165, 0.8, 1.05],
     hp: 6, dmg: 3.2, fd: 0.44, speed: 120, range: 200, shot: 230, skills: { split: 1, orbit: 1 } },
@@ -203,20 +206,23 @@ function drawFrame(S, name, x, y, mirror, flash, tilt = 0) {
   ctx.restore();
 }
 // which frame to show for a walker facing face/flip, with an optional attack pose (1 windup, 2 strike)
-// Walk frames to cycle per sheet and row; by default all five. The wizard's front walk skips
-// the two frames where the art leaves his staff out, so it doesn't blink; the rogue's first
-// back-view frame is drawn facing you, so it's skipped too.
-const WALK = { wizard: { down: [0, 1, 3] }, rogue: { up: [1, 2, 3, 4] } };
+// How many walk frames each sheet fills per row; painted sheets have five. The pixel heroes'
+// counts come from build_assets.py, which picks and orders the usable frames.
+const WALK = {
+  queen: { down: 4, up: 5, right: 4, left: 4 },
+  ninja: { down: 5, up: 5, right: 4, left: 4 },
+  sorceress: { down: 4, up: 3, right: 5, left: 5 },
+};
 function poseFrame(S, face, flip, anim, moving, pose) {
   if (pose) { const set = face === 'side' ? S.poses.side : S.poses.down; return [set[Math.min(1, pose - 1)], face === 'side' && flip]; }
   const row = face === 'side' ? (flip ? 'left' : 'right') : face;
-  const seq = (WALK[S.kind] && WALK[S.kind][row]) || [0, 1, 2, 3, 4];
-  return [row + (moving ? seq[Math.floor(anim) % seq.length] : seq[0]), false];
+  const n = (WALK[S.kind] && WALK[S.kind][row]) || 5;
+  return [row + (moving ? Math.floor(anim) % n : 0), false];
 }
 // A small bounce and sway on every step, so walking always reads as walking even where
 // neighbouring frames in the art are nearly the same.
-// The skeleton and the rogue get a heavier stomp, since their side-view walk frames barely change.
-const STEP = { skeleton: [1.9, 0.055], rogue: [1.9, 0.055] };
+// The skeleton gets a heavier stomp, since its walk frames barely change.
+const STEP = { skeleton: [1.9, 0.055] };
 function stepMotion(anim, moving, kind) {
   if (!moving) return [0, 0];
   const [lift, sway] = STEP[kind] || [1.4, 0.045];
@@ -233,7 +239,7 @@ function glowSprite(r, color) {
 const GLOW = {};
 const LIGHT = glowSprite(64, 'rgba(255,255,255,1)');
 
-// ---- hero sprite sheets, one recoloured wizard per character
+// ---- hero sprite sheets, one per character
 const CHAR_SHEETS = {};
 // hearts for the HUD (and, scaled up, the Thornheart itself), drawn as smooth shapes
 const HEARTS = {};
@@ -1538,8 +1544,8 @@ function drawPlayer() {
   if (p.inv > 0 && Math.floor(p.inv * 14) % 2 === 0 && !G.dying) return;
   const moving = hyp(p.vx, p.vy) > 8;
   // the casting pose only shows when standing still, so the legs keep walking while shooting
-  // only the wizard has a casting pose; sword-and-shield heroes keep their stance when shooting
-  const cast = p.castT > 0 && !moving && p.face !== 'up' && S.kind === 'wizard';
+  // only casters have a casting pose; blade-wielding heroes keep their stance when shooting
+  const cast = p.castT > 0 && !moving && p.face !== 'up' && CASTERS.has(S.kind);
   const [name, mirror] = poseFrame(S, p.face, p.flip, p.anim, moving, cast ? 2 : 0);
   const [bob, tilt] = stepMotion(p.anim, moving, S.kind);
   ctx.save();
@@ -1806,7 +1812,7 @@ function drawPortrait(pc, S, glow) {
   x.clearRect(0, 0, W, H);
   if (glow) { const g = x.createRadialGradient(W / 2, H * 0.55, 4, W / 2, H * 0.55, W * 0.6); g.addColorStop(0, 'rgba(79,195,255,0.28)'); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(0, 0, W, H); }
   const k = Math.min(W / (c * 0.6), H / (c * 0.8)), w = c * k;
-  x.drawImage(S.img, (i % ATLAS.cols) * c, Math.floor(i / ATLAS.cols) * c, c, c, (W - w) / 2, H - w + ATLAS.foot * k * 0.44, w, w);
+  x.drawImage(S.img, (i % ATLAS.cols) * c, Math.floor(i / ATLAS.cols) * c, c, c, (W - w) / 2, H - w + S.foot * k, w, w);
 }
 function lvKey(k) {
   if (!LV) return;
@@ -1864,7 +1870,8 @@ async function boot() {
   await Promise.all([
     loadImg('goblin', 'assets/goblin@0.44.webp'), loadImg('goblinBig', 'assets/goblin@0.8.webp'),
     loadImg('ghost', 'assets/ghost@0.44.webp'), loadImg('ghostBig', 'assets/ghost@0.8.webp'),
-    loadImg('wizard', 'assets/wizard@0.44.webp'), loadImg('rogue', 'assets/rogue@0.44.webp'), loadImg('skeleton', 'assets/skeleton@0.44.webp'),
+    loadImg('sorceress', 'assets/sorceress@0.8.webp'), loadImg('queen', 'assets/queen@0.8.webp'), loadImg('ninja', 'assets/ninja@0.8.webp'),
+    loadImg('skeleton', 'assets/skeleton@0.44.webp'),
     loadImg('c16', 'assets/crystal32.webp'), loadImg('c32', 'assets/crystal64.webp'), loadImg('floor', 'assets/floor.jpg'),
   ]);
   try { await Promise.all(['700 12px "Cinzel"', '400 12px "Alegreya Sans"', '700 12px "Alegreya Sans"'].map((f) => document.fonts.load(f))); } catch (e) {}
@@ -1878,7 +1885,7 @@ async function boot() {
   SHEETS.ghostB = makeSheet('ghost', 0.8, variant(IMG.ghostBig, 140, 1.4, 1), BOSS);
   GLOW.cyan = glowSprite(16, 'rgba(90,200,255,0.9)'); GLOW.teal = glowSprite(16, 'rgba(110,240,210,0.8)'); GLOW.violet = glowSprite(16, 'rgba(200,110,255,0.85)');
   GLOW.green = glowSprite(16, 'rgba(140,220,90,0.7)'); GLOW.red = glowSprite(16, 'rgba(255,80,90,0.8)'); GLOW.gold = glowSprite(16, 'rgba(255,200,100,0.8)');
-  for (const id in CHARS) { const c = CHARS[id], img = IMG[c.sheet]; CHAR_SHEETS[id] = makeSheet(c.sheet, 0.44, c.tint ? variant(img, ...c.tint) : img); }
+  for (const id in CHARS) { const c = CHARS[id], img = IMG[c.sheet]; CHAR_SHEETS[id] = makeSheet(c.sheet, HERO_SCALE[c.sheet] || 0.44, c.tint ? variant(img, ...c.tint) : img); }
   buildHearts();
   demoRoom(); showTitle();
   requestAnimationFrame((t) => { last = t; requestAnimationFrame(frame); });

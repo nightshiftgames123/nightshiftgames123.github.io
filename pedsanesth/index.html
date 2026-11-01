@@ -16,14 +16,9 @@
       var pub = /[?&]public=1\b/.test(location.search);
       document.documentElement.setAttribute('data-public', pub ? '1' : '0');
       if (pub) document.getElementById('manifest-link').setAttribute('href', 'manifest-public.webmanifest');
-      // Trial features: ?beta=1 turns on (remembered on this device), ?beta=0 turns off.
-      var beta = null;
-      try {
-        if (/[?&]beta=1\b/.test(location.search)) localStorage.setItem('peds_beta', '1');
-        if (/[?&]beta=0\b/.test(location.search)) localStorage.removeItem('peds_beta');
-        beta = localStorage.getItem('peds_beta');
-      } catch (e) {}
-      document.documentElement.setAttribute('data-beta', beta === '1' ? '1' : '0');
+      // Clean layout and patient conditions are now standard for everyone.
+      try { localStorage.removeItem('peds_beta'); } catch (e) {}
+      document.documentElement.setAttribute('data-beta', '1');
     })();
   </script>
   <link rel="apple-touch-icon" href="nasma-icon-180.png" />
@@ -428,7 +423,7 @@
       </div>
 
       <div class="card beta-only" id="cond-card">
-        <div class="card-title">Patient Conditions <span class="beta-tag">Beta · draft</span></div>
+        <div class="card-title">Patient Conditions <span class="beta-tag">Draft</span></div>
         <div class="form-row">
           <input type="text" id="cond-text" placeholder="Describe: e.g. Fontan on aspirin, OSA" onkeydown="if (event.key === 'Enter') detectConditions()" />
           <button class="btn btn-primary" style="white-space:nowrap;" onclick="detectConditions()">✨ Detect</button>

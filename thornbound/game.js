@@ -219,15 +219,12 @@ function poseFrame(S, face, flip, anim, moving, pose) {
   const n = (WALK[S.kind] && WALK[S.kind][row]) || 5;
   return [row + (moving ? Math.floor(anim) % n : 0), false];
 }
-// A small bounce and sway on every step, so walking always reads as walking even where
-// neighbouring frames in the art are nearly the same.
-// The skeleton gets a heavier stomp, since its walk frames barely change.
-const STEP = { skeleton: [1.9, 0.055] };
+// A small bounce on every step for the painted monsters, whose walk frames barely change.
+// Pixel heroes animate their own legs, so they get none. No sideways tilt for anyone.
+const STEP = { skeleton: 1.9 };
 function stepMotion(anim, moving, kind) {
-  if (!moving) return [0, 0];
-  const [lift, sway] = STEP[kind] || [1.4, 0.045];
-  const s = Math.sin(anim * Math.PI * 0.8);
-  return [-Math.abs(s) * lift, s * sway];
+  if (!moving || HERO_SCALE[kind]) return [0, 0];
+  return [-Math.abs(Math.sin(anim * Math.PI * 0.8)) * (STEP[kind] || 1.4), 0];
 }
 function glowSprite(r, color) {
   const c = mk(r * 2, r * 2), x = c.getContext('2d');

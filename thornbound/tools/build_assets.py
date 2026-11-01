@@ -167,6 +167,30 @@ def pixel_figures(img, attack_x):
     return out
 
 
+def register(cells):
+    """Line a walk row's frames up on the upper body (head and chest), so the figure doesn't jitter
+    sideways when a sword or a leg sticks out further in one frame. Legs and arms keep moving."""
+    def band(c):
+        a = np.asarray(c).astype(np.float32)
+        al = a[..., 3] / 255
+        ys = np.nonzero(al.max(1) > 0.5)[0]
+        top, h = ys.min(), ys.max() - ys.min()
+        g = (a[..., :3].mean(2) / 255 + 0.5) * al          # shade + silhouette, so outlines and faces count
+        g[:int(top + h * 0.06)] = 0; g[int(top + h * 0.45):] = 0
+        return g
+    bands = [band(c) for c in cells]
+    ref = sum(bands) / len(bands)
+    shifts = []
+    for g in bands:
+        errs = {dx: np.abs(np.roll(g, dx, axis=1) - ref).mean() for dx in range(-30, 31)}
+        shifts.append(min(errs, key=errs.get))
+    mean = round(sum(shifts) / len(shifts))
+    out = []
+    for c, dx in zip(cells, shifts):
+        n = Image.new('RGBA', c.size); n.paste(c, (dx - mean, 0)); out.append(n)
+    return out
+
+
 def pixel_frames(name):
     spec = PIXEL[name]
     src = Image.open(f'{SRC}/{name}-sheet.jpg')
@@ -195,7 +219,7 @@ def pixel_frames(name):
         pieces = [piece(r, k) for k in ks]
         ground = max(y1 for _, y1 in pieces)            # one feet line per row: lifted feet stay lifted
         centre = sum(torso_x(p) for p, _ in pieces) / len(pieces)
-        walks[d] = [place(p, centre, round((ground - y1) * PIXEL_SCALE)) for p, y1 in pieces]
+        walks[d] = register([place(p, centre, round((ground - y1) * PIXEL_SCALE)) for p, y1 in pieces])
     out = []
     for d in DIRS:
         out += [(f'{d}{i}', walks[d][i] if i < len(walks[d]) else Image.new('RGBA', (CELL_W, CELL_H))) for i in range(SLOTS)]

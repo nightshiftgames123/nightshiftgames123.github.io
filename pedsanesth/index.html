@@ -1561,6 +1561,7 @@
       msg.textContent = kwHits.length ? `Found ${kwHits.length}.` : 'No keyword match.';
       const key = getApiKey();
       if (!key) { msg.textContent += ' Add a Gemini key (Nasma AI tab) for smarter detection.'; return; }
+      if (!navigator.onLine) { msg.textContent += ' Offline: keyword detection only.'; return; }
       msg.textContent += ' ✨ Asking Nasma AI…';
       try {
         const list = CONDITIONS.map((c) => `${c.id}: ${c.name}`).join('\n');
@@ -1583,7 +1584,8 @@
         const all = [...new Set([...kwHits, ...ids])];
         msg.textContent = all.length ? `Found ${all.length}${added.length ? ` (${added.length} by AI)` : ''}. Tap ✕ to remove one.` : 'No matching condition found.';
       } catch (err) {
-        msg.textContent = (kwHits.length ? `Found ${kwHits.length}. ` : '') + `AI detection unavailable (${err.message}).`;
+        const why = err instanceof TypeError ? 'no internet, keyword detection only' : err.message;
+        msg.textContent = (kwHits.length ? `Found ${kwHits.length}. ` : 'No keyword match. ') + `AI detection unavailable (${why}).`;
       }
     }
 

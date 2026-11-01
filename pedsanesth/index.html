@@ -741,6 +741,14 @@
           • The free plan has a daily limit. If you see a "rate limit" message, wait a minute and try again.<br/>
           • The key is stored only on your phone, never on our side.
         </div>
+        <h4 style="color: var(--accent); margin: 14px 0 4px;">Hitting the free limit?</h4>
+        <p>The free plan allows only a limited number of questions per minute and per day. If you use Nasma AI a lot:</p>
+        <ol style="padding-left: 18px; margin-top: 4px;">
+          <li style="margin-bottom: 6px;">In Google AI Studio, open your API key's project and choose <strong>"Set up billing"</strong> (pay as you go, with a card).</li>
+          <li style="margin-bottom: 6px;">Limits become much higher; a typical question costs a small fraction of a US cent.</li>
+          <li style="margin-bottom: 6px;">Set a <strong>budget alert</strong> in Google Cloud Billing so you are never surprised.</li>
+        </ol>
+        <p class="muted" style="font-size: 12px;">Bonus: on the paid plan Google does not use your questions to improve its products.</p>
       </div>
     </div>
   </div>
@@ -1648,6 +1656,7 @@
       calculateAll();
       const names = (ids) => ids.map((id) => CONDITIONS.find((c) => c.id === id).name).join(', ');
       msg.textContent = kwHits.length ? `Found ${kwHits.length}.` : 'No keyword match.';
+      if (kwHits.length) return; // keywords were enough: don't spend an AI request
       const key = getApiKey();
       if (!key) { msg.textContent += ' Add a Gemini key (Nasma AI tab) for smarter detection.'; return; }
       if (!navigator.onLine) { msg.textContent += ' Offline: keyword detection only.'; return; }
@@ -1926,18 +1935,13 @@
         if (W.bmi != null) parts.push(`BMI ${W.bmi.toFixed(1)}${W.ref ? ` (95th percentile for age ${W.ref.p95.toFixed(1)})` : ''}${W.obese ? ' — OBESE' : ''}`);
         if (W.ibwRaw != null) parts.push(`IBW ${fmt(Math.min(W.ibwRaw, W.TBW))} kg; obesity weight scalars ${W.active ? 'ON' : 'off'}`);
         parts.push(`Maintenance fluids ${grab('fluid-hourly')}, EBV ${grab('metric-ebv')}`);
-        if (W.active) {
-          const by = { IBW: [], ABW: [], TBW: [] };
-          DRUG_DB.forEach((d) => by[d.wt || 'TBW'].push(d.name));
-          INFUSIONS.forEach((f) => by[f.wt].push(f.name + ' infusion'));
-          parts.push(`Dosing weights (obesity scalars ON): IBW ${fmt(W.IBW)} kg, ABW ${fmt(W.ABW)} kg, TBW ${fmt(W.TBW)} kg`);
-          Object.entries(by).forEach(([k, list]) => parts.push(`  ${k}: ${list.join(', ')}`));
-        }
+        if (W.active) parts.push(`Dosing weights (obesity scalars ON): IBW ${fmt(W.IBW)} kg, ABW ${fmt(W.ABW)} kg, TBW ${fmt(W.TBW)} kg; the weight for each drug is in [brackets] below`);
       }
-      // The app's verified reference doses, so the AI stays consistent with the calculator.
-      parts.push('App reference doses (per kg; max; source):');
-      DRUG_DB.forEach((d) => parts.push(`  ${d.name}: ${d.range} ${d.unit}/kg${d.kind === 'max' ? ' (maximum total dose)' : ''}${d.max != null ? `, max ${d.max} ${d.unit}` : ''}; ${d.src}`));
-      INFUSIONS.forEach((f) => parts.push(`  ${f.name} infusion: ${f.lo}–${f.hi} ${f.dU === 'mU' ? 'milliunits' : f.dU}/kg/${f.dT}; ${f.src}`));
+      // The app's verified reference doses, compact (one line each) to keep requests small.
+      const wtTag = (k) => (p.weight != null && computeWeights(p).active ? ` [${k || 'TBW'}]` : '');
+      parts.push('App reference doses (per kg, max) from FDA labels / PALS / SPA unless noted:');
+      parts.push(DRUG_DB.map((d) => `${d.name} ${d.range} ${d.unit}/kg${d.kind === 'max' ? ' MAX TOTAL' : ''}${d.max != null ? ` (max ${d.max} ${d.unit})` : ''}${wtTag(d.wt)}`).join('; '));
+      parts.push('Infusions: ' + INFUSIONS.map((f) => `${f.name} ${f.lo}–${f.hi} ${f.dU === 'mU' ? 'milliunits' : f.dU}/kg/${f.dT}${wtTag(f.wt)}`).join('; '));
       const conds = CONDITIONS.filter((c) => activeConds.has(c.id));
       if (conds.length) {
         parts.push('Patient conditions selected in the app: ' + conds.map((c) => c.name).join(', '));
@@ -1959,6 +1963,7 @@
 - End with one line reminding the clinician to verify doses against institutional references.`;
 
     let aiBusy = false;
+    const aiCache = new Map(); // identical request → saved answer (saves quota on repeat taps)
     async function queryGemini(mode) {
       if (aiBusy) return;
       const key = getApiKey();
@@ -1975,6 +1980,10 @@
       const prompt = `${task}\n\nPatient:\n${patientSummary()}\n\nClinical notes / question:\n${notes || '(none provided)'}`;
 
       const model = GEMINI_MODEL;
+      if (aiCache.has(prompt)) {
+        box.innerHTML = renderMarkdown(aiCache.get(prompt)) + '<p class="muted">↺ Same question as before: showing the saved answer (no new request used).</p>';
+        return;
+      }
       aiBusy = true;
       document.querySelectorAll('.ai-btn').forEach((b) => (b.disabled = true));
       box.innerHTML = '<span class="muted">⏳ Asking Gemini…</span>';
@@ -2024,6 +2033,7 @@
 
         if (blocked) throw new Error(`Gemini blocked this request (${blocked}). Try rephrasing the notes.`);
         if (!text) throw new Error(finish === 'SAFETY' ? 'Gemini withheld the answer for safety reasons. Try rephrasing.' : `No answer returned${finish ? ' (' + finish + ')' : ''}. Try again.`);
+        if (finish !== 'SAFETY') aiCache.set(prompt, text);
         if (finish === 'MAX_TOKENS') box.innerHTML += '<p class="muted">… (answer was cut off at the length limit)</p>';
         else if (finish === 'SAFETY') box.innerHTML += '<p class="err">… (answer stopped by Gemini safety filter)</p>';
       } catch (err) {
@@ -2040,7 +2050,12 @@
       if (status === 400 && /API key/i.test(m)) return 'Invalid API key. Copy it again from Google AI Studio.';
       if (status === 403) return 'This key is not allowed to use the Gemini API (403). Check the key in Google AI Studio. ' + m;
       if (status === 404) return `Model ${GEMINI_MODEL} not found (404). ${m}`;
-      if (status === 429) return 'Free-tier rate limit reached (429). Wait a minute and try again.';
+      if (status === 429) {
+        // Google says which limit was hit (per minute vs per day) and sometimes when to retry.
+        const retry = (m.match(/retry in ([\d.]+)s/i) || [])[1];
+        if (/per ?day|PerDay|daily/i.test(m)) return 'Daily free Gemini limit reached for this key. It resets at midnight US Pacific time (about 10–11 am Saudi time). To avoid this, turn on billing for your key (see 🔑 guide).';
+        return `Too many requests in a short time (free per-minute limit). Try again in ${retry ? Math.ceil(+retry) + ' seconds' : 'about a minute'}.`;
+      }
       if (status >= 500) return `Gemini is having problems (${status}). Try again shortly.`;
       return `Gemini error ${status}: ${m}`;
     }

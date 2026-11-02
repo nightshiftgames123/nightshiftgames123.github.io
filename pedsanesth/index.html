@@ -243,11 +243,12 @@
       #content > .sec, #content > .hint { break-inside: avoid; margin-bottom: 14px; display: block; }
       #content > .hint { column-span: all; }
     }
-    /* ===== Start screen: studio logo → Nasma AI (≈1.8 s, once per launch, tap to skip) ===== */
-    #splash { position: fixed; inset: 0; z-index: 100; background: #0f0e24; display: flex; align-items: center; justify-content: center; cursor: pointer; animation: sp-out .35s ease 1.6s forwards; }
+    /* ===== Start screen: studio logo → Nasma AI (≈4 s, once per launch, tap to skip) ===== */
+    #splash { position: fixed; inset: 0; z-index: 100; background: #0f0e24; display: flex; align-items: center; justify-content: center; cursor: pointer; animation: sp-out .5s ease 3.6s forwards; }
     #splash .st { position: absolute; display: flex; flex-direction: column; align-items: center; gap: 18px; }
-    #splash .st1 { animation: sp-a 1.0s ease forwards; }
-    #splash .st2 { opacity: 0; animation: sp-b .9s ease .85s forwards; }
+    #splash .st1 { animation: sp-a 2.0s ease forwards; }
+    #splash .st2 { opacity: 0; animation: sp-b 1.2s ease 1.75s forwards; }
+    #splash .skip { position: absolute; bottom: calc(28px + env(safe-area-inset-bottom)); font: 400 13px 'Geist', sans-serif; color: #8c949a; opacity: 0; animation: sp-b .6s ease .8s forwards; }
     #splash .studio { width: min(62vw, 300px); aspect-ratio: 1; border-radius: 13%; box-shadow: 0 20px 60px rgba(0,0,0,.5); display: block; }
     #splash .app { width: 104px; height: 104px; border-radius: 24px; box-shadow: 0 16px 40px rgba(0,0,0,.45); display: block; }
     #splash .name { font: 500 34px/1 'Newsreader', Georgia, serif; color: #ece9e2; letter-spacing: -0.01em; }
@@ -256,13 +257,14 @@
     @keyframes sp-a { 0% { opacity: 0; transform: scale(.96); } 18% { opacity: 1; transform: none; } 78% { opacity: 1; } 100% { opacity: 0; transform: scale(1.02); } }
     @keyframes sp-b { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
     @keyframes sp-out { to { opacity: 0; visibility: hidden; } }
-    @media (prefers-reduced-motion: reduce) { #splash { animation: sp-out .2s linear .9s forwards; } #splash .st1 { display: none; } #splash .st2 { animation: none; opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) { #splash { animation: sp-out .2s linear 2s forwards; } #splash .st1 { display: none; } #splash .st2 { animation: none; opacity: 1; } }
   </style>
 </head>
 <body>
 <div id="splash" aria-hidden="true" onclick="this.remove()">
   <div class="st st1"><img class="studio" src="studio-logo.jpg" alt="" width="300" height="300" /></div>
   <div class="st st2"><img class="app" src="nasma-icon-512.png" alt="" width="104" height="104" /><div class="name">Nasma <span>AI</span></div><div class="ar">نسمة</div></div>
+  <div class="skip">Tap to skip</div>
 </div>
 <script>
   // Show the start screen once per launch only (not on reloads), and remove it when done.
@@ -271,7 +273,7 @@
     try { seen = sessionStorage.getItem('nasma_splash'); sessionStorage.setItem('nasma_splash', '1'); } catch (e) {}
     if (seen) { sp.remove(); return; }
     sp.addEventListener('animationend', function (e) { if (e.target === sp) sp.remove(); });
-    setTimeout(function () { if (sp.parentNode) sp.remove(); }, 2600); // safety net
+    setTimeout(function () { if (sp.parentNode) sp.remove(); }, 5000); // safety net
   })();
 </script>
 <div class="wrap">

@@ -1,7 +1,7 @@
 // Offline cache for Nasma AI. Bump VERSION whenever any cached file changes.
 // Strategy: open instantly from the cache, then refresh the cache in the background
 // (stale-while-revalidate). A new version therefore appears on the next launch.
-const VERSION = 'pedsanesth-v27';
+const VERSION = 'pedsanesth-v28';
 const ASSETS = [
   './', './index.html', './nasma-core.js', './classic.html',
   './manifest.webmanifest', './manifest-public.webmanifest',

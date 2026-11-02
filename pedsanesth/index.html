@@ -215,6 +215,34 @@
     .ref table { width: 100%; border-collapse: collapse; font-size: 13px; }
     .ref td { padding: 6px 4px; border-bottom: 1px solid var(--line); vertical-align: top; }
     .ref td:first-child { color: var(--text); }
+    /* ===== Wide screens (computers, landscape tablets): two columns ===== */
+    @media (min-width: 1000px) {
+      .wrap { max-width: 1240px; }
+      .hdr, .pt-row { padding-left: 24px; padding-right: 24px; }
+      .layout { display: grid; grid-template-columns: 400px minmax(0, 1fr); gap: 24px; padding: 0 24px; align-items: start; }
+      .side { position: sticky; top: calc(var(--hdr, 73px) + 18px); max-height: calc(100vh - var(--hdr, 73px) - 30px); overflow-y: auto; scrollbar-width: thin; }
+      .side .stack { padding: 18px 0 18px; }
+      .main { min-width: 0; padding-top: 4px; }
+      nav.tabs { margin-top: 14px; padding: 0; top: var(--hdr, 73px); }
+      .main .chips { padding: 14px 0 4px; }
+      .main .list { padding: 10px 0 0; }
+      .ask { right: 28px; bottom: 28px; }
+      /* STAT: cards side by side */
+      .overlay .in { max-width: 1240px; padding: 0 24px 40px; }
+      #stat-cards { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); align-items: start; }
+      .stat-w { max-width: 420px; }
+      /* Chat / sources / info open as a side panel on the right */
+      .sheet-bg { justify-content: flex-end; align-items: stretch; }
+      .sheet { max-width: 480px; height: 100vh; border-radius: 0; border-top: 0; border-bottom: 0; border-right: 0; animation: nz-side .22s ease-out; }
+    }
+    @keyframes nz-side { from { transform: translateX(30px); opacity: 0; } to { transform: none; opacity: 1; } }
+    /* Very wide: drug and infusion sections flow in two columns */
+    @media (min-width: 1400px) {
+      .wrap { max-width: 1440px; }
+      #content { display: block; columns: 2; column-gap: 14px; }
+      #content > .sec, #content > .hint { break-inside: avoid; margin-bottom: 14px; display: block; }
+      #content > .hint { column-span: all; }
+    }
   </style>
 </head>
 <body>
@@ -229,6 +257,8 @@
     <div class="pt-row hidden" id="pt-row"><span class="chip" id="pt-chip"></span><span class="conds" id="pt-conds"></span></div>
   </header>
 
+  <div class="layout">
+  <aside class="side">
   <div class="stack">
     <section class="card" aria-label="Patient">
       <div class="card-h"><h2>Patient</h2><button class="link-btn" onclick="newPatient()">New patient</button></div>
@@ -272,6 +302,8 @@
       <div class="air-extra" id="air-extra"></div>
     </section>
   </div>
+  </aside>
+  <main class="main">
 
   <nav class="tabs" id="tabs">
     <button data-tab="drugs" class="on">Drugs</button>
@@ -286,6 +318,8 @@
       <button onclick="openSheet('sources')">Dose sources</button> · <button onclick="openSheet('info')">Formulas &amp; info</button> · <a href="classic.html">Classic version</a>
       <span class="support" id="support"> · <a href="#" target="_blank" rel="noopener" id="support-link">☕ Support on Ko-fi</a></span>
     </p>
+  </div>
+  </main>
   </div>
 </div>
 

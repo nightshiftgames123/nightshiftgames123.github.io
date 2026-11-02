@@ -1,0 +1,1746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1e293b" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Nasma AI" />
+  <link rel="manifest" id="manifest-link" href="manifest.webmanifest" />
+  <script>
+    // Public edition (reached via /pedsanesth-app/) shows the support button.
+    // The original /pedsanesth/ link used by the team never does.
+    (function () {
+      var pub = /[?&]public=1\b/.test(location.search);
+      document.documentElement.setAttribute('data-public', pub ? '1' : '0');
+      if (pub) document.getElementById('manifest-link').setAttribute('href', 'manifest-public.webmanifest');
+      // Clean layout and patient conditions are now standard for everyone.
+      try { localStorage.removeItem('peds_beta'); } catch (e) {}
+      document.documentElement.setAttribute('data-beta', '1');
+    })();
+  </script>
+  <link rel="apple-touch-icon" href="nasma-icon-180.png" />
+  <link rel="icon" type="image/png" href="nasma-icon-192.png" />
+  <title>Nasma AI · Pediatric Anesthesia</title>
+  <script>
+    // Apply saved (or system) theme before first paint to avoid a flash.
+    (function () {
+      var t = null;
+      try { t = localStorage.getItem('peds_theme'); } catch (e) {}
+      if (t !== 'light' && t !== 'dark') t = window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --card-dark: #1e293b;
+      --border-dark: #334155;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --ok: #10b981;
+      --warn: #f59e0b;
+      --bad: #f87171;
+
+      /* ASTM D4774 / ISO 26825 syringe label colors */
+      --astm-induction: #fef08a;      --astm-induction-text: #713f12;
+      --astm-benzo: #fdba74;          --astm-benzo-text: #7c2d12;
+      --astm-paralytic: #fca5a5;      --astm-paralytic-text: #7f1d1d;
+      --astm-reversal: #fecdd3;       --astm-reversal-text: #881337;
+      --astm-opioid: #93c5fd;         --astm-opioid-text: #1e3a8a;
+      --astm-opioid-antag: #dbeafe;   --astm-opioid-antag-text: #1e3a8a;
+      --astm-local: #cbd5e1;          --astm-local-text: #0f172a;
+      --astm-anticholinergic: #86efac; --astm-anticholinergic-text: #14532d;
+      --astm-pressor: #d8b4fe;        --astm-pressor-text: #581c87;
+      --astm-antiemetic: #fda4af;     --astm-antiemetic-text: #7f1d1d;
+      --astm-other: #f8fafc;          --astm-other-text: #0f172a;
+
+      --inset: #0f172a;
+      --text-strong: #ffffff;
+      --text-soft: #cbd5e1;
+      --section: #172036;
+      --warn-bg: rgba(245, 158, 11, .12); --warn-border: rgba(245, 158, 11, .5); --warn-text: #fde68a;
+      --info-bg: rgba(56, 189, 248, .08); --info-border: rgba(56, 189, 248, .35); --info-text: #bae6fd;
+      color-scheme: dark;
+    }
+    /* Light theme: same tokens, daylight values (accents darkened for contrast on white) */
+    :root[data-theme="light"] {
+      --bg-dark: #f1f5f9;
+      --card-dark: #ffffff;
+      --border-dark: #cbd5e1;
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --accent: #0369a1;
+      --ok: #047857;
+      --warn: #b45309;
+      --bad: #dc2626;
+      --inset: #f8fafc;
+      --text-strong: #0f172a;
+      --text-soft: #334155;
+      --section: #e2e8f0;
+      --warn-bg: #fffbeb; --warn-border: #f59e0b; --warn-text: #78350f;
+      --info-bg: #f0f9ff; --info-border: #7dd3fc; --info-text: #075985;
+      color-scheme: light;
+    }
+    :root[data-theme="light"] .astm-other { border: 1px solid #94a3b8; }
+    .theme-btn { font-size: 15px; min-width: 34px; }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background-color: var(--bg-dark); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; font-size: 14px; padding-bottom: env(safe-area-inset-bottom); }
+
+    header { background: var(--card-dark); border-bottom: 1px solid var(--border-dark); padding: 10px 14px; padding-top: max(10px, env(safe-area-inset-top)); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 40; gap: 8px; }
+    .brand { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .brand-logo-img { width: 34px; height: 34px; border-radius: 9px; display: block; flex-shrink: 0; }
+    .brand-logo { background: linear-gradient(135deg, #7c3aed, #0284c7); color: white; font-weight: 900; padding: 4px 8px; border-radius: 6px; font-size: 16px; }
+
+    .btn { background: var(--border-dark); color: var(--text-main); border: none; padding: 8px 12px; border-radius: 8px; font-weight: 600; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; min-height: 38px; }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-danger { background: #dc2626; color: white; animation: pulse 2s infinite; font-weight: 700; }
+    .btn-primary { background: #0284c7; color: white; }
+    .btn-sm { padding: 4px 8px; min-height: 30px; font-size: 11px; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.75; } }
+    @media (prefers-reduced-motion: reduce) { .btn-danger { animation: none; } }
+
+    .layout-grid { display: flex; flex-direction: column; gap: 14px; max-width: 1280px; margin: 12px auto; padding: 0 12px; width: 100%; }
+    @media (min-width: 1024px) { .layout-grid { display: grid; grid-template-columns: 340px 1fr; align-items: start; } }
+
+    .card { background: var(--card-dark); border: 1px solid var(--border-dark); border-radius: 12px; padding: 14px; margin-bottom: 10px; }
+    .card-title { font-size: 11px; text-transform: uppercase; color: var(--accent); letter-spacing: 0.05em; font-weight: 700; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+    .card-title a, .link { font-size: 11px; color: var(--accent); text-decoration: none; text-transform: none; letter-spacing: 0; font-weight: 600; cursor: pointer; background: none; border: none; }
+
+    .form-group { margin-bottom: 10px; }
+    .form-group label, .lbl { display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 4px; font-weight: 500; }
+    .form-row { display: flex; gap: 6px; }
+    input, select, textarea { background: var(--inset); border: 1px solid var(--border-dark); color: var(--text-strong); padding: 10px; border-radius: 8px; width: 100%; font-size: 16px; outline: none; min-height: 42px; }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+    input.invalid { border-color: var(--bad); }
+    #weight-val { color: var(--accent); font-weight: bold; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .metric-badge { background: var(--inset); border: 1px solid var(--border-dark); padding: 8px; border-radius: 8px; }
+    .metric-label { font-size: 10px; color: var(--text-muted); display: block; }
+    .metric-val { font-size: 14px; font-weight: 700; color: var(--accent); font-family: ui-monospace, Menlo, monospace; }
+    .metric-sub { font-size: 10px; color: var(--text-muted); display: block; margin-top: 2px; }
+
+    .alert { border-radius: 8px; padding: 8px 10px; font-size: 12px; line-height: 1.4; margin-top: 8px; }
+    .alert-warn { background: var(--warn-bg); border: 1px solid var(--warn-border); color: var(--warn-text); }
+    .alert-info { background: var(--info-bg); border: 1px solid var(--info-border); color: var(--info-text); }
+    .hidden { display: none !important; }
+
+    .nav-tabs { display: flex; border-bottom: 1px solid var(--border-dark); margin-bottom: 12px; gap: 4px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .tab-btn { background: transparent; color: var(--text-muted); border: none; padding: 10px 14px; font-size: 13px; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; min-height: 40px; }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); background: var(--inset); border-radius: 8px 8px 0 0; }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; min-width: 560px; }
+    th { background: var(--inset); padding: 10px; color: var(--text-muted); text-transform: uppercase; font-size: 9px; letter-spacing: 0.05em; position: sticky; top: 0; }
+    td { padding: 9px 10px; border-bottom: 1px solid var(--inset); font-family: ui-monospace, Menlo, monospace; vertical-align: top; }
+    td.name { font-family: inherit; font-weight: 600; color: var(--text-strong); }
+    td.name small { display: block; font-weight: 400; color: var(--text-muted); font-size: 10px; margin-top: 2px; line-height: 1.35; }
+    tr.section td { background: var(--section); color: var(--text-muted); font-size: 10px; text-transform: uppercase; letter-spacing: .05em; font-family: inherit; font-weight: 700; padding: 6px 10px; }
+    .capped { color: var(--warn); font-size: 10px; display: block; font-weight: 600; }
+    /* Drug name drawn like its ASTM D4774 syringe label; striped classes get a striped frame */
+    .drug-pill { display: inline-block; padding: 3px 9px; border-radius: 6px; font-weight: 800; color: #0f172a; line-height: 1.3; font-family: inherit; }
+    .drug-pill.astm-reversal, .drug-pill.astm-opioid-antag, .drug-pill.astm-hypotensive { border: 4px solid transparent; padding: 0 7px; }
+    .drug-pill.astm-reversal { background: linear-gradient(#fff, #fff) padding-box, repeating-linear-gradient(135deg, var(--astm-paralytic) 0 6px, #fff 6px 12px) border-box; }
+    .drug-pill.astm-opioid-antag { background: linear-gradient(#fff, #fff) padding-box, repeating-linear-gradient(135deg, var(--astm-opioid) 0 6px, #fff 6px 12px) border-box; }
+    .drug-pill.astm-hypotensive { background: linear-gradient(#fff, #fff) padding-box, repeating-linear-gradient(135deg, var(--astm-pressor) 0 6px, #fff 6px 12px) border-box; }
+    :root[data-theme="light"] .drug-pill.astm-reversal, :root[data-theme="light"] .drug-pill.astm-opioid-antag,
+    :root[data-theme="light"] .drug-pill.astm-hypotensive, :root[data-theme="light"] .drug-pill.astm-other { box-shadow: 0 0 0 1px #94a3b8; border-color: transparent; }
+    .cls-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); white-space: nowrap; font-family: inherit; }
+    /* Patient conditions (beta) */
+    .beta-only { display: none !important; }
+    :root[data-beta="1"] .beta-only { display: block !important; }
+    .beta-tag { font-size: 9px; font-weight: 800; background: #f59e0b; color: #422006; padding: 1px 6px; border-radius: 999px; letter-spacing: .04em; text-transform: uppercase; }
+    .cond-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .cond-chip { background: var(--inset); border: 1px solid var(--border-dark); color: var(--text-muted); padding: 6px 10px; border-radius: 999px; font-size: 12px; cursor: pointer; font-weight: 600; }
+    .cond-chip.on { background: #7c3aed; border-color: #7c3aed; color: #fff; }
+    .cond-panel { border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; background: rgba(124, 58, 237, .08); border: 1px solid rgba(124, 58, 237, .45); font-size: 12px; line-height: 1.5; color: var(--text-soft); }
+    .cond-panel h4 { font-size: 12px; color: #a78bfa; margin: 6px 0 2px; }
+    :root[data-theme="light"] .cond-panel h4 { color: #6d28d9; }
+    .cond-panel ul { padding-left: 16px; }
+    .cond-note { display: block; margin-top: 4px; font-size: 11px; font-weight: 700; line-height: 1.35; font-family: inherit; padding: 3px 6px; border-radius: 5px; }
+    .cond-note.avoid { background: rgba(220, 38, 38, .15); color: #f87171; }
+    .cond-note.caution { background: rgba(245, 158, 11, .15); color: #fbbf24; }
+    .cond-note.prefer { background: rgba(16, 185, 129, .15); color: #34d399; }
+    :root[data-theme="light"] .cond-note.avoid { color: #b91c1c; }
+    :root[data-theme="light"] .cond-note.caution { color: #92400e; }
+    :root[data-theme="light"] .cond-note.prefer { color: #047857; }
+    tr.cond-avoid td:first-child, .inf-row.cond-avoid { box-shadow: inset 4px 0 0 #dc2626; }
+    tr.cond-caution td:first-child, .inf-row.cond-caution { box-shadow: inset 4px 0 0 #f59e0b; }
+    tr.cond-prefer td:first-child, .inf-row.cond-prefer { box-shadow: inset 4px 0 0 #10b981; }
+    #drug-tbody tr.cond-avoid, #drug-tbody tr.cond-caution, #drug-tbody tr.cond-prefer { }
+    @media (max-width: 640px) {
+      #drug-tbody tr.cond-avoid:not(.section) { box-shadow: inset 4px 0 0 #dc2626; }
+      #drug-tbody tr.cond-caution:not(.section) { box-shadow: inset 4px 0 0 #f59e0b; }
+      #drug-tbody tr.cond-prefer:not(.section) { box-shadow: inset 4px 0 0 #10b981; }
+    }
+    /* ===== Clean layout (beta) ===== */
+    .clean-only { display: none !important; }
+    :root[data-beta="1"] .clean-only { display: revert !important; }
+    :root[data-beta="1"] .clean-hide { display: none !important; }
+    /* Header: one menu button instead of three */
+    .menu-wrap { position: relative; }
+    .menu-pop { position: absolute; right: 0; top: 44px; background: var(--card-dark); border: 1px solid var(--border-dark); border-radius: 12px; padding: 6px; min-width: 190px; box-shadow: 0 10px 30px rgba(0,0,0,.35); z-index: 50; }
+    .menu-pop button { display: block; width: 100%; text-align: left; background: none; border: none; color: var(--text-main); padding: 10px 12px; border-radius: 8px; font-size: 14px; cursor: pointer; }
+    .menu-pop button:hover, .menu-pop button:active { background: var(--inset); }
+    /* Drug rows: one compact line; details on tap */
+    :root[data-beta="1"] #drug-tbody td.name small,
+    :root[data-beta="1"] #drug-tbody td:nth-child(3) small,
+    :root[data-beta="1"] #drug-tbody td:nth-child(3) .wt-basis,
+    :root[data-beta="1"] #drug-tbody .cond-note,
+    :root[data-beta="1"] #drug-tbody td:nth-child(2) { display: none; }
+    :root[data-beta="1"] #drug-tbody tr.open td.name small,
+    :root[data-beta="1"] #drug-tbody tr.open td:nth-child(3) small,
+    :root[data-beta="1"] #drug-tbody tr.open .cond-note { display: block; }
+    :root[data-beta="1"] #drug-tbody tr.open td:nth-child(3) .wt-basis { display: inline-block; }
+    :root[data-beta="1"] .table-container thead th:nth-child(2) { display: none; }
+    :root[data-beta="1"] #drug-tbody tr:not(.section) { cursor: pointer; }
+    :root[data-beta="1"] #drug-tbody .fav-btn { font-size: 15px; min-height: 24px; min-width: 24px; opacity: .55; }
+    :root[data-beta="1"] #drug-tbody .fav-btn.on { opacity: 1; }
+    .cond-icon { margin-left: 4px; font-size: 13px; }
+    @media (max-width: 640px) {
+      :root[data-beta="1"] #drug-tbody tr:not(.section) { grid-template-columns: 1fr auto auto; padding: 8px 12px; row-gap: 2px; }
+      :root[data-beta="1"] #drug-tbody tr:not(.section) td.name { grid-column: 1; grid-row: 1; }
+      :root[data-beta="1"] #drug-tbody tr:not(.section) td:nth-child(3) { grid-column: 1; grid-row: 2; margin-top: 0; font-size: 11px; }
+      :root[data-beta="1"] #drug-tbody tr:not(.section) td:nth-child(4) { grid-column: 2; grid-row: 1 / span 2; align-self: center; font-size: 15px; }
+      :root[data-beta="1"] #drug-tbody tr:not(.section) td:nth-child(5) { grid-column: 3; grid-row: 1 / span 2; align-self: center; font-size: 15px; min-width: 64px; }
+    }
+    /* Infusion rows: hide notes until tapped */
+    :root[data-beta="1"] .inf-row .inf-note, :root[data-beta="1"] .inf-row .cond-slot, :root[data-beta="1"] .inf-row .inf-extra,
+    :root[data-beta="1"] .inf-row .cls-label { display: none; }
+    :root[data-beta="1"] .inf-row.open .inf-note, :root[data-beta="1"] .inf-row.open .cond-slot, :root[data-beta="1"] .inf-row.open .inf-extra { display: inline; }
+    :root[data-beta="1"] .inf-row.open .inf-extra, :root[data-beta="1"] .inf-row.open .cond-slot { display: block; }
+    :root[data-beta="1"] .inf-head { cursor: pointer; }
+    /* Patient card: extra fields folded */
+    :root[data-beta="1"] .more-fields { display: none; }
+    :root[data-beta="1"] .more-fields.open { display: block; }
+    .more-toggle { background: none; border: none; color: var(--accent); font-size: 12px; font-weight: 600; cursor: pointer; padding: 2px 0 8px; }
+    :root[data-beta="1"] #dw-card.dw-quiet { display: none; }
+    .airway-mini { font-size: 11px; color: var(--text-muted); margin-top: 8px; line-height: 1.5; }
+    .fav-btn { background: none; border: none; cursor: pointer; font-size: 18px; line-height: 1; padding: 2px 4px; margin-left: 4px; color: var(--text-muted); vertical-align: -2px; min-width: 28px; min-height: 28px; }
+    .fav-btn.on { color: #f59e0b; }
+    .support-link { display: none; }
+    :root[data-public="1"] .support-link.ready { display: inline-flex; }
+    .support-btn { align-items: center; gap: 6px; background: #fde047; color: #422006; font-weight: 700; border-radius: 999px; padding: 8px 14px; text-decoration: none; font-size: 13px; }
+    .icon-btn { min-width: 34px; font-size: 15px; }
+    @media (max-width: 420px) { .brand-sub { display: none !important; } }
+
+    /* AI: highlighted tab + floating button */
+    .tab-btn.ai-tab { background: linear-gradient(135deg, #7c3aed, #0284c7); color: #fff; border-radius: 8px 8px 0 0; }
+    .tab-btn.ai-tab.active { color: #fff; border-bottom-color: #a78bfa; }
+    .ai-fab { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 60; display: inline-flex; align-items: center; gap: 8px;
+      background: linear-gradient(135deg, #7c3aed, #0284c7); color: #fff; border: none; border-radius: 999px; padding: 12px 18px; font-size: 15px; font-weight: 700;
+      box-shadow: 0 6px 20px rgba(124, 58, 237, .45); cursor: pointer; }
+    .ai-fab:active { transform: scale(.97); }
+    .ai-fab.hidden { display: none; }
+    body { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+
+    /* Sources modal */
+    .src-table { width: 100%; min-width: 0; font-size: 11px; border-collapse: collapse; }
+    .src-table td, .src-table th { padding: 6px 8px; border-bottom: 1px solid var(--border-dark); font-family: inherit; vertical-align: top; position: static; }
+    .src-table th { font-size: 9px; }
+    .src-table tr.grp td { background: var(--section); font-weight: 700; text-transform: uppercase; font-size: 9px; letter-spacing: .05em; color: var(--text-muted); }
+    #modal-sources a { color: var(--accent); }
+    .wt-basis { display: inline-block; margin-top: 3px; font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 4px; background: var(--info-bg); color: var(--info-text); border: 1px solid var(--info-border); font-family: inherit; }
+    .mini-select { width: auto; min-height: 30px; padding: 4px 8px; font-size: 12px; text-transform: none; letter-spacing: 0; }
+
+    /* Infusions */
+    .inf-section { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); font-weight: 700; padding: 8px 12px; background: var(--section); }
+    .inf-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--inset); align-items: end; }
+    .inf-head { grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+    .inf-name { font-weight: 600; color: var(--text-strong); }
+    .inf-name small { display: block; font-weight: 400; color: var(--text-muted); font-size: 10px; margin-top: 2px; line-height: 1.4; }
+    .inf-field label { display: block; font-size: 10px; color: var(--text-muted); margin-bottom: 2px; }
+    .inf-field .unit-wrap { display: flex; align-items: center; gap: 4px; }
+    .inf-field input { min-height: 36px; padding: 6px 8px; font-size: 15px; }
+    .inf-field .u { font-size: 10px; color: var(--text-muted); white-space: nowrap; }
+    .inf-rate { text-align: right; }
+    .inf-rate .r { font-family: ui-monospace, Menlo, monospace; font-weight: 800; color: var(--ok); font-size: 16px; display: block; white-space: nowrap; }
+    .inf-rate .a { font-size: 10px; color: var(--text-muted); font-family: ui-monospace, Menlo, monospace; }
+    .inf-extra { grid-column: 1 / -1; font-size: 11px; color: var(--text-soft); line-height: 1.45; }
+    .inf-extra .v { font-size: 11px; }
+    .out-range { color: var(--warn) !important; font-weight: 700; }
+    .astm-hypotensive { background: repeating-linear-gradient(135deg, var(--astm-pressor) 0 5px, #fff 5px 10px); color: var(--astm-pressor-text); }
+    /* Phones: each drug becomes a compact card so dose & volume are always visible */
+    @media (max-width: 640px) {
+      table { min-width: 0; }
+      .table-container thead { display: none; }
+      #drug-tbody, #drug-tbody tr.section, #drug-tbody tr.section td { display: block; }
+      #drug-tbody tr:not(.section) { display: grid; grid-template-columns: 1fr auto auto; column-gap: 10px; align-items: center; padding: 9px 10px; border-bottom: 1px solid var(--inset); }
+      #drug-tbody tr:not(.section) td { padding: 0; border: none; }
+      #drug-tbody tr:not(.section) td.name { grid-column: 1 / 3; }
+      #drug-tbody tr:not(.section) td:nth-child(2) { grid-column: 3; grid-row: 1; justify-self: end; }
+      #drug-tbody tr:not(.section) td:nth-child(3) { grid-column: 1; grid-row: 2; margin-top: 4px; font-size: 11px; }
+      #drug-tbody tr:not(.section) td:nth-child(4) { grid-column: 2; grid-row: 2; font-size: 14px; text-align: right; }
+      #drug-tbody tr:not(.section) td:nth-child(5) { grid-column: 3; grid-row: 2; font-size: 14px; }
+    }
+
+    .pill-group { display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 4px; }
+    .pill { background: var(--inset); border: 1px solid var(--border-dark); color: var(--text-muted); padding: 6px 12px; border-radius: 20px; font-size: 11px; cursor: pointer; white-space: nowrap; }
+    .pill.active { background: #0284c7; color: white; border-color: #0284c7; }
+
+    .astm-tag { display: inline-block; padding: 2px 6px; border-radius: 4px; font-weight: 800; font-size: 9px; text-transform: uppercase; white-space: nowrap; font-family: inherit; }
+    .astm-induction { background: var(--astm-induction); color: var(--astm-induction-text); }
+    .astm-benzo { background: var(--astm-benzo); color: var(--astm-benzo-text); }
+    .astm-paralytic { background: var(--astm-paralytic); color: var(--astm-paralytic-text); }
+    .astm-reversal { background: repeating-linear-gradient(135deg, var(--astm-paralytic) 0 5px, #fff 5px 10px); color: var(--astm-reversal-text); }
+    .astm-opioid { background: var(--astm-opioid); color: var(--astm-opioid-text); }
+    .astm-opioid-antag { background: repeating-linear-gradient(135deg, var(--astm-opioid) 0 5px, #fff 5px 10px); color: var(--astm-opioid-antag-text); }
+    .astm-local { background: var(--astm-local); color: var(--astm-local-text); }
+    .astm-anticholinergic { background: var(--astm-anticholinergic); color: var(--astm-anticholinergic-text); }
+    .astm-pressor { background: var(--astm-pressor); color: var(--astm-pressor-text); }
+    .astm-antiemetic { background: var(--astm-antiemetic); color: var(--astm-antiemetic-text); }
+    .astm-other { background: var(--astm-other); color: var(--astm-other-text); }
+
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: flex-end; z-index: 100; }
+    @media (min-width: 640px) { .modal-backdrop { align-items: center; padding: 16px; } }
+    .modal-backdrop.open { display: flex; }
+    .modal-card { background: var(--card-dark); border-top: 2px solid #dc2626; border-radius: 16px 16px 0 0; width: 100%; max-height: 90vh; overflow-y: auto; padding-bottom: env(safe-area-inset-bottom); }
+    @media (min-width: 640px) { .modal-card { border: 2px solid #dc2626; border-radius: 12px; max-width: 820px; } }
+    .modal-header { background: #dc2626; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; color: white; position: sticky; top: 0; z-index: 10; }
+    .modal-body { padding: 14px; }
+
+    .crisis-grid { display: flex; flex-direction: column; gap: 10px; }
+    @media (min-width: 640px) { .crisis-grid { display: grid; grid-template-columns: 1fr 1fr; } }
+    .crisis-box { background: var(--inset); border: 1px solid var(--border-dark); padding: 10px; border-radius: 8px; font-size: 12px; }
+    .crisis-box h4 { color: var(--bad); margin-bottom: 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; }
+    .crisis-box ul { padding-left: 14px; line-height: 1.55; color: var(--text-soft); }
+    .crisis-box li + li { margin-top: 2px; }
+    .v { color: var(--warn); font-weight: 700; font-family: ui-monospace, Menlo, monospace; }
+    .v2 { color: var(--accent); font-weight: 700; font-family: ui-monospace, Menlo, monospace; }
+    .muted { color: var(--text-muted); }
+
+    .ai-output { background: var(--inset); border: 1px solid var(--border-dark); border-radius: 8px; padding: 12px; font-size: 13px; color: var(--text-soft); min-height: 100px; margin-top: 10px; line-height: 1.5; overflow-wrap: anywhere; }
+    .ai-output h3, .ai-output h4 { color: var(--accent); font-size: 13px; margin: 10px 0 4px; }
+    .ai-output ul, .ai-output ol { padding-left: 18px; margin: 4px 0; }
+    .ai-output p { margin: 4px 0; }
+    .ai-output code { background: var(--card-dark); padding: 1px 4px; border-radius: 4px; font-size: 12px; }
+    .ai-output .err { color: var(--bad); }
+    .check { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-muted); margin-bottom: 10px; }
+    .check input { width: auto; min-height: 0; }
+
+    footer { max-width: 1280px; margin: 0 auto 20px; padding: 0 14px; color: var(--text-muted); font-size: 10px; line-height: 1.5; text-align: center; }
+    #install-btn { display: none; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <img class="brand-logo-img" src="nasma-icon-192.png" alt="" width="34" height="34" />
+      <div style="min-width:0;">
+        <strong style="font-size: 14px; color: var(--text-strong);">Nasma AI <span style="font-weight:400; color: var(--text-muted);">· نسمة</span></strong>
+        <span class="brand-sub" style="font-size: 10px; color: var(--text-muted); display: block;">Pediatric anesthesia assistant</span>
+      </div>
+    </div>
+    <div style="display: flex; gap: 6px; flex-shrink: 0;">
+      <button class="btn btn-sm btn-primary" id="install-btn">⬇ Install</button>
+      <button class="btn btn-sm theme-btn clean-hide" id="theme-btn" onclick="toggleTheme()" aria-label="Switch light/dark mode">🌙</button>
+      <button class="btn btn-sm icon-btn clean-hide" onclick="toggleModal('modal-sources', true)" title="Dose sources" aria-label="Dose sources">📖</button>
+      <button class="btn btn-sm clean-hide" onclick="toggleModal('modal-resources', true)">📚 Info</button>
+      <div class="menu-wrap clean-only">
+        <button class="btn btn-sm icon-btn" onclick="toggleMenu(event)" aria-label="Menu" aria-haspopup="true" style="font-size:18px;">☰</button>
+        <div class="menu-pop hidden" id="menu-pop">
+          <button onclick="toggleTheme(); toggleMenu();" id="menu-theme">🌙 Dark / light mode</button>
+          <button onclick="toggleModal('modal-sources', true); toggleMenu();">📖 Dose sources</button>
+          <button onclick="toggleModal('modal-resources', true); toggleMenu();">📚 Info &amp; formulas</button>
+        </div>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="toggleModal('modal-emergency', true)">🚨 STAT</button>
+    </div>
+  </header>
+
+  <div class="layout-grid">
+
+    <!-- PATIENT PARAMETERS & AIRWAY -->
+    <div>
+      <div class="card">
+        <div class="card-title">Patient Parameters <button class="link" onclick="resetPatient()">↺ New patient</button></div>
+
+        <div class="form-group">
+          <label for="age-val">Age</label>
+          <div class="form-row">
+            <input type="number" id="age-val" inputmode="decimal" min="0" step="0.1" placeholder="e.g. 4" oninput="calculateAll()" />
+            <select id="age-unit" onchange="calculateAll()" style="max-width: 120px;">
+              <option value="years" selected>Years</option>
+              <option value="months">Months</option>
+              <option value="days">Days</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div style="display: flex; justify-content: space-between;">
+            <label for="weight-val">Weight (kg) — required</label>
+            <button class="link" onclick="autoEstimateWeight()">Estimate from age (APLS)</button>
+          </div>
+          <input type="number" id="weight-val" inputmode="decimal" min="0" step="0.1" placeholder="Actual weight in kg" oninput="calculateAll()" />
+          <div id="weight-warning" class="alert alert-warn hidden"></div>
+        </div>
+
+        <button type="button" class="more-toggle clean-only" id="more-toggle" onclick="toggleMore()">＋ Height, sex &amp; fasting</button>
+        <div class="more-fields" id="more-fields">
+        <div class="grid-2 form-group">
+          <div>
+            <label for="height-val">Height (cm)</label>
+            <input type="number" id="height-val" inputmode="decimal" min="0" placeholder="for IBW / BMI" oninput="calculateAll()" />
+          </div>
+          <div>
+            <label for="sex-val">Sex</label>
+            <select id="sex-val" onchange="calculateAll()">
+              <option value="" selected>—</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid-2 form-group">
+          <div>
+            <label for="npo-val">NPO (hrs)</label>
+            <input type="number" id="npo-val" inputmode="decimal" min="0" placeholder="optional" oninput="calculateAll()" />
+          </div>
+        </div>
+        </div>
+
+        <div class="grid-2 clean-hide" style="margin-top: 8px;">
+          <div class="metric-badge">
+            <span class="metric-label">BSA (Mosteller)</span>
+            <span class="metric-val" id="metric-bsa">—</span>
+          </div>
+          <div class="metric-badge">
+            <span class="metric-label">Est. Blood Volume</span>
+            <span class="metric-val" id="metric-ebv">—</span>
+            <span class="metric-sub" id="metric-ebv-sub"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card beta-only" id="cond-card">
+        <div class="card-title">Patient Conditions <span class="beta-tag">Draft</span></div>
+        <div class="form-row">
+          <input type="text" id="cond-text" placeholder="Describe: e.g. Fontan on aspirin, OSA" onkeydown="if (event.key === 'Enter') detectConditions()" />
+          <button class="btn btn-primary" style="white-space:nowrap;" onclick="detectConditions()">✨ Detect</button>
+        </div>
+        <div class="metric-sub" id="cond-detect-msg" style="margin-top:6px;">Describe the patient, then tap Detect.</div>
+        <div class="cond-chips" id="cond-chips"></div>
+        <div class="metric-sub" style="margin-top:8px;">⚠️ Draft content, not yet department-reviewed. Doses are unchanged.</div>
+      </div>
+
+      <div class="card" id="dw-card">
+        <div class="card-title">Dosing Weight
+          <select id="scalar-mode" class="mini-select" onchange="calculateAll()" aria-label="Obesity weight scalars">
+            <option value="auto" selected>Obesity scalars: Auto</option>
+            <option value="on">Obesity scalars: On</option>
+            <option value="off">Obesity scalars: Off</option>
+          </select>
+        </div>
+        <div class="grid-2">
+          <div class="metric-badge">
+            <span class="metric-label">Total (actual) — TBW</span>
+            <span class="metric-val" id="wt-tbw">—</span>
+          </div>
+          <div class="metric-badge">
+            <span class="metric-label">Ideal — IBW</span>
+            <span class="metric-val" id="wt-ibw">—</span>
+            <span class="metric-sub" id="wt-ibw-sub"></span>
+          </div>
+          <div class="metric-badge">
+            <span class="metric-label">Adjusted — ABW</span>
+            <span class="metric-val" id="wt-abw">—</span>
+            <span class="metric-sub">IBW + 0.4 × (TBW − IBW)</span>
+          </div>
+          <div class="metric-badge">
+            <span class="metric-label">BMI</span>
+            <span class="metric-val" id="wt-bmi">—</span>
+            <span class="metric-sub" id="wt-bmi-sub"></span>
+          </div>
+        </div>
+        <div id="obesity-status" class="alert alert-info"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Airway Sizing</div>
+        <div class="grid-2">
+          <div class="metric-badge">
+            <span class="metric-label">ETT Cuffed (ID)</span>
+            <span class="metric-val" id="airway-ett-cuffed">—</span>
+            <span class="metric-sub" id="airway-ett-cuffed-sub"></span>
+          </div>
+          <div class="metric-badge clean-hide">
+            <span class="metric-label">ETT Uncuffed (ID)</span>
+            <span class="metric-val" id="airway-ett-uncuffed">—</span>
+            <span class="metric-sub" id="airway-ett-uncuffed-sub"></span>
+          </div>
+          <div class="metric-badge">
+            <span class="metric-label">ETT Depth (oral, at lip)</span>
+            <span class="metric-val" id="airway-depth">—</span>
+            <span class="metric-sub" id="airway-depth-sub"></span>
+          </div>
+          <div class="metric-badge">
+            <span class="metric-label">LMA Size</span>
+            <span class="metric-val" id="airway-lma">—</span>
+            <span class="metric-sub" id="airway-lma-sub"></span>
+          </div>
+          <div class="metric-badge">
+            <span class="metric-label">Laryngoscope Blade</span>
+            <span class="metric-val" id="airway-blade">—</span>
+          </div>
+          <div class="metric-badge clean-hide">
+            <span class="metric-label">Hypotension if SBP &lt;</span>
+            <span class="metric-val" id="vitals-sbp">—</span>
+            <span class="metric-sub" id="vitals-hr"></span>
+          </div>
+        </div>
+        <p class="metric-sub clean-hide" style="margin-top:8px;">Sizes are starting points — have one size above and below ready; confirm depth by auscultation/EtCO₂.</p>
+        <div class="airway-mini clean-only" id="airway-mini"></div>
+      </div>
+    </div>
+
+    <!-- DOSING TABLE, FLUIDS, AI -->
+    <div>
+      <div class="nav-tabs" role="tablist">
+        <button class="tab-btn active" onclick="switchTab('tab-drugs', this)">💉 Drug Dosing</button>
+        <button class="tab-btn" onclick="switchTab('tab-infusions', this)">⏱ Infusions</button>
+        <button class="tab-btn" onclick="switchTab('tab-fluids', this)">💧 Fluids &amp; Blood</button>
+        <button class="tab-btn ai-tab" id="ai-tab-btn" onclick="switchTab('tab-ai', this)">✨ Nasma AI</button>
+      </div>
+
+      <!-- TAB 1: DRUGS TABLE -->
+      <div id="tab-drugs" class="tab-pane active">
+        <div class="pill-group" id="pill-group">
+          <span class="pill active" data-cat="all">All</span>
+          <span class="pill" data-cat="fav">★ Favorites</span>
+          <span class="pill" data-cat="induction">🟨 Induction/Sedation</span>
+          <span class="pill" data-cat="paralytics">🟥 Relaxants &amp; Reversal</span>
+          <span class="pill" data-cat="analgesics">🟦 Opioids &amp; Analgesia</span>
+          <span class="pill" data-cat="adjuncts">🟩 Adjuncts</span>
+          <span class="pill" data-cat="pressors">🟪 Vasoactive bolus</span>
+          <span class="pill" data-cat="local">⬜ Local (max)</span>
+        </div>
+
+        <div id="cond-panel-drugs" class="cond-panel hidden"></div>
+        <div id="drug-empty" class="alert alert-info">Enter the patient's weight to calculate doses.</div>
+
+        <div class="card" style="padding: 0; overflow: hidden;">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Medication</th>
+                  <th>Label</th>
+                  <th>Dose / kg</th>
+                  <th>Dose</th>
+                  <th style="text-align: right;">Volume</th>
+                </tr>
+              </thead>
+              <tbody id="drug-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+        <p class="metric-sub clean-hide">Volumes are calculated for the concentration shown under each drug. Check that it matches the vial or syringe you are using.</p>
+      </div>
+
+      <!-- TAB: INFUSIONS -->
+      <div id="tab-infusions" class="tab-pane">
+        <div class="pill-group" id="inf-pills">
+          <span class="pill active" data-group="all">All</span>
+          <span class="pill" data-group="fav">★ Favorites</span>
+          <span class="pill" data-group="sedation">Anesthesia &amp; Sedation</span>
+          <span class="pill" data-group="nmb">Relaxants</span>
+          <span class="pill" data-group="vaso">Vasoactive</span>
+          <span class="pill" data-group="other">Other</span>
+        </div>
+        <div id="cond-panel-inf" class="cond-panel hidden"></div>
+        <div id="inf-empty" class="alert alert-info">Enter the patient's weight to calculate infusion rates.</div>
+        <div id="inf-fav-empty" class="alert alert-info hidden">No favorite infusions yet. Tap ☆ next to an infusion to add it.</div>
+        <div class="card" style="padding:0; overflow:hidden;">
+          <div id="inf-list"></div>
+        </div>
+        <div class="card" id="ino-card">
+          <div class="card-title">Inhaled Nitric Oxide (iNO)</div>
+          <ul style="padding-left:16px; font-size:12px; line-height:1.6; color: var(--text-soft);">
+            <li><strong>Dose in ppm, not by weight:</strong> start <span class="v">20 ppm</span> (usual 5–20 ppm). Higher doses add little benefit and raise toxicity.</li>
+            <li><strong>Uses:</strong> pulmonary hypertensive crisis, PPHN, RV failure after cardiac surgery, hypoxemic respiratory failure.</li>
+            <li><strong>Wean</strong> stepwise to 5 ppm, then 1 ppm, before stopping. Abrupt withdrawal can cause <strong>rebound pulmonary hypertension</strong>. Have a backup delivery system for transport.</li>
+            <li><strong>Monitor</strong> methemoglobin (keep &lt;5%) and NO₂ on the delivery device.</li>
+            <li><strong>Caution:</strong> neonates dependent on right-to-left ductal shunting (e.g. HLHS) and LV dysfunction (may cause pulmonary edema).</li>
+          </ul>
+        </div>
+        <p class="metric-sub clean-hide">Edit the dose or the syringe concentration to match your pump; the rate updates instantly. Standard concentrations vary by institution, so check every label.</p>
+      </div>
+
+      <!-- TAB 2: FLUIDS -->
+      <div id="tab-fluids" class="tab-pane">
+        <div class="card">
+          <div class="card-title">Maintenance (4-2-1 Rule)</div>
+          <div class="grid-2" style="margin-bottom: 10px;">
+            <div class="metric-badge">
+              <span class="metric-label">Hourly Maintenance</span>
+              <span class="metric-val" id="fluid-hourly">—</span>
+            </div>
+            <div class="metric-badge">
+              <span class="metric-label">NPO Deficit</span>
+              <span class="metric-val" id="fluid-deficit">—</span>
+              <span class="metric-sub" id="fluid-deficit-sub"></span>
+            </div>
+            <div class="metric-badge">
+              <span class="metric-label">Hour 1 (½ deficit + maint)</span>
+              <span class="metric-val" id="fluid-h1">—</span>
+            </div>
+            <div class="metric-badge">
+              <span class="metric-label">Hours 2 &amp; 3 (¼ deficit + maint)</span>
+              <span class="metric-val" id="fluid-h23">—</span>
+            </div>
+            <div class="metric-badge">
+              <span class="metric-label">Isotonic Bolus 10–20 mL/kg</span>
+              <span class="metric-val" id="fluid-bolus">—</span>
+            </div>
+            <div class="metric-badge">
+              <span class="metric-label">Target Urine Output</span>
+              <span class="metric-val" id="fluid-uop">—</span>
+              <span class="metric-sub">0.5–1 mL/kg/hr</span>
+            </div>
+          </div>
+          <p style="font-size: 11px; color: var(--text-muted); line-height: 1.5;">
+            • Use isotonic fluid (LR / PlasmaLyte / NS) intraop. Many children now fast only 1 hr for clear fluids, so judge the deficit clinically.<br/>
+            • Neonates, infants on dextrose infusions, or children with prolonged fasting may need dextrose (e.g. 1–2.5% in isotonic). Check glucose.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Allowable Blood Loss</div>
+          <div class="grid-2 form-group">
+            <div>
+              <label for="hct-start">Starting Hct (%)</label>
+              <input type="number" id="hct-start" inputmode="decimal" placeholder="e.g. 36" oninput="calculateAll()" />
+            </div>
+            <div>
+              <label for="hct-target">Lowest acceptable Hct (%)</label>
+              <input type="number" id="hct-target" inputmode="decimal" value="25" oninput="calculateAll()" />
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="metric-badge">
+              <span class="metric-label">Est. Blood Volume</span>
+              <span class="metric-val" id="blood-ebv">—</span>
+            </div>
+            <div class="metric-badge">
+              <span class="metric-label">MABL</span>
+              <span class="metric-val" id="blood-abl">—</span>
+              <span class="metric-sub">EBV × (Hct₀ − Hct_target) / Hct₀</span>
+            </div>
+            <div class="metric-badge">
+              <span class="metric-label">PRBC 10–15 mL/kg</span>
+              <span class="metric-val" id="blood-prbc">—</span>
+              <span class="metric-sub">≈ Hb rise 2–3 g/dL</span>
+            </div>
+            <div class="metric-badge">
+              <span class="metric-label">FFP 10–15 mL/kg</span>
+              <span class="metric-val" id="blood-ffp">—</span>
+            </div>
+            <div class="metric-badge">
+              <span class="metric-label">Platelets 5–10 mL/kg</span>
+              <span class="metric-val" id="blood-plt">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: AI ASSISTANT -->
+      <div id="tab-ai" class="tab-pane">
+        <div class="card">
+          <div class="card-title">Nasma AI · powered by Gemini</div>
+          <button class="btn btn-sm" style="width:100%; margin-bottom:10px; background: var(--info-bg); color: var(--info-text); border: 1px solid var(--info-border);" onclick="toggleModal('modal-key', true)">🔑 How to get your free Gemini key</button>
+
+          <div class="form-group">
+            <label for="api-key-input">Gemini API Key</label>
+            <input type="password" id="api-key-input" autocomplete="off" placeholder="Paste key from Google AI Studio..." onchange="onKeyChanged()" />
+          </div>
+          <label class="check"><input type="checkbox" id="remember-key" onchange="onKeyChanged()" /> Remember key on this device</label>
+
+
+          <div class="form-group">
+            <label for="ai-prompt">Clinical Notes / Question</label>
+            <textarea id="ai-prompt" rows="3" placeholder="E.g., tonsillectomy, mild intermittent asthma, URI 2 weeks ago, OSA symptoms..."></textarea>
+          </div>
+          <div class="alert alert-info" style="margin: 0 0 10px;">Don't enter names, MRNs, dates of birth or other identifiers. Notes are sent to Google.</div>
+
+          <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+            <button class="btn btn-primary ai-btn" style="flex:1;" onclick="queryGemini('plan')">Case Plan</button>
+            <button class="btn ai-btn" style="flex:1;" onclick="queryGemini('risks')">Assess Risks</button>
+            <button class="btn ai-btn" style="flex:1;" onclick="queryGemini('ask')">Ask Question</button>
+          </div>
+
+          <div class="ai-output" id="ai-response-box"><span class="muted">Enter your free Gemini API key above to use Nasma AI (tap 🔑 for step-by-step help). The calculator works fully without it.</span></div>
+          <p class="metric-sub" style="margin-top:6px;">AI output can be wrong. Verify every dose against the calculator and your institution's references.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer>
+    <p style="margin-bottom: 8px;"><a class="support-link support-btn" href="#" target="_blank" rel="noopener">☕ Like this app? Support it on Ko-fi</a></p>
+    <span class="clean-hide">Clinical decision support only. Doses are typical starting values for healthy children and must be checked against the patient's condition, institutional protocols and current references before use. Your entries stay on this device.</span>
+    <span class="clean-only">Decision support only · verify every dose · tap a drug for details</span>
+  </footer>
+
+  <!-- MODAL: STAT EMERGENCY -->
+  <div id="modal-emergency" class="modal-backdrop" onclick="if (event.target === this) toggleModal('modal-emergency', false)">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-label="STAT crisis doses">
+      <div class="modal-header">
+        <strong>🚨 STAT CRISIS DOSES (<span id="modal-wt-disp">?</span> kg)</strong>
+        <button class="btn btn-sm" onclick="toggleModal('modal-emergency', false)">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="crisis-empty" class="alert alert-warn" style="margin-top:0;">
+          Weight is not entered. Enter it on the main screen, or estimate it here:
+          <div class="form-row" style="margin-top:8px;">
+            <input type="number" id="crisis-weight" inputmode="decimal" placeholder="Weight kg" />
+            <button class="btn btn-primary" onclick="useCrisisWeight()">Use</button>
+          </div>
+        </div>
+        <div class="crisis-grid" id="crisis-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOATING AI BUTTON -->
+  <button class="ai-fab" id="ai-fab" onclick="openAI()" aria-label="Open Nasma AI assistant">✨ Ask Nasma</button>
+
+  <!-- MODAL: GEMINI KEY INSTRUCTIONS -->
+  <div id="modal-key" class="modal-backdrop" onclick="if (event.target === this) toggleModal('modal-key', false)">
+    <div class="modal-card" style="border-color: #7c3aed;" role="dialog" aria-modal="true" aria-label="How to get a Gemini key">
+      <div class="modal-header" style="background: linear-gradient(135deg, #7c3aed, #0284c7);">
+        <strong>🔑 Get your free Gemini key</strong>
+        <button class="btn btn-sm" onclick="toggleModal('modal-key', false)">✕</button>
+      </div>
+      <div class="modal-body" style="font-size: 13px; line-height: 1.6; color: var(--text-soft);">
+        <p style="margin-bottom: 10px;">Nasma AI uses Google's Gemini. The key is free and takes about 2 minutes. You only do this once.</p>
+        <ol style="padding-left: 18px;">
+          <li style="margin-bottom: 8px;"><strong>Open Google AI Studio</strong> with the button below and sign in with any Google (Gmail) account.</li>
+          <li style="margin-bottom: 8px;">Tap <strong>"Create API key"</strong>. If asked, accept the terms and choose or create a project (the default is fine).</li>
+          <li style="margin-bottom: 8px;"><strong>Copy the key.</strong> It's a long code that usually starts with <code>AIza</code>.</li>
+          <li style="margin-bottom: 8px;">Come back here, <strong>paste it into the "Gemini API Key" box</strong>, and tick <em>"Remember key on this device"</em>.</li>
+        </ol>
+        <a class="btn btn-primary" style="width:100%; margin: 6px 0 12px; text-decoration:none; min-height:44px; font-size:14px;" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Open Google AI Studio ↗</a>
+        <div class="alert alert-info" style="margin-top: 0;">
+          • <strong>Keep your key private.</strong> Don't share it or post it. You can delete it and make a new one anytime in AI Studio.<br/>
+          • The free plan has a daily limit. If you see a "rate limit" message, wait a minute and try again.<br/>
+          • The key is stored only on your phone, never on our side.
+        </div>
+        <h4 style="color: var(--accent); margin: 14px 0 4px;">Hitting the free limit?</h4>
+        <p>The free plan allows only a limited number of questions per minute and per day. If you use Nasma AI a lot:</p>
+        <ol style="padding-left: 18px; margin-top: 4px;">
+          <li style="margin-bottom: 6px;">In Google AI Studio, open your API key's project and choose <strong>"Set up billing"</strong> (pay as you go, with a card).</li>
+          <li style="margin-bottom: 6px;">Limits become much higher; a typical question costs a small fraction of a US cent.</li>
+          <li style="margin-bottom: 6px;">Set a <strong>budget alert</strong> in Google Cloud Billing so you are never surprised.</li>
+        </ol>
+        <p class="muted" style="font-size: 12px;">Bonus: on the paid plan Google does not use your questions to improve its products.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: SOURCES -->
+  <div id="modal-sources" class="modal-backdrop" onclick="if (event.target === this) toggleModal('modal-sources', false)">
+    <div class="modal-card" style="border-color: #0284c7;" role="dialog" aria-modal="true" aria-label="Dose sources">
+      <div class="modal-header" style="background: #0284c7;">
+        <strong>📖 Dose Sources</strong>
+        <button class="btn btn-sm" onclick="toggleModal('modal-sources', false)">✕</button>
+      </div>
+      <div class="modal-body" style="font-size: 12px; line-height: 1.6; color: var(--text-soft);">
+        <p>Doses were checked in October 2026 against US references. <strong>"Common practice"</strong> means a dose that is widely used but not taken from a label or national guideline; have your pharmacy confirm these first.</p>
+        <h4 style="color: var(--accent); margin: 12px 0 4px;">References</h4>
+        <ul style="padding-left: 16px;">
+          <li><strong>FDA prescribing information:</strong>
+            <a href="https://www.accessdata.fda.gov/drugsatfda_docs/Label/2022/019627s069lbl.pdf" target="_blank" rel="noopener">Diprivan</a>,
+            <a href="https://www.rxlist.com/ultiva-drug.htm" target="_blank" rel="noopener">Ultiva</a>,
+            <a href="https://www.pfizermedical.com/precedex/dosage-admin" target="_blank" rel="noopener">Precedex</a>,
+            <a href="https://www.pfizermedical.com/amidate" target="_blank" rel="noopener">Amidate</a>,
+            <a href="https://www.pfizermedical.com/midazolam" target="_blank" rel="noopener">midazolam</a>,
+            <a href="https://medlibrary.org/lib/rx/meds/anectine/" target="_blank" rel="noopener">Anectine</a>,
+            <a href="https://labeling.pfizer.com/ShowLabeling.aspx?id=4592" target="_blank" rel="noopener">rocuronium</a>,
+            <a href="https://www.accessdata.fda.gov/drugsatfda_docs/label/2022/022225Orig1s012lbl.pdf" target="_blank" rel="noopener">Bridion</a>,
+            <a href="https://medlibrary.org/lib/rx/meds/glycopyrrolate-30/page/3/" target="_blank" rel="noopener">glycopyrrolate</a>,
+            <a href="https://www.accessdata.fda.gov/drugsatfda_docs/label/2021/020007s049lbl.pdf" target="_blank" rel="noopener">Zofran</a>,
+            <a href="https://www.drugs.com/pro/ofirmev.html" target="_blank" rel="noopener">Ofirmev</a>,
+            <a href="https://drugs.com/pro/prostin-vr-pediatric.html" target="_blank" rel="noopener">Prostin VR</a>,
+            <a href="https://www.drugs.com/dosage/ryanodex.html" target="_blank" rel="noopener">Ryanodex</a></li>
+          <li><strong>AHA PALS 2020:</strong>
+            <a href="https://cpr.heart.org/-/media/CPR-Files/CPR-Guidelines-Files/2025-Algorithms/Algorithm-PALS-CA-250123.pdf?sc_lang=en" target="_blank" rel="noopener">cardiac arrest algorithm</a>,
+            <a href="https://acls-algorithms.com/wp-content/uploads/2022/08/2020-2025-PALS-Tachycardia-with-pulse-algorithm.pdf" target="_blank" rel="noopener">tachycardia algorithm</a></li>
+          <li><strong>Society for Pediatric Anesthesia:</strong> <a href="https://pedsanesthesia.org/checklists" target="_blank" rel="noopener">Critical Events Checklists</a></li>
+          <li><strong>ASRA 2020:</strong> <a href="https://asra.com/advisory-guidelines/article/3/local-anesthetic-systemic-toxicity" target="_blank" rel="noopener">LAST checklist</a> · <a href="https://rapm.bmj.com/content/43/2/211" target="_blank" rel="noopener">ASRA/ESRA pediatric regional</a></li>
+          <li><strong>MHAUS:</strong> malignant hyperthermia, dantrolene</li>
+          <li><strong>AAP:</strong> <a href="https://www.pharmacytimes.com/view/aap-reaffirms-epinephrine-as-firstline-anaphylaxis-treatment-recommends-emergency-action-plan" target="_blank" rel="noopener">anaphylaxis 2017</a>, naloxone, <a href="https://www.merckmanuals.com/en-ca/professional/multimedia/table/intravenous-medications-for-children-with-severe-hypertension-and-symptoms-or-signs-of-target-organ-damage" target="_blank" rel="noopener">hypertensive emergency 2017</a></li>
+          <li><strong>American Epilepsy Society 2016:</strong> <a href="https://mdedge.com/neurologyreviews/article/106211/epilepsy-seizures/aes-publishes-guideline-treating-status" target="_blank" rel="noopener">status epilepticus</a></li>
+          <li><strong>Fourth Consensus Guidelines for PONV</strong> (Gan et al., Anesth Analg 2020)</li>
+          <li><strong>Children's hospital pathways:</strong>
+            <a href="https://www.hopkinsmedicine.org/-/media/files/allchildrens/clinical-pathways/postcardiacarrestclinical-pathway-12_29_2021.pdf" target="_blank" rel="noopener">Johns Hopkins All Children's (post-arrest)</a>,
+            <a href="https://www.chop.edu/clinical-pathway/cicu-sedation-analgesia-mechanically-ventilated-patient-infant-child-protocol" target="_blank" rel="noopener">CHOP (sedation)</a>,
+            <a href="https://www.nationwidechildrens.org/-/media/nch/for-medical-professionals/clinical-pathways/ed-hyperkalemia-pathway.pdf" target="_blank" rel="noopener">Nationwide Children's (hyperkalemia)</a>,
+            <a href="https://www.med.unc.edu/pediatrics/cccp/wp-content/uploads/sites/1156/2025/06/PCCM-Infusion-Dosing-Guidelines-20141210.pdf" target="_blank" rel="noopener">UNC (infusions)</a></li>
+          <li><strong>Growth data:</strong> CDC 2000 BMI-for-age (obesity percentile)</li>
+        </ul>
+        <h4 style="color: var(--accent); margin: 12px 0 4px;">Source for each drug</h4>
+        <table class="src-table"><tbody id="src-tbody"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: RESOURCES -->
+  <div id="modal-resources" class="modal-backdrop" onclick="if (event.target === this) toggleModal('modal-resources', false)">
+    <div class="modal-card" style="border-color: #0284c7;" role="dialog" aria-modal="true" aria-label="Reference">
+      <div class="modal-header" style="background: #0284c7;">
+        <strong>📚 Reference</strong>
+        <button class="btn btn-sm" onclick="toggleModal('modal-resources', false)">✕</button>
+      </div>
+      <div class="modal-body" style="font-size: 12px; line-height: 1.7; color: var(--text-soft);">
+        <div class="support-link" style="margin-bottom: 12px; flex-direction: column; gap: 6px; align-items: flex-start;">
+          <p>This app is free and made independently in spare time. If it helps you, you can support its development:</p>
+          <a class="support-btn" style="display:inline-flex;" href="#" target="_blank" rel="noopener" data-support>☕ Support on Ko-fi</a>
+        </div>
+        <h4 style="color: var(--accent); margin-bottom: 4px;">ASTM D4774 label colors</h4>
+        <p><span class="astm-tag astm-induction">Yellow</span> Induction agents</p>
+        <p><span class="astm-tag astm-benzo">Orange</span> Benzodiazepines</p>
+        <p><span class="astm-tag astm-paralytic">Fluorescent red</span> Neuromuscular blockers</p>
+        <p><span class="astm-tag astm-reversal">Red / white stripes</span> Relaxant reversal</p>
+        <p><span class="astm-tag astm-opioid">Blue</span> Opioids</p>
+        <p><span class="astm-tag astm-opioid-antag">Blue / white stripes</span> Opioid antagonists</p>
+        <p><span class="astm-tag astm-anticholinergic">Green</span> Anticholinergics</p>
+        <p><span class="astm-tag astm-pressor">Violet</span> Vasopressors</p>
+        <p><span class="astm-tag astm-antiemetic">Salmon</span> Antiemetics</p>
+        <p><span class="astm-tag astm-local">Gray</span> Local anesthetics</p>
+        <p><span class="astm-tag astm-other">White</span> Other agents</p>
+
+        <h4 style="color: var(--accent); margin: 12px 0 4px;">Formulas used</h4>
+        <p>• Weight estimate (APLS): 0–12 mo = 0.5×months + 4; 1–5 y = 2×age + 8; 6–12 y = 3×age + 7</p>
+        <p>• Cuffed ETT = age/4 + 3.5; uncuffed = age/4 + 4 (≥1 y), rounded down to 0.5 mm</p>
+        <p>• Oral ETT depth: ≥2 y = age/2 + 12; &lt;2 y ≈ 3 × ETT ID; neonate ≈ weight(kg) + 6</p>
+        <p>• EBV: neonate 85, infant 80, child 75, adolescent 70 mL/kg</p>
+        <p>• BSA (Mosteller) = √(height cm × weight kg / 3600)</p>
+        <p>• IBW, ages 1–18: height &lt;152.4 cm → height² × 1.65 / 1000; ≥152.4 cm → Devine (male 50 / female 45.5 kg + 2.3 kg per inch over 5 ft). Never exceeds TBW.</p>
+        <p>• ABW = IBW + 0.4 × (TBW − IBW)</p>
+        <p>• Obesity: BMI ≥ 95th percentile for age and sex (CDC 2000, ages 2–20), BMI ≥ 30 for adults. Not assessed under 2 years.</p>
+        <h4 style="color: var(--accent); margin: 12px 0 4px;">Weight used when obesity scalars are on</h4>
+        <div id="scalar-list"></div>
+        <p>• Maintenance (Holliday-Segar 4-2-1)</p>
+        <p>• MH Hotline (MHAUS, US/Canada): <a href="tel:18006449737" style="color: var(--accent);">1-800-644-9737</a>; outside US: +1-209-417-3722</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="nasma-core.js"></script>
+  <script>
+    'use strict';
+
+    let infFilter = 'all';
+    let activeConds = new Set();
+    const condRules = (name) => CONDITIONS.filter((c) => activeConds.has(c.id) && c.rules[name]).map((c) => ({ cond: c.name, level: c.rules[name][0], why: c.rules[name][1] }));
+    const LEVEL_ORDER = { avoid: 3, caution: 2, prefer: 1 };
+    const LEVEL_ICON = { avoid: '⛔ Avoid', caution: '⚠️ Caution', prefer: '✓ Preferred' };
+    function condInfo(name) {
+      const r = condRules(name);
+      if (!r.length) return { cls: '', icon: '', html: '' };
+      const worst = r.reduce((a, b) => (LEVEL_ORDER[b.level] > LEVEL_ORDER[a.level] ? b : a)).level;
+      return { cls: 'cond-' + worst, icon: `<span class="cond-icon" title="Condition flag">${{ avoid: '⛔', caution: '⚠️', prefer: '✓' }[worst]}</span>`, html: r.map((x) => `<span class="cond-note ${x.level}">${LEVEL_ICON[x.level]} · ${x.cond}: ${x.why}</span>`).join('') };
+    }
+
+    let activeFilter = 'all';
+    const openRows = new Set();
+    function toggleMenu(e) {
+      if (e) e.stopPropagation();
+      $('menu-pop').classList.toggle('hidden');
+      $('menu-theme').textContent = document.documentElement.getAttribute('data-theme') === 'light' ? '🌙 Dark mode' : '☀️ Light mode';
+    }
+    document.addEventListener('click', (e) => {
+      const pop = document.getElementById('menu-pop');
+      if (pop && !pop.classList.contains('hidden') && !e.target.closest('.menu-wrap')) pop.classList.add('hidden');
+      // Tap a drug row (not the star) to show its details
+      const tr = e.target.closest('#drug-tbody tr[data-drug]');
+      if (tr && !e.target.closest('.fav-btn')) {
+        const n = tr.dataset.drug;
+        openRows.has(n) ? openRows.delete(n) : openRows.add(n);
+        tr.classList.toggle('open');
+      }
+      const ih = e.target.closest('.inf-head');
+      if (ih && !e.target.closest('.fav-btn')) ih.parentElement.classList.toggle('open');
+    });
+    function toggleMore() {
+      const open = $('more-fields').classList.toggle('open');
+      $('more-toggle').textContent = open ? '－ Hide height, sex & fasting' : '＋ Height, sex & fasting';
+    }
+    const $ = (id) => document.getElementById(id);
+
+    // ───────────────────────── Helpers ─────────────────────────
+    function num(id) {
+      const raw = $(id).value.trim();
+      if (raw === '') return null;
+      const v = parseFloat(raw);
+      return Number.isFinite(v) ? v : null;
+    }
+
+
+    function getPatient() {
+      const ageVal = num('age-val');
+      const unit = $('age-unit').value;
+      let ageYears = null;
+      if (ageVal != null && ageVal >= 0) {
+        ageYears = unit === 'months' ? ageVal / 12 : unit === 'days' ? ageVal / 365.25 : ageVal;
+      }
+      let weight = num('weight-val');
+      const weightValid = weight != null && weight >= 0.3 && weight <= 200;
+      if (!weightValid) weight = null;
+      return { ageYears, weight, sex: $('sex-val').value || null, height: num('height-val'), npo: num('npo-val'), hct0: num('hct-start'), hctT: num('hct-target') };
+    }
+
+
+
+
+    // Returns the three dosing weights plus the obesity assessment.
+    function computeWeights(p) {
+      const tbw = p.weight, h = p.height, a = p.ageYears;
+      const out = { TBW: tbw, IBW: tbw, ABW: tbw, ibwRaw: null, ibwNote: '', bmi: null, ref: null, obese: null, reason: '', active: false };
+      if (tbw == null) return out;
+
+      if (h && h >= 45 && h <= 220) {
+        out.bmi = tbw / Math.pow(h / 100, 2);
+        if (a != null && a >= 1) {
+          if (h < 152.4) { out.ibwRaw = (h * h * 1.65) / 1000; out.ibwNote = 'height² × 1.65 / 1000'; }
+          else if (p.sex) { out.ibwRaw = (p.sex === 'male' ? 50 : 45.5) + 2.3 * (h / 2.54 - 60); out.ibwNote = 'Devine (' + p.sex + ')'; }
+          else out.ibwNote = 'select sex (≥152 cm)';
+        } else out.ibwNote = a == null ? 'enter age' : 'not defined <1 y';
+      } else out.ibwNote = 'enter height';
+
+      if (out.bmi != null && a != null) {
+        if (a >= 20) { out.obese = out.bmi >= 30; out.reason = 'BMI ≥ 30'; }
+        else if (a >= 2) {
+          out.ref = bmiRef(p.sex, a);
+          if (out.ref) { out.obese = out.bmi >= out.ref.p95; out.reason = 'BMI ≥ 95th percentile'; }
+        }
+      }
+
+      const mode = $('scalar-mode').value;
+      out.active = out.ibwRaw != null && (mode === 'on' || (mode === 'auto' && out.obese === true));
+      if (out.active) {
+        out.IBW = Math.min(out.ibwRaw, tbw);
+        out.ABW = Math.min(out.IBW + 0.4 * (tbw - out.IBW), tbw);
+      }
+      return out;
+    }
+
+    function renderWeights(p, W) {
+      const show = (id, v) => ($(id).textContent = v != null ? fmt(v) + ' kg' : '—');
+      show('wt-tbw', W.TBW);
+      show('wt-ibw', W.ibwRaw);
+      $('wt-ibw-sub').textContent = W.ibwNote;
+      show('wt-abw', W.ibwRaw != null && W.TBW != null ? Math.min(Math.min(W.ibwRaw, W.TBW) + 0.4 * (W.TBW - Math.min(W.ibwRaw, W.TBW)), W.TBW) : null);
+      $('wt-bmi').textContent = W.bmi != null ? W.bmi.toFixed(1) : '—';
+      $('wt-bmi-sub').textContent = W.ref ? `P95 for age: ${W.ref.p95.toFixed(1)}` : (p.ageYears != null && p.ageYears >= 2 && p.ageYears < 20 && !p.sex && W.bmi != null ? 'select sex for percentile' : '');
+
+      const box = $('obesity-status');
+      const mode = $('scalar-mode').value;
+      let msg, warn = false;
+      if (W.TBW == null) msg = 'Enter weight, height, age and sex to check for obesity.';
+      else if (W.active) {
+        warn = true;
+        msg = `<strong>Obesity scalars ON</strong>${W.obese ? ` (${W.reason})` : ' (manual)'}. Each drug is dosed on IBW, ABW or TBW as labeled. Resuscitation drugs use actual weight, capped at the adult dose.`;
+      } else if (W.obese && W.ibwRaw == null) { warn = true; msg = `Obese (${W.reason}) but IBW is unavailable (${W.ibwNote}). All doses use actual weight.`; }
+      else if (mode === 'on' && W.ibwRaw == null) { warn = true; msg = `Scalars requested but IBW is unavailable (${W.ibwNote}). All doses use actual weight.`; }
+      else if (W.obese === false) msg = `Not obese${W.ref ? ` (BMI ${W.bmi.toFixed(1)} &lt; P95 ${W.ref.p95.toFixed(1)})` : ''}. All doses use actual weight.`;
+      else if (p.ageYears != null && p.ageYears < 2) msg = 'Under 2 years: BMI percentile does not apply. Doses use actual weight. Set scalars to "On" to override.';
+      else msg = 'Add height and sex to check for obesity. Doses use actual weight.';
+      box.innerHTML = msg;
+      box.className = 'alert ' + (warn ? 'alert-warn' : 'alert-info');
+    }
+
+    const basisTag = (W, key) => (W.active && key !== 'TBW' ? `<span class="wt-basis">${key} ${fmt(W[key])} kg</span>` : (W.active ? `<span class="wt-basis">TBW ${fmt(W.TBW)} kg</span>` : ''));
+
+    // ───────────────────────── Main calculation ─────────────────────────
+    function calculateAll() {
+      const p = getPatient();
+      const w = p.weight;
+      const a = p.ageYears;
+
+      $('weight-val').classList.toggle('invalid', $('weight-val').value.trim() !== '' && w == null);
+
+      // Weight plausibility check against age
+      const warn = $('weight-warning');
+      const est = estimateWeight(a);
+      const raw = num('weight-val');
+      if (raw != null && w == null) {
+        warn.textContent = 'Weight must be between 0.3 and 200 kg.';
+        warn.classList.remove('hidden');
+      } else if (w != null && est != null && (w < est * 0.6 || w > est * 1.8)) {
+        warn.textContent = `Check weight: ${fmt(w)} kg is unusual for this age (APLS estimate ≈ ${fmt(est)} kg). Doses use the weight entered.`;
+        warn.classList.remove('hidden');
+      } else {
+        warn.classList.add('hidden');
+      }
+
+      // BSA / EBV
+      $('metric-bsa').textContent = w != null && p.height ? Math.sqrt((p.height * w) / 3600).toFixed(2) + ' m²' : '—';
+      let ebvPerKg = 75;
+      if (a != null) ebvPerKg = a < 1 / 12 ? 85 : a < 1 ? 80 : a < 12 ? 75 : 70;
+      const ebv = w != null ? w * ebvPerKg : null;
+      $('metric-ebv').textContent = ebv != null ? Math.round(ebv) + ' mL' : '—';
+      $('blood-ebv').textContent = ebv != null ? Math.round(ebv) + ' mL' : '—';
+      $('metric-ebv-sub').textContent = w != null ? `${ebvPerKg} mL/kg${a == null ? ' (age unknown)' : ''}` : '';
+
+      const W = computeWeights(p);
+      renderWeights(p, W);
+      // Clean layout: hide the dosing-weight card until height is entered (or scalars are forced on)
+      $('dw-card').classList.toggle('dw-quiet', !p.height && $('scalar-mode').value !== 'on');
+      renderAirway(a, w);
+      renderFluids(p, ebv);
+      renderConditions();
+      renderDrugTable(W, a);
+      updateInfusions(W);
+      renderCrisis(W, a);
+    }
+
+    function renderAirway(a, w) {
+      const set = (id, v, sub) => { $(id).textContent = v; if (sub !== undefined) $(id + '-sub').textContent = sub; };
+      if (a == null) {
+        set('airway-ett-cuffed', '—', 'enter age');
+        set('airway-ett-uncuffed', '—', '');
+        set('airway-depth', '—', '');
+        $('airway-blade').textContent = '—';
+        $('vitals-sbp').textContent = '—';
+        $('airway-mini').textContent = '';
+        $('vitals-hr').textContent = '';
+      } else {
+        let cuffed, uncuffed, depth, depthNote;
+        if (a < 1) {
+          if (w != null && w < 3) { cuffed = null; uncuffed = w < 1 ? 2.5 : 3.0; }
+          else if (a < 0.5) { cuffed = 3.0; uncuffed = 3.5; }
+          else { cuffed = 3.5; uncuffed = 4.0; }
+        } else {
+          cuffed = Math.min(floorHalf(a / 4 + 3.5), 7.0);
+          uncuffed = Math.min(floorHalf(a / 4 + 4), 7.5);
+        }
+        if (a < 1 / 12 && w != null && w <= 4.5) { depth = w + 6; depthNote = 'neonate: wt + 6'; }
+        else if (a < 2) { depth = 3 * (cuffed || uncuffed); depthNote = '3 × ETT ID'; }
+        else { depth = Math.min(a / 2 + 12, 21); depthNote = 'age/2 + 12'; }
+
+        set('airway-ett-cuffed', cuffed ? cuffed.toFixed(1) + ' mm' : 'n/a', cuffed ? (activeConds.has('t21') ? `T21: have ${(cuffed - 1).toFixed(1)}–${(cuffed - 0.5).toFixed(1)} ready` : `ready ${(cuffed - 0.5).toFixed(1)} & ${(cuffed + 0.5).toFixed(1)}`) : '<3 kg: use uncuffed');
+        set('airway-ett-uncuffed', uncuffed.toFixed(1) + ' mm', a >= 8 ? 'cuffed preferred' : '');
+        set('airway-depth', depth.toFixed(1) + ' cm', depthNote);
+
+        let blade;
+        if (a < 1 / 12) blade = 'Miller 0–1';
+        else if (a < 2) blade = 'Miller 1';
+        else if (a < 8) blade = 'Miller 2 / Mac 2';
+        else if (a < 13) blade = 'Mac 2–3';
+        else blade = 'Mac 3';
+        $('airway-blade').textContent = blade;
+
+        let sbp, hr;
+        if (a < 1 / 12) { sbp = 60; hr = 'Normal HR 100–205'; }
+        else if (a < 1) { sbp = 70; hr = 'Normal HR 100–180'; }
+        else if (a <= 10) { sbp = Math.round(70 + 2 * a); hr = a < 3 ? 'Normal HR 98–140' : a < 6 ? 'Normal HR 80–120' : 'Normal HR 75–118'; }
+        else { sbp = 90; hr = 'Normal HR 60–100'; }
+        $('vitals-sbp').textContent = sbp + ' mmHg';
+        $('airway-mini').textContent = `Uncuffed ${uncuffed.toFixed(1)} mm · Hypotension if SBP < ${sbp} · ${hr}`;
+        $('vitals-hr').textContent = hr;
+      }
+
+      let lma = '—', lmaSub = '';
+      if (w != null) {
+        if (w < 5) lma = 'Size 1';
+        else if (w <= 10) lma = 'Size 1.5';
+        else if (w <= 20) lma = 'Size 2';
+        else if (w <= 30) lma = 'Size 2.5';
+        else if (w <= 50) lma = 'Size 3';
+        else if (w <= 70) lma = 'Size 4';
+        else lma = 'Size 5';
+        lmaSub = 'by weight';
+      }
+      $('airway-lma').textContent = lma;
+      $('airway-lma-sub').textContent = lmaSub;
+    }
+
+    function renderFluids(p, ebv) {
+      const w = p.weight;
+      const ids = ['fluid-hourly', 'fluid-deficit', 'fluid-h1', 'fluid-h23', 'fluid-bolus', 'fluid-uop', 'blood-abl', 'blood-prbc', 'blood-ffp', 'blood-plt'];
+      if (w == null) { ids.forEach((id) => ($(id).textContent = '—')); $('fluid-deficit-sub').textContent = ''; return; }
+
+      const hourly = w <= 10 ? w * 4 : w <= 20 ? 40 + (w - 10) * 2 : 60 + (w - 20);
+      $('fluid-hourly').textContent = Math.round(hourly) + ' mL/hr';
+      if (p.npo != null && p.npo >= 0) {
+        const deficit = hourly * p.npo;
+        $('fluid-deficit').textContent = Math.round(deficit) + ' mL';
+        $('fluid-deficit-sub').textContent = `${fmt(p.npo)} hr × ${Math.round(hourly)} mL/hr`;
+        $('fluid-h1').textContent = Math.round(deficit / 2 + hourly) + ' mL';
+        $('fluid-h23').textContent = Math.round(deficit / 4 + hourly) + ' mL/hr';
+      } else {
+        $('fluid-deficit').textContent = '—';
+        $('fluid-deficit-sub').textContent = 'enter NPO hours';
+        $('fluid-h1').textContent = $('fluid-h23').textContent = '—';
+      }
+      $('fluid-bolus').textContent = `${Math.round(w * 10)}–${Math.round(w * 20)} mL`;
+      $('fluid-uop').textContent = `${fmt(w * 0.5)}–${fmt(w)} mL/hr`;
+
+      if (p.hct0 != null && p.hctT != null && p.hct0 > p.hctT && p.hctT > 0) {
+        $('blood-abl').textContent = Math.round((ebv * (p.hct0 - p.hctT)) / p.hct0) + ' mL';
+      } else {
+        $('blood-abl').textContent = p.hct0 == null ? 'enter Hct' : '—';
+      }
+      $('blood-prbc').textContent = `${Math.round(w * 10)}–${Math.round(w * 15)} mL`;
+      $('blood-ffp').textContent = `${Math.round(w * 10)}–${Math.round(w * 15)} mL`;
+      $('blood-plt').textContent = `${Math.round(w * 5)}–${Math.round(w * 10)} mL`;
+    }
+
+    function renderDrugTable(W, a) {
+      const w = W.TBW;
+      const tbody = $('drug-tbody');
+      $('drug-empty').classList.toggle('hidden', w != null);
+      const rows = [];
+      const list = activeFilter === 'all' ? DRUG_DB
+        : activeFilter === 'fav' ? DRUG_DB.filter((d) => isFav('d:' + d.name))
+        : DRUG_DB.filter((d) => d.cat === activeFilter);
+      if (activeFilter === 'fav' && !list.length) {
+        tbody.innerHTML = '<tr class="section"><td colspan="5" style="text-transform:none;letter-spacing:0;font-weight:500;padding:14px 10px;">No favorites yet. Tap ☆ next to a drug to add it.</td></tr>';
+        return;
+      }
+      let lastCat = null;
+
+      for (const d of list) {
+        if ((activeFilter === 'all' || activeFilter === 'fav') && d.cat !== lastCat) {
+          rows.push(`<tr class="section"><td colspan="5">${CAT_TITLES[d.cat]}</td></tr>`);
+          lastCat = d.cat;
+        }
+        const perKg = d.doseFn ? d.doseFn(w, a) : d.dose;
+        const dw = W[d.wt || 'TBW'];
+        let doseCell = '—', volCell = '—';
+        if (w != null) {
+          const r = dose(perKg, dw, d.max);
+          const prefix = d.kind === 'max' ? 'max ' : '';
+          doseCell = `${prefix}${fmt(r.value)} ${d.unit}` + (r.capped ? `<span class="capped">capped at max ${fmt(d.max)} ${d.unit}</span>` : '');
+          volCell = `${prefix}${fmtVol(r.value / d.conc)} mL`;
+        }
+        const sub = [d.concText, d.note].filter(Boolean).join(' · ');
+        const ci = condInfo(d.name);
+        rows.push(`<tr class="${ci.cls}${openRows.has(d.name) ? ' open' : ''}" data-drug="${d.name}">
+          <td class="name"><span class="drug-pill ${d.astm}">${d.name}</span>${ci.icon}${favBtn('d:' + d.name)}<small>${sub}</small>${ci.html}</td>
+          <td><span class="cls-label">${d.label}</span></td>
+          <td style="color: var(--text-muted);">${fmt(perKg)} ${d.unit}/kg<small style="display:block;font-size:10px;">range ${d.range}${d.max != null ? ' · max ' + fmt(d.max) + ' ' + d.unit : ''}</small>${w != null ? basisTag(W, d.wt || 'TBW') : ''}</td>
+          <td style="color: var(--accent); font-weight: bold;">${doseCell}</td>
+          <td style="text-align: right; color: var(--ok); font-weight: bold;">${volCell}</td>
+        </tr>`);
+      }
+      tbody.innerHTML = rows.join('');
+    }
+
+    // ───────────────────────── Favorites (saved on this device) ─────────────────────────
+    const FAV_KEY = 'peds_favorites';
+    let favorites;
+    try { favorites = new Set(JSON.parse(localStorage.getItem(FAV_KEY) || '[]')); } catch { favorites = new Set(); }
+    const isFav = (id) => favorites.has(id);
+    const favBtn = (id) => `<button type="button" class="fav-btn${isFav(id) ? ' on' : ''}" data-fav="${escapeHtml(id)}" aria-label="Toggle favorite" title="Favorite">${isFav(id) ? '★' : '☆'}</button>`;
+    function toggleFav(id) {
+      favorites.has(id) ? favorites.delete(id) : favorites.add(id);
+      storageSet(FAV_KEY, JSON.stringify([...favorites]));
+      calculateAll();
+    }
+    document.addEventListener('click', (e) => {
+      const b = e.target.closest('.fav-btn');
+      if (b) { e.preventDefault(); toggleFav(b.dataset.fav); }
+    });
+
+    // ───────────────────────── Infusions ─────────────────────────
+    const UNIT_BASE = { mcg: 1, mg: 1000, U: 1, mU: 0.001 };
+    const unitLabel = (u) => (u === 'mU' ? 'milliunits' : u);
+    // Show large microgram amounts in mg for readability.
+    const fmtAmt = (v, u) => (u === 'mcg' && v >= 1000 ? `${fmt(v / 1000)} mg` : `${fmt(v)} ${u}`);
+
+    // Current dose unit per row; mass-based drugs can switch between mcg/kg/min, mcg/kg/hr and mg/kg/hr.
+    const infUnit = INFUSIONS.map((f) => ({ u: f.dU, t: f.dT }));
+    const switchable = (f) => !f.fixedUnit && (f.dU === 'mcg' || f.dU === 'mg');
+    const MASS_UNITS = [['mcg', 'min'], ['mcg', 'hr'], ['mg', 'hr']];
+    // Convert a per-kg dose between units (via mcg/kg/min).
+    const convDose = (v, from, to) => (v * UNIT_BASE[from.u] / (from.t === 'hr' ? 60 : 1)) * (to.t === 'hr' ? 60 : 1) / UNIT_BASE[to.u];
+    const roundDose = (v) => parseFloat(v.toPrecision(3));
+
+    function onInfUnitChange(i, value) {
+      const [u, t] = value.split('|');
+      const from = infUnit[i], to = { u, t };
+      const inp = $('inf-d-' + i), v = parseFloat(inp.value);
+      if (Number.isFinite(v)) inp.value = roundDose(convDose(v, from, to));
+      infUnit[i] = to;
+      updateInfusions(lastW);
+    }
+
+    function buildInfusions() {
+      let html = '', last = null;
+      INFUSIONS.forEach((f, i) => {
+        const unitCtl = switchable(f)
+          ? `<select class="mini-select" id="inf-u-${i}" onchange="onInfUnitChange(${i}, this.value)" aria-label="${f.name} dose unit" style="width:100%; margin-bottom:4px;">${MASS_UNITS.map(([u, t]) => `<option value="${u}|${t}"${u === f.dU && t === f.dT ? ' selected' : ''}>${u}/kg/${t}</option>`).join('')}</select>`
+          : `<label for="inf-d-${i}">Dose (${unitLabel(f.dU)}/kg/${f.dT})</label>`;
+        if (f.group !== last) { html += `<div class="inf-section" data-group="${f.group}">${INF_GROUPS[f.group]}</div>`; last = f.group; }
+        html += `<div class="inf-row" data-group="${f.group}" data-i="${i}">
+          <div class="inf-head">
+            <div class="inf-name"><span class="drug-pill ${f.astm}">${f.name}</span><span class="inf-cond-icon"></span>${favBtn('i:' + f.name)}<small><span id="inf-usual-${i}"></span>${f.note ? `<span class="inf-note"> · ${f.note}</span>` : ''}</small><span class="wt-slot"></span><span class="cond-slot"></span></div>
+            <span class="cls-label">${f.label}</span>
+          </div>
+          <div class="inf-field">${unitCtl}
+            <input type="number" inputmode="decimal" step="any" min="0" id="inf-d-${i}" value="${f.def}" /></div>
+          <div class="inf-field"><label for="inf-c-${i}">Syringe (${f.cU}/mL)</label>
+            <input type="number" inputmode="decimal" step="any" min="0" id="inf-c-${i}" value="${f.conc}" /></div>
+          <div class="inf-rate"><span class="r" id="inf-r-${i}">—</span><span class="a" id="inf-a-${i}"></span></div>
+          ${f.load ? `<div class="inf-extra" id="inf-l-${i}"></div>` : ''}
+        </div>`;
+      });
+      $('inf-list').innerHTML = html;
+      $('inf-list').addEventListener('input', () => updateInfusions(lastW));
+    }
+
+    let lastW = null;
+    function updateInfusions(W) {
+      lastW = W;
+      const has = W && W.TBW != null;
+      $('inf-empty').classList.toggle('hidden', !!has);
+      INFUSIONS.forEach((f, i) => {
+        const row = document.querySelector(`.inf-row[data-i="${i}"]`);
+        const fav = isFav('i:' + f.name);
+        row.querySelector('.fav-btn').classList.toggle('on', fav);
+        row.querySelector('.fav-btn').textContent = fav ? '★' : '☆';
+        row.classList.toggle('hidden', infFilter === 'fav' ? !fav : infFilter !== 'all' && infFilter !== f.group);
+        const ci = condInfo(f.name);
+        row.classList.remove('cond-avoid', 'cond-caution', 'cond-prefer');
+        if (ci.cls) row.classList.add(ci.cls);
+        row.querySelector('.cond-slot').innerHTML = ci.html;
+        row.querySelector('.inf-cond-icon').innerHTML = ci.icon;
+        const doseIn = $('inf-d-' + i), concIn = $('inf-c-' + i);
+        const d = parseFloat(doseIn.value), c = parseFloat(concIn.value);
+        const cur = infUnit[i], base = { u: f.dU, t: f.dT };
+        const lo = convDose(f.lo, base, cur), hi = convDose(f.hi, base, cur);
+        $('inf-usual-' + i).textContent = `usual ${fmt(roundDose(lo))}–${fmt(roundDose(hi))} ${unitLabel(cur.u)}/kg/${cur.t}`;
+        doseIn.classList.toggle('out-range', Number.isFinite(d) && (d < lo * 0.999 || d > hi * 1.001));
+        const r = $('inf-r-' + i), a = $('inf-a-' + i);
+        row.querySelector('.wt-slot').innerHTML = has ? basisTag(W, f.wt) : '';
+        if (!has || !(d >= 0) || !(c > 0)) { r.textContent = '—'; a.textContent = ''; if (f.load) $('inf-l-' + i).innerHTML = ''; return; }
+        const w = W[f.wt];
+        const perHrBase = d * w * (cur.t === 'min' ? 60 : 1) * UNIT_BASE[cur.u];
+        const rate = perHrBase / (c * UNIT_BASE[f.cU]);
+        r.textContent = (rate >= 100 ? rate.toFixed(0) : rate >= 10 ? rate.toFixed(1) : rate.toFixed(2)) + ' mL/hr';
+        const amt = perHrBase / UNIT_BASE[f.cU];
+        a.textContent = `${fmtAmt(amt, f.cU)}/hr`;
+        if (f.load) {
+          const lo = f.load.lo * w, hi = f.load.hi * w;
+          const v = (x) => fmtVol((x * UNIT_BASE[f.load.u]) / (c * UNIT_BASE[f.cU]));
+          const span = (x, y, sep = '–') => (x === y ? `${x}` : `${x}${sep}${y}`);
+          const big = f.load.u === 'mcg' && hi >= 1000;
+          $('inf-l-' + i).innerHTML = `<strong>Load</strong> ${span(fmt(f.load.lo), fmt(f.load.hi))} ${f.load.u}/kg = <span class="v">${big ? span(fmt(lo / 1000), fmt(hi / 1000)) + ' mg' : span(fmt(lo), fmt(hi)) + ' ' + f.load.u}</span> (${span(v(lo), v(hi))} mL) ${f.load.over}`;
+        }
+      });
+      // Hide a section header when none of its rows are visible.
+      document.querySelectorAll('.inf-section').forEach((s) => {
+        const visible = [...document.querySelectorAll(`.inf-row[data-group="${s.dataset.group}"]`)].some((r) => !r.classList.contains('hidden'));
+        s.classList.toggle('hidden', !visible);
+      });
+      $('inf-fav-empty').classList.toggle('hidden', !(infFilter === 'fav' && !INFUSIONS.some((f) => isFav('i:' + f.name))));
+    }
+
+    $('inf-pills').addEventListener('click', (e) => {
+      const pill = e.target.closest('.pill');
+      if (!pill) return;
+      infFilter = pill.dataset.group;
+      document.querySelectorAll('#inf-pills .pill').forEach((el) => el.classList.toggle('active', el === pill));
+      updateInfusions(lastW);
+    });
+
+    // ───────────────────────── Conditions UI ─────────────────────────
+    const BETA = document.documentElement.getAttribute('data-beta') === '1';
+    function renderConditions() {
+      if (!BETA) { activeConds.clear(); return; }
+      $('cond-chips').innerHTML = CONDITIONS.filter((c) => activeConds.has(c.id))
+        .map((c) => `<button type="button" class="cond-chip on" data-cond="${c.id}" aria-label="Remove ${c.name}">${c.name} ✕</button>`).join('');
+      const act = CONDITIONS.filter((c) => activeConds.has(c.id));
+      const html = act.length ? `<details><summary style="cursor:pointer;"><strong>Patient conditions (${act.length})</strong> <span class="beta-tag">draft</span> <span class="metric-sub" style="display:inline;">${act.map((c) => c.name).join(' · ')}</span></summary>` +
+        act.map((c) => `<h4>${c.name}</h4><ul>${c.notes.map((n) => `<li>${n}</li>`).join('')}</ul>`).join('') +
+        '<div class="metric-sub" style="margin-top:4px;">Rows marked ⛔ / ⚠️ / ✓ below are affected. Doses are unchanged: adjust clinically.</div></details>' : '';
+      ['cond-panel-drugs', 'cond-panel-inf'].forEach((id) => { $(id).innerHTML = html; $(id).classList.toggle('hidden', !act.length); });
+    }
+    document.addEventListener('click', (e) => {
+      const chip = e.target.closest('.cond-chip');
+      if (!chip) return;
+      const id = chip.dataset.cond;
+      activeConds.has(id) ? activeConds.delete(id) : activeConds.add(id);
+      calculateAll();
+    });
+
+    // Detect conditions from free text: instant keyword match, then (if a key is set) Gemini picks from the fixed list only.
+    async function detectConditions() {
+      const text = $('cond-text').value.trim();
+      const msg = $('cond-detect-msg');
+      if (!text) { msg.textContent = 'Type a short description first.'; return; }
+      const kwHits = CONDITIONS.filter((c) => c.kw.test(text)).map((c) => c.id);
+      kwHits.forEach((id) => activeConds.add(id));
+      calculateAll();
+      const names = (ids) => ids.map((id) => CONDITIONS.find((c) => c.id === id).name).join(', ');
+      msg.textContent = kwHits.length ? `Found ${kwHits.length}.` : 'No keyword match.';
+      if (kwHits.length) return; // keywords were enough: don't spend an AI request
+      const key = getApiKey();
+      if (!key) { msg.textContent += ' Add a Gemini key (Nasma AI tab) for smarter detection.'; return; }
+      if (!navigator.onLine) { msg.textContent += ' Offline: keyword detection only.'; return; }
+      msg.textContent += ' ✨ Asking Nasma AI…';
+      try {
+        const list = CONDITIONS.map((c) => `${c.id}: ${c.name}`).join('\n');
+        const res = await fetch(`${GEMINI_BASE}/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: 'You map a pediatric anesthesia patient description to condition IDs. Use ONLY IDs from the list. Include a condition only if the description states or clearly implies it (e.g. "Glenn" or "HLHS" implies fontan; "on aspirin" implies anticoag). Reply as JSON: {"ids": [...]}.' }] },
+            contents: [{ role: 'user', parts: [{ text: `Conditions:\n${list}\n\nDescription: ${text}` }] }],
+            generationConfig: { temperature: 0, responseMimeType: 'application/json' }
+          })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(explainError(res.status, data.error?.message));
+        const raw = (data.candidates?.[0]?.content?.parts || []).filter((x) => !x.thought).map((x) => x.text || '').join('');
+        const ids = (JSON.parse(raw).ids || []).filter((id) => CONDITIONS.some((c) => c.id === id));
+        const added = ids.filter((id) => !kwHits.includes(id));
+        ids.forEach((id) => activeConds.add(id));
+        calculateAll();
+        const all = [...new Set([...kwHits, ...ids])];
+        msg.textContent = all.length ? `Found ${all.length}${added.length ? ` (${added.length} by AI)` : ''}. Tap ✕ to remove one.` : 'No matching condition found.';
+      } catch (err) {
+        const why = err instanceof TypeError ? 'no internet, keyword detection only' : err.message;
+        msg.textContent = (kwHits.length ? `Found ${kwHits.length}. ` : 'No keyword match. ') + `AI detection unavailable (${why}).`;
+      }
+    }
+
+    function renderSourcesTable() {
+      const crisis = [
+        ['Laryngospasm', 'Common practice'], ['Cardiac arrest, bradycardia, tachycardia', 'AHA PALS 2020'],
+        ['Anaphylaxis', 'SPA checklist / AAP 2017'], ['Local anesthetic toxicity (lipid)', 'ASRA 2020 checklist'],
+        ['Malignant hyperthermia (dantrolene)', 'MHAUS / FDA labels'], ['Hyperkalemia', "PALS / Nationwide Children's"],
+        ['Hypoglycemia / seizure', 'PALS / American Epilepsy Society 2016']
+      ];
+      const grp = (t) => `<tr class="grp"><td colspan="2">${t}</td></tr>`;
+      const row = (n, src) => `<tr><td>${n}</td><td>${src}</td></tr>`;
+      $('src-tbody').innerHTML =
+        grp('Bolus doses') + DRUG_DB.map((d) => row(d.name, d.src)).join('') +
+        grp('Infusions') + INFUSIONS.map((f) => row(f.name, f.src)).join('') +
+        grp('STAT crisis') + crisis.map(([n, src]) => row(n, src)).join('');
+    }
+
+    function openAI() {
+      switchTab('tab-ai', $('ai-tab-btn'));
+      $('ai-tab-btn').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setTimeout(() => (getApiKey() ? $('ai-prompt') : $('api-key-input')).focus({ preventScroll: true }), 400);
+    }
+
+    function renderScalarList() {
+      const rows = [...DRUG_DB.map((d) => [d.name + ' (bolus)', d.wt || 'TBW']), ...INFUSIONS.map((f) => [f.name + ' (infusion)', f.wt])];
+      const by = { IBW: [], ABW: [], TBW: [] };
+      rows.forEach(([n, k]) => by[k].push(n));
+      $('scalar-list').innerHTML = Object.entries(by).map(([k, list]) => `<p><strong>${k}:</strong> ${list.join(', ')}</p>`).join('') +
+        '<p class="muted">Crisis drugs (epinephrine, amiodarone, adenosine, succinylcholine, dantrolene, calcium, defibrillation) use actual weight capped at adult doses. Lipid emulsion uses IBW. Based on common pediatric obesity dosing guidance; confirm against departmental policy.</p>';
+    }
+
+    // ───────────────────────── Crisis modal ─────────────────────────
+    function renderCrisis(W, a) {
+      const w = W.TBW;
+      $('modal-wt-disp').textContent = w != null ? fmt(w) + (W.active ? ` · IBW ${fmt(W.IBW)}` : '') : '?';
+      $('crisis-empty').classList.toggle('hidden', w != null);
+      const grid = $('crisis-grid');
+      if (w == null) { grid.innerHTML = ''; return; }
+
+      // d(perKg, max) -> formatted dose with cap notice
+      const d = (perKg, max, unit = 'mg', digits) => {
+        const r = dose(perKg, w, max);
+        const v = digits != null ? r.value.toFixed(digits) : fmt(r.value);
+        return `<span class="v">${v} ${unit}</span>${r.capped ? ' <span class="muted">(max)</span>' : ''}`;
+      };
+      const vol = (perKg, max, conc) => `<span class="v2">${fmtVol(dose(perKg, w, max).value / conc)} mL</span>`;
+      const range = (lo, hi, unit = 'mg', max) => `<span class="v">${fmt(dose(lo, w, max).value)}–${fmt(dose(hi, w, max).value)} ${unit}</span>`;
+      const J = (perKg, cap = 200) => `<span class="v">${Math.round(Math.min(perKg * w, cap))} J</span>`;
+
+      const imEpiMax = a != null && a >= 12 ? 0.5 : 0.3; // AAP: 0.3 mg prepubertal, 0.5 mg adolescents
+      const dantroleneMg = 2.5 * w;
+      const dantriumVials = Math.ceil(dantroleneMg / 20);
+      const ryanodexVials = Math.ceil(dantroleneMg / 250);
+
+      grid.innerHTML = `
+        <div class="crisis-box">
+          <h4>Laryngospasm</h4>
+          <ul>
+            <li>100% O₂, jaw thrust / Larson's point, CPAP</li>
+            <li><strong>Propofol</strong> 0.5–1 mg/kg: ${range(0.5, 1)}</li>
+            <li><strong>Succinylcholine IV</strong> 1–2 mg/kg: ${range(1, 2, 'mg', 150)}</li>
+            <li><strong>Succinylcholine IM</strong> 4 mg/kg: ${d(4, 150)} = ${vol(4, 150, 20)} of 20 mg/mL</li>
+            <li><strong>Atropine</strong> 0.02 mg/kg: ${d(0.02, 0.5)} = ${vol(0.02, 0.5, 0.4)} of 0.4 mg/mL</li>
+          </ul>
+        </div>
+
+        <div class="crisis-box">
+          <h4>PALS Cardiac Arrest <span class="muted" style="font-weight:400;text-transform:none;">· AHA 2020</span></h4>
+          <ul>
+            <li><strong>Epinephrine</strong> 0.01 mg/kg: ${d(0.01, 1)} = ${vol(0.01, 1, 0.1)} of 0.1 mg/mL (1:10,000), q3–5 min</li>
+            <li><strong>Defib</strong> 1st ${J(2)} → 2nd ${J(4)} → max ${J(10)} (≤ adult dose)</li>
+            <li><strong>Amiodarone</strong> 5 mg/kg: ${d(5, 300)} (may repeat ×2)</li>
+            <li><strong>or Lidocaine</strong> 1 mg/kg: ${d(1, 100)}</li>
+            <li><strong>Compression depth</strong>: ${a != null && a < 1 ? '~4 cm (1½ in)' : a != null && a >= 12 ? '5–6 cm' : '~5 cm (2 in)'} · rate 100–120/min</li>
+          </ul>
+        </div>
+
+        <div class="crisis-box">
+          <h4>Bradycardia / Arrhythmia</h4>
+          <ul>
+            <li><strong>Atropine</strong> 0.02 mg/kg: ${d(0.02, 0.5)} (vagal / AV block)</li>
+            <li><strong>Epinephrine</strong> 0.01 mg/kg: ${d(0.01, 1)} if HR &lt;60 with poor perfusion → CPR</li>
+            <li><strong>Adenosine</strong> (SVT) 0.1 mg/kg: ${d(0.1, 6)} → 0.2 mg/kg: ${d(0.2, 12)}, rapid flush</li>
+            <li><strong>Sync cardioversion</strong> ${J(0.5)}–${J(1)} → ${J(2)}</li>
+          </ul>
+        </div>
+
+        <div class="crisis-box">
+          <h4>Anaphylaxis <span class="muted" style="font-weight:400;text-transform:none;">· SPA / AAP</span></h4>
+          <ul>
+            <li>Stop trigger (relaxant, latex, antibiotic, chlorhexidine), 100% O₂</li>
+            <li><strong>Epi IV</strong> 1–2 mcg/kg (severe): ${range(1, 2, 'mcg', 1000)} = ${fmtVol(Math.min(w, 1000) / 10)}–${fmtVol(Math.min(2 * w, 1000) / 10)} mL of 10 mcg/mL; titrate, consider infusion</li>
+            <li><strong>Epi IM</strong> 0.01 mg/kg: ${d(0.01, imEpiMax)} = ${vol(0.01, imEpiMax, 1)} of 1 mg/mL <span class="muted">(max ${imEpiMax} mg)</span></li>
+            <li><strong>Fluid</strong> 20 mL/kg: <span class="v">${Math.round(20 * w)} mL</span>, repeat PRN</li>
+            <li>Diphenhydramine 1 mg/kg ${d(1, 50)} · Methylpred 2 mg/kg ${d(2, 125)} · Albuterol</li>
+          </ul>
+        </div>
+
+        <div class="crisis-box">
+          <h4>LAST (Local Anesthetic Toxicity) <span class="muted" style="font-weight:400;text-transform:none;">· ASRA 2020</span></h4>
+          <ul>
+            <li>Stop local, call for help, airway/seizure control (benzo)</li>
+            <li><strong>20% Lipid bolus</strong> 1.5 mL/kg over 2–3 min: <span class="v">${fmt(1.5 * W.IBW)} mL</span>${W.active ? ' <span class="muted">(IBW)</span>' : ''}</li>
+            <li><strong>Infusion</strong> 0.25 mL/kg/min: <span class="v">${fmt(0.25 * W.IBW)} mL/min</span> (${Math.round(15 * W.IBW)} mL/hr)</li>
+            <li>Repeat bolus ×2 and double rate (0.5 mL/kg/min) if unstable</li>
+            <li>Max ~12 mL/kg: <span class="v">${Math.round(12 * W.IBW)} mL</span> · epi ≤1 mcg/kg doses; avoid propofol, vasopressin, Ca-channel/β-blockers</li>
+          </ul>
+        </div>
+
+        <div class="crisis-box">
+          <h4>Malignant Hyperthermia <span class="muted" style="font-weight:400;text-transform:none;">· MHAUS</span></h4>
+          <ul>
+            <li>Stop volatiles &amp; sux, 100% O₂ high flow, call <a href="tel:18006449737" style="color: var(--accent);">MH Hotline 1-800-644-9737</a></li>
+            <li><strong>Dantrolene</strong> 2.5 mg/kg: ${d(2.5, null)} — repeat to effect (up to 10 mg/kg = <span class="v">${fmt(10 * w)} mg</span>)</li>
+            <li>Dantrium/Revonto 20 mg vials: <span class="v2">${dantriumVials} vial${dantriumVials > 1 ? 's' : ''}</span> (60 mL sterile water each)</li>
+            <li>Ryanodex 250 mg/5 mL: <span class="v2">${fmtVol(dantroleneMg / 50)} mL</span> (${ryanodexVials} vial${ryanodexVials > 1 ? 's' : ''})</li>
+            <li>Cool if &gt;39 °C, treat K⁺ (below), check ABG/CK</li>
+          </ul>
+        </div>
+
+        <div class="crisis-box">
+          <h4>Hyperkalemia <span class="muted" style="font-weight:400;text-transform:none;">· PALS / Nationwide Children's</span></h4>
+          <ul>
+            <li><strong>CaCl 10%</strong> 20 mg/kg: ${d(20, 1000)} = ${vol(20, 1000, 100)} (central line preferred)</li>
+            <li><strong>or Ca gluconate 10%</strong> 60–100 mg/kg: ${range(60, 100, 'mg', 3000)} (peripheral IV preferred)</li>
+            <li><strong>Insulin</strong> 0.1 U/kg: ${d(0.1, 10, 'U')} + <strong>dextrose</strong> 0.5 g/kg: ${d(0.5, 25, 'g')} (D10 ${fmt(Math.min(5 * w, 250))} mL)</li>
+            <li><strong>NaHCO₃</strong> 1 mEq/kg if acidotic: ${d(1, 50, 'mEq')} · Albuterol neb · hyperventilate</li>
+          </ul>
+        </div>
+
+        <div class="crisis-box">
+          <h4>Hypoglycemia / Seizure</h4>
+          <ul>
+            <li><strong>Dextrose</strong> 0.5 g/kg: D10 <span class="v">${fmt(Math.min(5 * w, 250))} mL</span>${a != null && a >= 1 ? ` or D25 <span class="v">${fmt(Math.min(2 * w, 100))} mL</span>` : ' (neonate: D10 2 mL/kg = <span class="v">' + fmt(2 * w) + ' mL</span>)'}</li>
+            <li><strong>Midazolam IM</strong> (AES): <span class="v">${w > 40 ? '10 mg' : w >= 13 ? '5 mg' : fmt(0.2 * w) + ' mg'}</span>${w < 13 ? ' (0.2 mg/kg)' : ''} · IV 0.1 mg/kg: ${d(0.1, 5)}</li>
+            <li><strong>Lorazepam IV</strong> 0.1 mg/kg: ${d(0.1, 4)}</li>
+          </ul>
+        </div>
+      `;
+    }
+
+    function useCrisisWeight() {
+      const v = parseFloat($('crisis-weight').value);
+      if (!Number.isFinite(v) || v < 0.3 || v > 200) { $('crisis-weight').classList.add('invalid'); return; }
+      $('weight-val').value = v;
+      calculateAll();
+    }
+
+    // ───────────────────────── UI ─────────────────────────
+    function autoEstimateWeight() {
+      const p = getPatient();
+      const est = estimateWeight(p.ageYears);
+      if (est == null) {
+        alert(p.ageYears == null ? 'Enter age first.' : 'The APLS formula only applies to children 12 years and under — weigh the patient.');
+        return;
+      }
+      $('weight-val').value = est.toFixed(1);
+      calculateAll();
+    }
+
+    function resetPatient() {
+      ['age-val', 'weight-val', 'height-val', 'npo-val', 'hct-start', 'crisis-weight'].forEach((id) => ($(id).value = ''));
+      $('age-unit').value = 'years';
+      $('sex-val').value = '';
+      activeConds.clear();
+      if ($('cond-text')) { $('cond-text').value = ''; $('cond-detect-msg').textContent = 'Describe the patient, then tap Detect.'; }
+      $('scalar-mode').value = 'auto';
+      $('hct-target').value = '25';
+      calculateAll();
+      $('age-val').focus();
+    }
+
+    function switchTab(tabId, btn) {
+      document.querySelectorAll('.tab-pane').forEach((el) => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach((el) => el.classList.remove('active'));
+      $(tabId).classList.add('active');
+      btn.classList.add('active');
+      $('ai-fab').classList.toggle('hidden', tabId === 'tab-ai');
+    }
+
+    $('pill-group').addEventListener('click', (e) => {
+      const pill = e.target.closest('.pill');
+      if (!pill) return;
+      activeFilter = pill.dataset.cat;
+      document.querySelectorAll('#pill-group .pill').forEach((el) => el.classList.toggle('active', el === pill));
+      calculateAll();
+    });
+
+    function toggleModal(id, open) {
+      $(id).classList.toggle('open', open);
+      document.body.style.overflow = document.querySelector('.modal-backdrop.open') ? 'hidden' : '';
+    }
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') document.querySelectorAll('.modal-backdrop.open').forEach((m) => toggleModal(m.id, false));
+    });
+
+    // ───────────────────────── Gemini AI ─────────────────────────
+    const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
+    const GEMINI_MODEL = 'gemini-3-flash-preview';
+    const KEY_STORE = 'peds_gemini_key';
+
+    function storageGet(k) { try { return localStorage.getItem(k); } catch { return null; } }
+    function storageSet(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} }
+
+    function getApiKey() { return $('api-key-input').value.trim(); }
+
+    function onKeyChanged() {
+      storageSet(KEY_STORE, $('remember-key').checked && getApiKey() ? getApiKey() : null);
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    // Minimal, safe Markdown → HTML (escapes everything first).
+    function renderMarkdown(md) {
+      const lines = escapeHtml(md).split('\n');
+      let html = '', list = null;
+      const inline = (t) => t
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>');
+      const close = () => { if (list) { html += `</${list}>`; list = null; } };
+      for (const line of lines) {
+        let m;
+        if ((m = line.match(/^\s*#{1,2}\s+(.*)/))) { close(); html += `<h3>${inline(m[1])}</h3>`; }
+        else if ((m = line.match(/^\s*#{3,6}\s+(.*)/))) { close(); html += `<h4>${inline(m[1])}</h4>`; }
+        else if ((m = line.match(/^\s*[-*•]\s+(.*)/))) { if (list !== 'ul') { close(); html += '<ul>'; list = 'ul'; } html += `<li>${inline(m[1])}</li>`; }
+        else if ((m = line.match(/^\s*\d+[.)]\s+(.*)/))) { if (list !== 'ol') { close(); html += '<ol>'; list = 'ol'; } html += `<li>${inline(m[1])}</li>`; }
+        else if (line.trim() === '') { close(); }
+        else { close(); html += `<p>${inline(line)}</p>`; }
+      }
+      close();
+      return html;
+    }
+
+    function patientSummary() {
+      const p = getPatient();
+      const ageTxt = $('age-val').value ? `${$('age-val').value} ${$('age-unit').value}` : 'age not given';
+      const parts = [`Age: ${ageTxt}`, `Weight: ${p.weight != null ? p.weight + ' kg' : 'not given'}`];
+      if (p.height) parts.push(`Height: ${p.height} cm`);
+      if (p.npo != null) parts.push(`NPO: ${p.npo} h`);
+      const grab = (id) => $(id).textContent;
+      if (p.ageYears != null) parts.push(`Calculator airway: cuffed ETT ${grab('airway-ett-cuffed')}, depth ${grab('airway-depth')}, LMA ${grab('airway-lma')}`);
+      if (p.sex) parts.push(`Sex: ${p.sex}`);
+      if (p.weight != null) {
+        const W = computeWeights(p);
+        if (W.bmi != null) parts.push(`BMI ${W.bmi.toFixed(1)}${W.ref ? ` (95th percentile for age ${W.ref.p95.toFixed(1)})` : ''}${W.obese ? ' — OBESE' : ''}`);
+        if (W.ibwRaw != null) parts.push(`IBW ${fmt(Math.min(W.ibwRaw, W.TBW))} kg; obesity weight scalars ${W.active ? 'ON' : 'off'}`);
+        parts.push(`Maintenance fluids ${grab('fluid-hourly')}, EBV ${grab('metric-ebv')}`);
+        if (W.active) parts.push(`Dosing weights (obesity scalars ON): IBW ${fmt(W.IBW)} kg, ABW ${fmt(W.ABW)} kg, TBW ${fmt(W.TBW)} kg; the weight for each drug is in [brackets] below`);
+      }
+      // The app's verified reference doses, compact (one line each) to keep requests small.
+      const wtTag = (k) => (p.weight != null && computeWeights(p).active ? ` [${k || 'TBW'}]` : '');
+      parts.push('App reference doses (per kg, max) from FDA labels / PALS / SPA unless noted:');
+      parts.push(DRUG_DB.map((d) => `${d.name} ${d.range} ${d.unit}/kg${d.kind === 'max' ? ' MAX TOTAL' : ''}${d.max != null ? ` (max ${d.max} ${d.unit})` : ''}${wtTag(d.wt)}`).join('; '));
+      parts.push('Infusions: ' + INFUSIONS.map((f) => `${f.name} ${f.lo}–${f.hi} ${f.dU === 'mU' ? 'milliunits' : f.dU}/kg/${f.dT}${wtTag(f.wt)}`).join('; '));
+      const conds = CONDITIONS.filter((c) => activeConds.has(c.id));
+      if (conds.length) {
+        parts.push('Patient conditions selected in the app: ' + conds.map((c) => c.name).join(', '));
+        conds.forEach((c) => Object.entries(c.rules).forEach(([drug, [lvl, why]]) => parts.push(`  App flag (${c.name}): ${drug}: ${lvl} (${why})`)));
+      }
+      return parts.join('\n');
+    }
+
+    const SYSTEM_PROMPT = `You are Nasma AI, an assistant that answers like a consultant pediatric anesthesiologist giving concise decision support to another anesthesia clinician.
+- Be practical and specific; use short headings and bullet points.
+- Give weight-based doses as mg/kg (or mcg/kg) AND the calculated amount for this patient, with typical maximums.
+- Flag pediatric-specific hazards (airway, laryngospasm, emergence delirium, OSA/opioid sensitivity, PONV, hypothermia, hypoglycemia).
+- If key information is missing, state your assumptions briefly rather than refusing.
+- Do not invent facts about the patient. Keep it under about 400 words unless asked for more.
+- Prefer US references: FDA prescribing information, AHA PALS, Society for Pediatric Anesthesia (SPA) checklists, ASRA, MHAUS, AAP. Name the source briefly for key doses, and say clearly when a use or dose is off-label in children.
+- The clinician's app uses the reference doses listed with the patient. Use the same doses; if you recommend a different dose, say so explicitly and explain why.
+- Obese patients: when the patient data says obesity weight scalars are ON, calculate each drug on the weight the app assigns it (IBW, ABW or TBW, listed with the patient) and state which weight you used. Resuscitation drugs use actual weight, capped at adult doses.
+- If patient conditions are listed, tailor the whole answer to them (physiology goals, drug choice, contraindications) and stay consistent with the app's avoid/caution/preferred flags.
+- End with one line reminding the clinician to verify doses against institutional references.`;
+
+    let aiBusy = false;
+    const aiCache = new Map(); // identical request → saved answer (saves quota on repeat taps)
+    async function queryGemini(mode) {
+      if (aiBusy) return;
+      const key = getApiKey();
+      const box = $('ai-response-box');
+      if (!key) { box.innerHTML = '<span class="err">⚠️ Please enter a Gemini API key first.</span>'; $('api-key-input').focus(); return; }
+      const notes = $('ai-prompt').value.trim();
+      if (mode === 'ask' && !notes) { box.innerHTML = '<span class="err">⚠️ Type your question in the Clinical Notes box.</span>'; $('ai-prompt').focus(); return; }
+
+      const task = {
+        plan: 'Create a concise anesthetic plan: premedication, induction, airway, maintenance, analgesia (multimodal), PONV prophylaxis, fluids, emergence and PACU considerations.',
+        risks: 'List the main perioperative risks for this child, ranked by importance, each with a specific mitigation.',
+        ask: 'Answer the clinician\'s question.'
+      }[mode];
+      const prompt = `${task}\n\nPatient:\n${patientSummary()}\n\nClinical notes / question:\n${notes || '(none provided)'}`;
+
+      const model = GEMINI_MODEL;
+      if (aiCache.has(prompt)) {
+        box.innerHTML = renderMarkdown(aiCache.get(prompt)) + '<p class="muted">↺ Same question as before: showing the saved answer (no new request used).</p>';
+        return;
+      }
+      aiBusy = true;
+      document.querySelectorAll('.ai-btn').forEach((b) => (b.disabled = true));
+      box.innerHTML = '<span class="muted">⏳ Asking Gemini…</span>';
+
+      let text = '';
+      let finish = null, blocked = null;
+      try {
+        const res = await fetch(`${GEMINI_BASE}/models/${encodeURIComponent(model)}:streamGenerateContent?alt=sse`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.3, maxOutputTokens: 4096 }
+          })
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(explainError(res.status, data.error?.message));
+        }
+
+        // Stream Server-Sent Events and render as text arrives.
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buf = '';
+        for (;;) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          let idx;
+          while ((idx = buf.indexOf('\n')) >= 0) {
+            const line = buf.slice(0, idx).trim();
+            buf = buf.slice(idx + 1);
+            if (!line.startsWith('data:')) continue;
+            let chunk;
+            try { chunk = JSON.parse(line.slice(5)); } catch { continue; }
+            if (chunk.error) throw new Error(chunk.error.message || 'Gemini returned an error.');
+            if (chunk.promptFeedback?.blockReason) blocked = chunk.promptFeedback.blockReason;
+            const cand = chunk.candidates?.[0];
+            if (cand?.finishReason) finish = cand.finishReason;
+            const parts = cand?.content?.parts || [];
+            for (const part of parts) if (part.text && !part.thought) text += part.text;
+            box.innerHTML = renderMarkdown(text) || `<span class="muted">⏳ Thinking…</span>`;
+          }
+        }
+
+        if (blocked) throw new Error(`Gemini blocked this request (${blocked}). Try rephrasing the notes.`);
+        if (!text) throw new Error(finish === 'SAFETY' ? 'Gemini withheld the answer for safety reasons. Try rephrasing.' : `No answer returned${finish ? ' (' + finish + ')' : ''}. Try again.`);
+        if (finish !== 'SAFETY') aiCache.set(prompt, text);
+        if (finish === 'MAX_TOKENS') box.innerHTML += '<p class="muted">… (answer was cut off at the length limit)</p>';
+        else if (finish === 'SAFETY') box.innerHTML += '<p class="err">… (answer stopped by Gemini safety filter)</p>';
+      } catch (err) {
+        const msg = err instanceof TypeError ? 'Network error — check your connection (the AI needs internet; the calculator works offline).' : err.message;
+        box.innerHTML = (text ? renderMarkdown(text) : '') + `<p class="err">⚠️ ${escapeHtml(msg)}</p>`;
+      } finally {
+        aiBusy = false;
+        document.querySelectorAll('.ai-btn').forEach((b) => (b.disabled = false));
+      }
+    }
+
+    function explainError(status, message) {
+      const m = message || '';
+      if (status === 400 && /API key/i.test(m)) return 'Invalid API key. Copy it again from Google AI Studio.';
+      if (status === 403) return 'This key is not allowed to use the Gemini API (403). Check the key in Google AI Studio. ' + m;
+      if (status === 404) return `Model ${GEMINI_MODEL} not found (404). ${m}`;
+      if (status === 429) {
+        // Google says which limit was hit (per minute vs per day) and sometimes when to retry.
+        const retry = (m.match(/retry in ([\d.]+)s/i) || [])[1];
+        if (/per ?day|PerDay|daily/i.test(m)) return 'Daily free Gemini limit reached for this key. It resets at midnight US Pacific time (about 10–11 am Saudi time). To avoid this, turn on billing for your key (see 🔑 guide).';
+        return `Too many requests in a short time (free per-minute limit). Try again in ${retry ? Math.ceil(+retry) + ' seconds' : 'about a minute'}.`;
+      }
+      if (status >= 500) return `Gemini is having problems (${status}). Try again shortly.`;
+      return `Gemini error ${status}: ${m}`;
+    }
+
+    // ───────────────────────── Light / dark theme ─────────────────────────
+    function applyTheme(t) {
+      document.documentElement.setAttribute('data-theme', t);
+      $('theme-btn').textContent = t === 'light' ? '🌙' : '☀️';
+      $('theme-btn').title = t === 'light' ? 'Switch to dark mode' : 'Switch to light mode';
+      document.querySelector('meta[name="theme-color"]').setAttribute('content', t === 'light' ? '#ffffff' : '#1e293b');
+    }
+    function toggleTheme() {
+      const next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      storageSet('peds_theme', next);
+      applyTheme(next);
+    }
+    applyTheme(document.documentElement.getAttribute('data-theme') || 'dark');
+
+    // ───────────────────────── PWA install & offline ─────────────────────────
+    let deferredInstall = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredInstall = e;
+      $('install-btn').style.display = 'inline-flex';
+    });
+    $('install-btn').addEventListener('click', async () => {
+      if (!deferredInstall) return;
+      deferredInstall.prompt();
+      await deferredInstall.userChoice;
+      deferredInstall = null;
+      $('install-btn').style.display = 'none';
+    });
+    if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+    }
+
+    // ───────────────────────── Init ─────────────────────────
+    // ───────────────────────── Support (public edition only) ─────────────────────────
+    const SUPPORT_URL = 'https://ko-fi.com/nightshiftapps'; // button stays hidden while empty
+    if (SUPPORT_URL) {
+      document.querySelectorAll('.support-link').forEach((el) => {
+        el.classList.add('ready');
+        (el.matches('a') ? [el] : el.querySelectorAll('a')).forEach((a) => (a.href = SUPPORT_URL));
+      });
+    }
+
+    (function init() {
+      buildInfusions();
+      renderScalarList();
+      renderSourcesTable();
+      const savedKey = storageGet(KEY_STORE);
+      if (savedKey) { $('api-key-input').value = savedKey; $('remember-key').checked = true; }
+      calculateAll();
+    })();
+  </script>
+</body>
+</html>

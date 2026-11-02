@@ -24,10 +24,16 @@
       if (pub) document.getElementById('manifest-link').setAttribute('href', 'manifest-public.webmanifest');
     })();
   </script>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <!-- Fonts are bundled with the app (no external request, work offline) -->
+  <link rel="preload" href="fonts/geist-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="fonts/geist-mono-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin />
   <style>
+    @font-face { font-family: 'Geist'; font-weight: 400; font-style: normal; font-display: swap; src: url(fonts/geist-latin-400-normal.woff2) format('woff2'); }
+    @font-face { font-family: 'Geist'; font-weight: 500; font-style: normal; font-display: swap; src: url(fonts/geist-latin-500-normal.woff2) format('woff2'); }
+    @font-face { font-family: 'Geist'; font-weight: 600; font-style: normal; font-display: swap; src: url(fonts/geist-latin-600-normal.woff2) format('woff2'); }
+    @font-face { font-family: 'Geist Mono'; font-weight: 400; font-style: normal; font-display: swap; src: url(fonts/geist-mono-latin-400-normal.woff2) format('woff2'); }
+    @font-face { font-family: 'Geist Mono'; font-weight: 500; font-style: normal; font-display: swap; src: url(fonts/geist-mono-latin-500-normal.woff2) format('woff2'); }
+    @font-face { font-family: 'Newsreader'; font-weight: 500; font-style: normal; font-display: swap; src: url(fonts/newsreader-latin-500-normal.woff2) format('woff2'); }
     :root[data-theme="dark"] { --bg:#0d1012; --surface:#15191c; --surface2:#1b2024; --line:#262c31; --text:#ece9e2; --muted:#8c949a; --faint:#5c646a; --accent:#86c9c1; --accentInk:#0b1413; --accentSoft:rgba(134,201,193,.12); --warn:#e2b45c; --stat:#e5484d; --statSoft:rgba(229,72,77,.12); --shadow:0 10px 30px rgba(0,0,0,.45); color-scheme: dark; }
     :root[data-theme="light"] { --bg:#f4f2ed; --surface:#ffffff; --surface2:#f9f7f3; --line:#e4e0d7; --text:#15181a; --muted:#686f74; --faint:#a3a8ab; --accent:#1f6f68; --accentInk:#ffffff; --accentSoft:rgba(31,111,104,.08); --warn:#93640c; --stat:#c8302f; --statSoft:rgba(200,48,47,.08); --shadow:0 10px 30px rgba(30,30,20,.12); color-scheme: light; }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }

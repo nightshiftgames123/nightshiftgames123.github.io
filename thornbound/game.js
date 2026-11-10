@@ -5,9 +5,20 @@
 (() => {
 
 // ===================================================================== constants
-const TILE = 32, COLS = 9, ROWS = 11, WALL = 32;
-const RW = COLS * TILE + WALL * 2, RH = ROWS * TILE + WALL * 2; // 352 x 416
-const HUD = 40, VW = RW, VH = RH + HUD;
+const TILE = 32, COLS = 9, WALL = 32, HUD = 40;
+// Rooms are 11 tiles tall, or taller on a phone held upright, so the dungeon fills the screen top
+// to bottom. Picked once at start-up from the screen's shape (inside the notch/home-bar insets).
+const ROWS = (() => {
+  const st = document.getElementById('stage'), cs = getComputedStyle(st);
+  const w = innerWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  const h = innerHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+  const touch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+  if (!touch || h < w * 1.05) return 11;
+  const fit = Math.floor((h * (COLS * TILE + WALL * 2) / w - HUD - WALL * 2) / TILE);
+  return Math.max(11, Math.min(21, fit));
+})();
+const RW = COLS * TILE + WALL * 2, RH = ROWS * TILE + WALL * 2; // 352 x 416 for an 11-row room
+const VW = RW, VH = RH + HUD;
 const MCX = RW / 2, MCY = RH / 2;
 const GRID_W = 9, GRID_H = 8;
 const FINAL_FLOOR = 4;
@@ -41,7 +52,7 @@ const THEMES = [
 ];
 const theme = () => THEMES[(G.floor - 1) % THEMES.length];
 
-// Room layouts (9x11): '#' rubble, '^' thorns. Door lanes (centre row / column ends) stay clear.
+// Room layouts (9x11, stretched to ROWS): '#' rubble, '^' thorns. Door lanes (centre row / column ends) stay clear.
 const LAYOUTS = [
   ['.........', '.........', '.........', '.........', '.........', '.........', '.........', '.........', '.........', '.........', '.........'],
   ['.........', '.........', '..#...#..', '.........', '.........', '.........', '.........', '.........', '..#...#..', '.........', '.........'],
@@ -57,7 +68,26 @@ const LAYOUTS = [
   ['.........', '.........', '..##.##..', '..#...#..', '.........', '.........', '.........', '..#...#..', '..##.##..', '.........', '.........'],
   ['.........', '.^^...^^.', '.^.....^.', '.........', '.........', '.........', '.........', '.........', '.^.....^.', '.^^...^^.', '.........'],
   ['.........', '.........', '.###.....', '.........', '.....###.', '.........', '.###.....', '.........', '.....###.', '.........', '.........'],
-];
+].map(stretchLayout);
+// Taller rooms add rows evenly through the top and bottom halves (mirrored), plus a second centre
+// row when the extra count is odd, so the side doors stay centred. An added row repeats its
+// neighbours where they match (lengthening a wall), otherwise it's open floor.
+function stretchLayout(rows) {
+  const extra = ROWS - rows.length, n = Math.floor(extra / 2), mid = rows[5];
+  if (extra <= 0) return rows;
+  const grow = (part) => { // part runs from the outer wall towards the centre row
+    const add = new Map();
+    for (let j = 0; j < n; j++) { const g = Math.floor((j + 0.5) * part.length / n); add.set(g, (add.get(g) || 0) + 1); }
+    const out = [];
+    part.forEach((row, g) => {
+      out.push(row);
+      const next = g + 1 < part.length ? part[g + 1] : mid;
+      for (let k = 0; k < (add.get(g) || 0); k++) out.push(row === next ? row : '.........');
+    });
+    return out;
+  };
+  return [...grow(rows.slice(0, 5)), mid, ...(extra % 2 ? [mid] : []), ...grow(rows.slice(6).reverse()).reverse()];
+}
 const BOSS_LAYOUTS = [0, 1];
 
 // ===================================================================== utils
@@ -133,20 +163,21 @@ const charUnlocked = (id) => !CHARS[id].lock || SAVE.feats[CHARS[id].lock];
 const cv = $('game'), ctx = cv.getContext('2d');
 const stage = $('stage');
 const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
-let K = 1;
+let K = 1, hintDone = false; // the drag hint hides once you've used the sticks
 function resize() {
   const vw = window.innerWidth, vh = window.innerHeight;
   const portrait = vh > vw * 1.05;
-  stage.classList.toggle('portrait-touch', portrait && isTouch);
-  const availH = portrait && isTouch ? vh * 0.66 : vh - 8;
-  const s = Math.min((vw - 8) / VW, availH / VH);
+  const cs = getComputedStyle(stage), full = portrait && isTouch; // phones: fill the screen edge to edge
+  const availW = full ? vw - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) : vw - 8;
+  const availH = full ? vh - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) : vh - 8;
+  const s = Math.min(availW / VW, availH / VH);
   const cssW = Math.floor(VW * s), cssH = Math.floor(VH * s);
   cv.style.width = cssW + 'px'; cv.style.height = cssH + 'px';
   const dpr = Math.min(2, window.devicePixelRatio || 1);
   cv.width = Math.round(cssW * dpr); cv.height = Math.round(cssH * dpr);
   K = cv.width / VW;
   ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
-  $('touchHint').style.display = isTouch && portrait ? 'flex' : 'none';
+  $('touchHint').style.display = isTouch && portrait && !hintDone ? 'flex' : 'none';
 }
 window.addEventListener('resize', resize);
 resize();
@@ -445,7 +476,7 @@ function genFloor() {
       const li = r.type === 'fight' ? ri(0, LAYOUTS.length - 1) : r.type === 'boss' ? (f === FINAL_FLOOR ? 0 : pick(BOSS_LAYOUTS)) : 0;
       r.grid = new Uint8Array(COLS * ROWS);
       LAYOUTS[li].forEach((row, y) => { for (let x = 0; x < COLS; x++) r.grid[y * COLS + x] = row[x] === '#' ? 1 : row[x] === '^' ? 2 : 0; });
-      r.fx = ri(0, 1024 - COLS * TILE * 2); r.fy = ri(0, 1024 - ROWS * TILE * 2);
+      r.fx = ri(0, 1024 - COLS * TILE * 2); r.fy = ri(0, Math.max(0, 1024 - ROWS * TILE * 2));
       r.bg = null;
     }
     const treasure = others[0], shop = others[1];
@@ -581,7 +612,13 @@ function renderRoomBg(room) {
   const c = mk(RW * 2, RH * 2), x = c.getContext('2d'); x.scale(2, 2); // 2x so the painted floor stays sharp
   const IW = COLS * TILE, IH = ROWS * TILE;
   x.fillStyle = '#0a0b0f'; x.fillRect(0, 0, RW, RH);
-  if (IMG.floor) x.drawImage(IMG.floor, room.fx, room.fy, IW * 2, IH * 2, WALL, WALL, IW, IH);
+  if (IMG.floor && IH * 2 <= 1024) x.drawImage(IMG.floor, room.fx, room.fy, IW * 2, IH * 2, WALL, WALL, IW, IH);
+  else if (IMG.floor) { // taller than the floor art: the full height, then a mirrored copy below it (no seam)
+    x.save(); x.beginPath(); x.rect(WALL, WALL, IW, IH); x.clip();
+    x.drawImage(IMG.floor, room.fx, 0, IW * 2, 1024, WALL, WALL, IW, 512);
+    x.translate(0, WALL + 1024); x.scale(1, -1); x.drawImage(IMG.floor, room.fx, 0, IW * 2, 1024, WALL, 0, IW, 512);
+    x.restore();
+  }
   x.globalCompositeOperation = 'multiply'; x.fillStyle = th.tint; x.fillRect(WALL, WALL, IW, IH);
   x.globalCompositeOperation = 'source-over'; x.fillStyle = 'rgba(8,10,14,0.40)'; x.fillRect(WALL, WALL, IW, IH);
   if (room.type === 'boss') { x.fillStyle = G.floor === FINAL_FLOOR ? 'rgba(80,0,10,0.3)' : 'rgba(60,0,0,0.18)'; x.fillRect(WALL, WALL, IW, IH); }
@@ -1070,6 +1107,7 @@ window.addEventListener('touchstart', (ev) => {
     const which = t.clientX < window.innerWidth / 2 ? 'move' : 'aim';
     if (sticks[which]) continue;
     sticks[which] = { id: t.identifier, ox: t.clientX, oy: t.clientY, dx: 0, dy: 0 };
+    if (!hintDone) { hintDone = true; $('touchHint').style.display = 'none'; }
     const el = stickEl(which); el.style.display = 'block'; el.style.left = t.clientX + 'px'; el.style.top = t.clientY + 'px'; el.firstElementChild.style.transform = '';
   }
   ev.preventDefault();

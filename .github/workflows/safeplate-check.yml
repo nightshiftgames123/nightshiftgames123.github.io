@@ -2,9 +2,9 @@ name: SafePlate data check
 
 on:
   push:
-    paths: ['safeplate/**', 'tools/check-safeplate.js', '.github/workflows/safeplate-check.yml']
+    paths: ['safeplate/**', 'safeplate-server/**', 'tools/check-safeplate.js', '.github/workflows/safeplate-check.yml']
   pull_request:
-    paths: ['safeplate/**', 'tools/check-safeplate.js', '.github/workflows/safeplate-check.yml']
+    paths: ['safeplate/**', 'safeplate-server/**', 'tools/check-safeplate.js', '.github/workflows/safeplate-check.yml']
 
 permissions:
   contents: read
@@ -18,3 +18,5 @@ jobs:
         with:
           node-version: 22
       - run: node tools/check-safeplate.js
+      - name: Check the AI server code parses
+        run: node --check --input-type=module < safeplate-server/worker.js

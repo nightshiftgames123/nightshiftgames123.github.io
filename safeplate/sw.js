@@ -1,5 +1,5 @@
 // Offline cache for SafePlate. Bump VERSION whenever any cached file changes.
-const VERSION = 'safeplate-v10';
+const VERSION = 'safeplate-v11';
 const ASSETS = ['./', './index.html', './recipes-more.js', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {

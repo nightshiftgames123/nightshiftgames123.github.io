@@ -1,0 +1,26 @@
+# SafePlate AI server: a small Cloudflare Worker that holds the Gemini key and
+# gives each device a few free AI uses a day. See README.md for setup.
+name = "safeplate-ai"
+main = "worker.js"
+compatibility_date = "2025-09-01"
+
+[vars]
+# Sites allowed to call this server (comma-separated, no trailing slash).
+ALLOWED_ORIGINS = "https://nightshiftgames123.github.io"
+# Free AI uses per device per day (a chat message or a label scan is one use).
+DAILY_FREE = "5"
+# Most uses per day from one internet connection, so clearing the browser doesn't reset the allowance forever.
+DAILY_PER_IP = "20"
+# Most uses per day across everyone. This is the spending limit: when it is reached, the AI pauses until tomorrow.
+DAILY_TOTAL = "1500"
+GEMINI_MODEL = "gemini-3-flash-preview"
+
+# The Gemini key is NOT stored here. Add it in the Cloudflare dashboard as a secret named GEMINI_API_KEY.
+
+[[durable_objects.bindings]]
+name = "LIMITER"
+class_name = "Limiter"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Limiter"]

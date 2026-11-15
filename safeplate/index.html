@@ -188,7 +188,8 @@
     mark { background: var(--swap-soft); color: var(--swap); border-radius: 4px; padding: 0 3px; font-weight: 600; }
     mark.bad { background: var(--bad-soft); color: var(--bad); }
 
-    .note.source { margin-top: 14px; }
+    .note.source { margin-top: 10px; } .note.source > div + div { margin-top: 4px; }
+    .src { margin-top: 3px; } .src a { font-weight: 600; } .untested { color: #b45309; }
     .note.source a { font-weight: 600; }
     .note {
       border-inline-start: 4px solid var(--swap); background: var(--swap-soft);
@@ -226,6 +227,7 @@
     .btn.ghost { background: var(--card); color: var(--text); border: 1px solid var(--border); }
     .btn.ai { background: var(--ai); color: #fff; }
     [data-theme="dark"] .btn.ai { color: #1a1030; }
+    [data-theme="dark"] .untested { color: #fbbf24; }
     .btn.small { padding: 7px 12px; font-size: 14px; }
     .row { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 16px; }
     .result-line { padding: 10px 0; border-bottom: 1px dashed var(--border); }
@@ -418,6 +420,12 @@
       en: '🧽 <b>Avoid cross-contact:</b> wash boards, pans and utensils first, cook the safe version before anything else, and keep allergen-containing packages off the counter.',
       ar: '🧽 <b>تجنّب التلوث المتبادل:</b> اغسل الألواح والأواني والأدوات أولاً، واطبخ النسخة الآمنة قبل أي شيء آخر، وأبعد العبوات التي تحتوي على مسببات الحساسية عن سطح العمل.'
     },
+    swapSource: { en: 'Source: ', ar: 'المصدر: ' },
+    swapUntested: { en: '⚠️ Untested swap: SafePlate suggestion, no published source yet.', ar: '⚠️ بديل غير مُجرَّب: اقتراح من SafePlate، ولا يوجد له مصدر منشور بعد.' },
+    untestedHere: { en: function (x) { return '⚠️ Untested swaps in this recipe: ' + x + '. Try a small batch first.'; }, ar: function (x) { return '⚠️ بدائل غير مُجرَّبة في هذه الوصفة: ' + x + '. جرّب كمية صغيرة أولاً.'; } },
+    allSwapsSourced: { en: '✅ Each swap here comes from a published allergy or baking guide (linked under the swap).', ar: '✅ كل بديل هنا مأخوذ من دليل منشور للحساسية أو الخَبز (الرابط تحت البديل).' },
+    comboNote: { en: 'Each swap is sourced on its own; this exact combination in this recipe hasn\'t been tested by the source.', ar: 'كل بديل موثّق بمفرده، لكن هذا المزيج بالذات في هذه الوصفة لم يجرّبه المصدر.' },
+    testedVersion: { en: function (x) { return '✅ A tested version without ' + x + ' exists: '; }, ar: function (x) { return '✅ توجد نسخة مُجرَّبة بدون ' + x + ': '; } },
     adaptedFrom: { en: 'Adapted from: ', ar: 'مقتبسة من: ' },
     sourceNote: { en: 'Amounts, temperatures and times follow this tested recipe. The allergy swaps are SafePlate suggestions, not part of the original, so results can differ a little.',
       ar: 'المقادير ودرجات الحرارة والأوقات مأخوذة من هذه الوصفة المجرّبة. أما بدائل الحساسية فهي اقتراحات من SafePlate وليست من الوصفة الأصلية، لذا قد تختلف النتيجة قليلاً.' },
@@ -645,75 +653,120 @@
   // m = often contains (label warning), k = words the label checker matches, swaps
   // in order of preference; the first one free of all the user's allergens wins.
   // Each entry and swap carries its Arabic text in `ar`.
+  // Published sources for swaps and for tested allergy-free versions of recipes.
+  var SRC = {
+    kfaMilk: { n: 'Kids With Food Allergies: How to substitute milk', u: 'https://kidswithfoodallergies.org/recipes-diet/recipe-substitutions/substitutions-for-milk/' },
+    kfaButtermilk: { n: 'Kids With Food Allergies: Buttermilk substitution', u: 'https://kidswithfoodallergies.org/recipes/buttermilk-substitution/' },
+    kfaEgg: { n: 'Kids With Food Allergies: How to substitute egg', u: 'https://kidswithfoodallergies.org/recipes-diet/recipe-substitutions/substitutions-for-egg/' },
+    kfaSesame: { n: 'Kids With Food Allergies: Sesame allergy', u: 'https://kidswithfoodallergies.org/living-with-food-allergies/top-food-allergens/sesame-allergy/' },
+    kfaTeriyaki: { n: 'Kids With Food Allergies: Teriyaki sauce (wheat-free tamari)', u: 'https://kidswithfoodallergies.org/recipe-page.aspx?Recid=1016' },
+    kfaPancakes: { n: 'Kids With Food Allergies: Pancakes, Egg and Milk-Free', u: 'https://kidswithfoodallergies.org/recipes/pancakes-egg-and-milk-free/' },
+    kfaWheat: { n: 'Kids With Food Allergies: Cooking wheat-free and gluten-free', u: 'https://kidswithfoodallergies.org/recipes-diet/recipe-substitutions/substitutions-for-wheat-and-gluten/' },
+    kfaMeatballs: { n: 'Kids With Food Allergies: Turkey Meatballs (gluten-free crumbs or cereal)', u: 'https://kidswithfoodallergies.org/page/recipe-page.aspx?name=Turkey+Meatballs&recid=1325' },
+    kfaFajitas: { n: 'Kids With Food Allergies: Chicken Fajitas (corn tortillas)', u: 'https://kidswithfoodallergies.org/recipes/chicken-fajitas/?recid=1007' },
+    kfaNuts: { n: 'Kids With Food Allergies: Substitutions for peanut or nut allergy', u: 'https://kidswithfoodallergies.org/recipes-diet/recipe-substitutions/substitutions-for-peanuts-and-tree-nuts/' },
+    kfaPesto: { n: 'Kids With Food Allergies: Sorrel Pesto, Dairy and Nut Free', u: 'https://kidswithfoodallergies.org/recipes/sorrel-pesto-dairy-and-nut-free/' },
+    fareEgg: { n: 'FARE: Egg substitutions', u: 'https://www.foodallergy.org/living-food-allergies/food-allergy-essentials/common-allergens/substitutions/egg-substitutions' },
+    fareMilk: { n: 'FARE: Milk substitutions', u: 'https://www.foodallergy.org/living-food-allergies/food-allergy-essentials/common-allergens/substitutions/milk-substitutions' },
+    fareWheat: { n: 'FARE: Wheat substitutions', u: 'https://www.foodallergy.org/living-food-allergies/food-allergy-essentials/common-allergens/substitutions/wheat-substitutions' },
+    farePB: { n: 'FARE: Peanut butter substitutions', u: 'https://www.foodallergy.org/living-food-allergies/food-allergy-essentials/common-allergens/substitutions/peanut-butter' },
+    fareTeen: { n: 'FARE: Cooking and baking for teens with food allergies', u: 'https://www.foodallergy.org/fare-blog/cooking-and-baking-teens-food-allergies' },
+    fareTeriyaki: { n: 'FARE: Chicken Teriyaki Bowl (coconut aminos)', u: 'https://www.foodallergy.org/resources/feasting-fare-chicken-teriyaki-bowl' },
+    kaEgg: { n: 'King Arthur Baking: Guide to substituting eggs', u: 'https://www.kingarthurbaking.com/blog/2021/01/21/guide-for-substituting-eggs-best-egg-replacers' },
+    kaM4M: { n: 'King Arthur Baking: Gluten-Free Measure for Measure Flour', u: 'https://shop.kingarthurbaking.com/items/gluten-free-measure-for-measure-flour' },
+    kaGfCookies: { n: 'King Arthur Baking: Gluten-Free Chocolate Chip Cookies', u: 'https://www.kingarthurbaking.com/recipes/gluten-free-chocolate-chip-cookies-recipe' },
+    kaGfPancakes: { n: 'King Arthur Baking: Gluten-Free Pancakes or Waffles', u: 'https://www.kingarthurbaking.com/recipes/gluten-free-pancakes-or-waffles-recipe' },
+    kaGfBrownies: { n: 'King Arthur Baking: Gluten-Free Deep Dark Fudgy Brownies', u: 'https://www.kingarthurbaking.com/pro/formulas/gluten-free-deep-dark-fudgy-brownies' },
+    kaGfVeganBananaBread: { n: 'King Arthur Baking: Gluten-free and vegan banana bread', u: 'https://www.kingarthurbaking.com/blog/2018/07/20/gluten-free-and-vegan-banana-bread' },
+    hersheyGf: { n: "Hershey's: Gluten-Free \"Perfectly Chocolate\" Chocolate Cake", u: 'https://www.hersheyland.com/recipes/gluten-free-hersheys-perfectly-chocolate-chocolate-cake.html' },
+    ccGreen: { n: "Cook's Country: Does sunflower butter turn cookies green?", u: 'https://www.cookscountry.com/how_tos/9883-does-sunflower-butter-turn-cookies-green' },
+    tmdQuinoaTabbouleh: { n: 'The Mediterranean Dish: Quinoa Tabbouleh', u: 'https://www.themediterraneandish.com/quinoa-tabbouleh/' }
+  };
+
+  // Tested allergy-free versions of some recipes, published by trusted sources.
+  // a = the allergens that version leaves out. Shown when it covers every allergen the user avoids in that recipe.
+  var TESTED = {
+    pancakes: [{ a: ['wheat'], s: SRC.kaGfPancakes }, { a: ['egg', 'milk'], s: SRC.kfaPancakes }],
+    waffles: [{ a: ['wheat'], s: SRC.kaGfPancakes }],
+    cookies: [{ a: ['wheat'], s: SRC.kaGfCookies }],
+    brownies: [{ a: ['wheat'], s: SRC.kaGfBrownies }],
+    'chocolate-cake': [{ a: ['wheat'], s: SRC.hersheyGf }],
+    bananabread: [{ a: ['wheat', 'egg', 'milk'], s: SRC.kaGfVeganBananaBread }],
+    tabbouleh: [{ a: ['wheat'], s: SRC.tmdQuinoaTabbouleh }],
+    'teriyaki-chicken': [{ a: ['soy', 'wheat'], s: SRC.fareTeriyaki }]
+  };
+
   var LIB = {
     butter: { n: 'butter', s: 'butter', a: ['milk'], k: ['butter', 'unsalted butter', 'salted butter', 'margarine'],
       ar: { n: 'زبدة', s: 'الزبدة', k: ['زبدة', 'زبدة طرية', 'سمن', 'سمن بلدي', 'مارغرين', 'مرجرين'] },
       swaps: [
-        { n: 'dairy-free butter sticks (olive or avocado-oil based)', s: 'dairy-free butter', a: [], tip: 'Use 1:1. Some brands contain soy or cashew, so check the label.',
+        { n: 'dairy-free butter sticks (olive or avocado-oil based)', src: [SRC.kfaMilk], s: 'dairy-free butter', a: [], tip: 'Use 1:1. Some brands contain soy or cashew, so check the label.',
           ar: { n: 'أصابع زبدة نباتية خالية من الألبان (بزيت الزيتون أو الأفوكادو)', s: 'الزبدة النباتية', tip: 'بنفس الكمية. بعض الأنواع تحتوي على الصويا أو الكاجو، فاقرأ الملصق.' } },
-        { n: 'refined coconut oil', s: 'coconut oil', a: [], tip: 'Use 1:1, solid for cookies and melted for batters. Refined coconut oil has no coconut taste.',
+        { n: 'refined coconut oil', src: [SRC.kfaMilk], s: 'coconut oil', a: [], tip: 'Use 1:1, solid for cookies and melted for batters. Refined coconut oil has no coconut taste.',
           ar: { n: 'زيت جوز الهند المكرر', s: 'زيت جوز الهند', tip: 'بنفس الكمية: صلباً للكوكيز ومذاباً للخلطات السائلة. المكرر بلا طعم جوز الهند.' } }
       ] },
     milk: { n: 'milk', s: 'milk', a: ['milk'], k: ['milk', 'whole milk', 'skim milk', '2% milk', 'evaporated milk', 'condensed milk', 'sweetened condensed milk'],
       ar: { n: 'حليب', s: 'الحليب', k: ['حليب', 'حليب كامل الدسم', 'حليب قليل الدسم', 'حليب مبخر', 'حليب مكثف', 'حليب بودرة'] },
       swaps: [
-        { n: 'oat milk (certified gluten-free)', s: 'oat milk', a: [], tip: 'Use 1:1. Pick unsweetened for savory dishes.',
+        { n: 'oat milk (certified gluten-free)', src: [SRC.kfaMilk, SRC.fareMilk], s: 'oat milk', a: [], tip: 'Use 1:1. Pick unsweetened for savory dishes.',
           ar: { n: 'حليب الشوفان (معتمد خالٍ من الغلوتين)', s: 'حليب الشوفان', tip: 'بنفس الكمية. اختر غير المحلّى للأطباق المالحة.' } },
-        { n: 'soy milk', s: 'soy milk', a: ['soy'], tip: 'Use 1:1. Highest protein, so it behaves most like dairy in baking.',
+        { n: 'soy milk', src: [SRC.kfaMilk, SRC.fareMilk], s: 'soy milk', a: ['soy'], tip: 'Use 1:1. Highest protein, so it behaves most like dairy in baking.',
           ar: { n: 'حليب الصويا', s: 'حليب الصويا', tip: 'بنفس الكمية. الأعلى بروتيناً، فيتصرف كالحليب في المخبوزات.' } },
-        { n: 'rice milk', s: 'rice milk', a: [], tip: 'Use 1:1. Thinner, so add 1 tsp cornstarch per cup for sauces.',
+        { n: 'rice milk', src: [SRC.kfaMilk, SRC.fareMilk], s: 'rice milk', a: [], tip: 'Use 1:1. Thinner, so add 1 tsp cornstarch per cup for sauces.',
           ar: { n: 'حليب الأرز', s: 'حليب الأرز', tip: 'بنفس الكمية. أخفّ قواماً، فأضف ملعقة صغيرة نشا ذرة لكل كوب في الصلصات.' } }
       ] },
     buttermilk: { n: 'buttermilk', s: 'buttermilk', a: ['milk'], k: ['buttermilk'],
       ar: { n: 'لبن رائب (باترميلك)', s: 'اللبن الرائب', k: ['لبن رائب', 'باترميلك', 'لبن خض'] },
-      swaps: [{ n: 'oat milk + 1 tbsp lemon juice per cup (rest 5 min)', s: '"oat buttermilk"', a: [], tip: 'The acid curdles it slightly, just like real buttermilk.',
+      swaps: [{ n: 'oat milk + 1 tbsp lemon juice per cup (rest 5 min)', src: [SRC.kfaButtermilk], s: '"oat buttermilk"', a: [], tip: 'The acid curdles it slightly, just like real buttermilk.',
         ar: { n: 'حليب الشوفان + ملعقة كبيرة عصير ليمون لكل كوب (يُترك 5 دقائق)', s: '"لبن الشوفان الرائب"', tip: 'الحمض يخثّره قليلاً تماماً مثل اللبن الرائب.' } }] },
     cream: { n: 'heavy cream', s: 'cream', a: ['milk'], k: ['heavy cream', 'whipping cream', 'cream', 'half-and-half', 'half and half', 'light cream'],
       ar: { n: 'كريمة طبخ (قشدة ثقيلة)', s: 'الكريمة', k: ['كريمة', 'كريمة طبخ', 'كريمة خفق', 'قشطة', 'قشدة'] },
-      swaps: [{ n: 'full-fat canned coconut milk', s: 'coconut milk', a: [], tip: 'Use 1:1. Shake the can well; adds a light coconut note.',
+      swaps: [{ n: 'full-fat canned coconut milk', src: [SRC.kfaMilk], s: 'coconut milk', a: [], tip: 'Use 1:1. Shake the can well; adds a light coconut note.',
         ar: { n: 'حليب جوز الهند المعلّب كامل الدسم', s: 'حليب جوز الهند', tip: 'بنفس الكمية. رجّ العلبة جيداً؛ يضيف نكهة خفيفة من جوز الهند.' } }] },
     cheddar: { n: 'shredded cheddar', s: 'cheese', a: ['milk'], k: ['cheese', 'cheddar', 'mozzarella', 'monterey jack', 'swiss cheese', 'american cheese', 'colby', 'provolone', 'halloumi'],
       ar: { n: 'جبن شيدر مبشور', s: 'الجبن', k: ['جبن', 'جبنة', 'شيدر', 'موزاريلا', 'موتزاريلا', 'عكاوي', 'حلوم', 'جبنة نابلسية', 'قشقوان'] },
-      swaps: [{ n: 'dairy-free cheese shreds', s: 'dairy-free cheese', a: [], tip: 'Melts best stirred into a hot sauce. Many are coconut-based; some contain cashew or soy, so check.',
-        ar: { n: 'جبن نباتي مبشور خالٍ من الألبان', s: 'الجبن النباتي', tip: 'يذوب أفضل عند خلطه في صلصة ساخنة. معظمه من جوز الهند، وبعضه يحتوي على الكاجو أو الصويا. بعض "الجبن النباتي" في الأسواق يحتوي على بروتين الحليب، فتأكد أنه خالٍ من الألبان.' } }] },
+      swaps: [{ n: 'dairy-free cheese shreds', src: [SRC.kfaMilk], s: 'dairy-free cheese', a: [], tip: 'It may not melt like dairy cheese and can be tricky in cheese sauces. Many are coconut-based; some contain cashew or soy, so check.',
+        ar: { n: 'جبن نباتي مبشور خالٍ من الألبان', s: 'الجبن النباتي', tip: 'قد لا يذوب مثل الجبن العادي وقد يصعب استخدامه في صلصات الجبن. معظمه من جوز الهند، وبعضه يحتوي على الكاجو أو الصويا. بعض "الجبن النباتي" في الأسواق يحتوي على بروتين الحليب، فتأكد أنه خالٍ من الألبان.' } }] },
     parmesan: { n: 'grated parmesan', s: 'parmesan', a: ['milk'], k: ['parmesan', 'parmigiano', 'pecorino', 'romano'],
       ar: { n: 'جبن بارميزان مبشور', s: 'البارميزان', k: ['بارميزان', 'بارميجيانو', 'بيكورينو', 'رومانو'] },
-      swaps: [{ n: 'nutritional yeast + a pinch of salt', s: 'nutritional yeast', a: [], tip: 'Use about ¾ of the amount. Adds savory, cheesy flavor.',
+      swaps: [{ n: 'nutritional yeast + a pinch of salt', src: [SRC.kfaMilk, SRC.kfaPesto], s: 'nutritional yeast', a: [], tip: 'Use about ¾ of the amount. Adds savory, cheesy flavor.',
         ar: { n: 'خميرة غذائية + رشة ملح', s: 'الخميرة الغذائية', tip: 'استخدم نحو ¾ الكمية. تضيف نكهة جبن مالحة.' } }] },
     cream_cheese: { n: 'cream cheese', s: 'cream cheese', a: ['milk'], k: ['cream cheese', 'mascarpone', 'ricotta', 'labneh'],
       ar: { n: 'جبن كريمي', s: 'الجبن الكريمي', k: ['جبن كريمي', 'جبنة كريمية', 'جبنة فيلادلفيا', 'ماسكاربوني', 'ريكوتا', 'لبنة'] },
       swaps: [
-        { n: 'oat-based cream cheese', s: 'oat cream cheese', a: [], tip: 'Use 1:1 in spreads and frostings.',
-          ar: { n: 'جبن كريمي من الشوفان', s: 'جبن الشوفان الكريمي', tip: 'بنفس الكمية في الدهن والكريمات.' } },
+        { n: 'dairy-free cream cheese (soy-, coconut- or oat-based)', src: [SRC.kfaMilk], s: 'dairy-free cream cheese', a: [], tip: 'Use 1:1 in spreads and frostings. Check the label for soy or nuts.',
+          ar: { n: 'جبن كريمي نباتي خالٍ من الألبان (من الصويا أو جوز الهند أو الشوفان)', s: 'الجبن الكريمي النباتي', tip: 'بنفس الكمية في الدهن والكريمات. افحص الملصق بحثاً عن الصويا أو المكسرات.' } },
         { n: 'cashew cream cheese', s: 'cashew cream cheese', a: ['treenut'], tip: 'Use 1:1. Richest texture.',
           ar: { n: 'جبن كريمي من الكاجو', s: 'جبن الكاجو الكريمي', tip: 'بنفس الكمية. الأغنى قواماً.' } }
       ] },
     yogurt: { n: 'plain yogurt', s: 'yogurt', a: ['milk'], k: ['yogurt', 'yoghurt', 'greek yogurt', 'kefir'],
       ar: { n: 'زبادي سادة', s: 'الزبادي', k: ['زبادي', 'روب', 'لبن زبادي', 'زبادي يوناني', 'كفير', 'لبن'] },
       swaps: [
-        { n: 'unsweetened coconut yogurt', s: 'coconut yogurt', a: [], tip: 'Use 1:1.',
+        { n: 'unsweetened coconut yogurt', src: [SRC.kfaMilk, SRC.fareMilk], s: 'coconut yogurt', a: [], tip: 'Use 1:1.',
           ar: { n: 'زبادي جوز الهند غير المحلّى', s: 'زبادي جوز الهند', tip: 'بنفس الكمية.' } },
-        { n: 'unsweetened soy yogurt', s: 'soy yogurt', a: ['soy'], tip: 'Use 1:1. Tangier, closest to Greek yogurt.',
+        { n: 'unsweetened soy yogurt', src: [SRC.kfaMilk], s: 'soy yogurt', a: ['soy'], tip: 'Use 1:1. Tangier, closest to Greek yogurt.',
           ar: { n: 'زبادي الصويا غير المحلّى', s: 'زبادي الصويا', tip: 'بنفس الكمية. أكثر حموضة، والأقرب للزبادي اليوناني.' } }
       ] },
     sour_cream: { n: 'sour cream', s: 'sour cream', a: ['milk'], k: ['sour cream', 'creme fraiche', 'crème fraîche'],
       ar: { n: 'قشدة حامضة', s: 'القشدة الحامضة', k: ['قشدة حامضة', 'كريمة حامضة', 'ساور كريم'] },
-      swaps: [{ n: 'coconut yogurt + a squeeze of lime', s: 'lime coconut yogurt', a: [], tip: 'Use 1:1.',
+      swaps: [{ n: 'dairy-free sour cream (soy-, coconut- or pea-based)', src: [SRC.kfaMilk], s: 'dairy-free sour cream', a: [], tip: 'Use 1:1. Check the label for soy.',
+        ar: { n: 'قشدة حامضة نباتية خالية من الألبان (من الصويا أو جوز الهند أو البازلاء)', s: 'القشدة الحامضة النباتية', tip: 'بنفس الكمية. افحص الملصق بحثاً عن الصويا.' } },
+        { n: 'coconut yogurt + a squeeze of lime', s: 'lime coconut yogurt', a: [], tip: 'Use 1:1.',
         ar: { n: 'زبادي جوز الهند + عصرة ليمون', s: 'زبادي جوز الهند بالليمون', tip: 'بنفس الكمية.' } }] },
     egg_bind: { n: 'eggs in baking & binding', s: 'egg', a: ['egg'], k: ['egg', 'eggs', 'egg yolk', 'egg yolks', 'egg white', 'egg whites', 'large egg', 'large eggs'],
       ar: { n: 'البيض في المخبوزات والربط', s: 'البيض', k: ['بيض', 'بيضة', 'بيضات', 'صفار البيض', 'بياض البيض'] },
       swaps: [
-        { n: 'flax egg (1 tbsp ground flaxseed + 3 tbsp water per egg, rested 5 min)', s: 'flax egg', a: [], tip: 'Best binder for cookies, quick breads and meatballs.',
+        { n: 'flax egg (1 tbsp ground flaxseed + 3 tbsp water per egg, rested 5 min)', src: [SRC.fareEgg, SRC.kaEgg], s: 'flax egg', a: [], tip: 'Best binder for cookies, quick breads and meatballs.',
           ar: { n: 'بيضة الكتان (ملعقة كبيرة بذور كتان مطحونة + 3 ملاعق كبيرة ماء لكل بيضة، تُترك 5 دقائق)', s: 'بيضة الكتان', tip: 'أفضل رابط للكوكيز والكيك السريع وكرات اللحم.' } },
-        { n: 'aquafaba (3 tbsp chickpea can liquid per egg)', s: 'aquafaba', a: [], tip: 'Gives lift in pancakes and cakes.',
-          ar: { n: 'أكوافابا (3 ملاعق كبيرة من ماء علبة الحمص لكل بيضة)', s: 'الأكوافابا', tip: 'تعطي انتفاخاً في البان كيك والكيك.' } },
-        { n: 'unsweetened applesauce (¼ cup per egg)', s: 'applesauce', a: [], tip: 'Adds moisture. Bakes a bit denser.',
-          ar: { n: 'صلصة التفاح غير المحلّاة (¼ كوب لكل بيضة)', s: 'صلصة التفاح', tip: 'تضيف رطوبة، والنتيجة أكثف قليلاً.' } }
+        { n: 'aquafaba (¼ cup chickpea can liquid per egg)', src: [SRC.kaEgg], s: 'aquafaba', a: [], tip: 'King Arthur\'s go-to egg swap for most baking, including pancakes, muffins and brownies. Not for angel food or chiffon cakes.',
+          ar: { n: 'أكوافابا (¼ كوب من ماء علبة الحمص لكل بيضة)', s: 'الأكوافابا', tip: 'البديل المفضّل لدى King Arthur في معظم المخبوزات، ومنها البان كيك والمافن والبراونيز. لا يناسب كيك الإسفنج الخفيف (أنجل فود أو الشيفون).' } },
+        { n: 'unsweetened applesauce (¼ cup per egg, plus ½ tsp baking powder)', src: [SRC.fareEgg, SRC.kaEgg], s: 'applesauce', a: [], tip: 'Best in quick breads, muffins and snack cakes. Adds moisture; bakes a bit denser.',
+          ar: { n: 'صلصة التفاح غير المحلّاة (¼ كوب لكل بيضة، مع ½ ملعقة صغيرة بيكنج باودر)', s: 'صلصة التفاح', tip: 'الأفضل في الكيك السريع والمافن والكيك البسيط. تضيف رطوبة، والنتيجة أكثف قليلاً.' } }
       ] },
     egg_main: { n: 'scrambled eggs (fried rice, stir-fries)', s: 'egg', a: ['egg'], k: [],
       ar: { n: 'البيض المخفوق المطهو (الأرز المقلي، القلي السريع)', s: 'البيض', k: [] },
       swaps: [
-        { n: 'crumbled extra-firm tofu with a pinch of turmeric', s: 'tofu scramble', a: ['soy'], tip: 'Season with a pinch of kala namak (black salt) for an eggy taste.',
+        { n: 'crumbled extra-firm tofu with a pinch of turmeric', src: [SRC.fareEgg], s: 'tofu scramble', a: ['soy'], tip: 'Season with a pinch of kala namak (black salt) for an eggy taste.',
           ar: { n: 'توفو متماسك مفتّت مع رشة كركم', s: 'التوفو المفتّت', tip: 'أضف رشة من الملح الأسود (كالا نمك) لطعم يشبه البيض.' } },
         { n: 'chickpea-flour "egg" (¼ cup chickpea flour + ¼ cup water + pinch of turmeric per 2 eggs)', s: 'chickpea "egg"', a: [], tip: 'Pour into the pan like an omelet, let it set, then break into pieces.',
           ar: { n: '"بيض" دقيق الحمص (¼ كوب دقيق حمص + ¼ كوب ماء + رشة كركم لكل بيضتين)', s: '"بيض" الحمص', tip: 'اسكبه في المقلاة كالعجة، واتركه يتماسك، ثم قطّعه.' } }
@@ -740,8 +793,8 @@
       ] },
     flour: { n: 'all-purpose flour', s: 'flour', a: ['wheat'], k: ['flour', 'all-purpose flour', 'all purpose flour', 'bread flour', 'cake flour', 'self-rising flour', 'wheat flour', 'whole wheat flour', 'plain flour'],
       ar: { n: 'دقيق متعدد الاستعمالات', s: 'الدقيق', k: ['دقيق', 'طحين', 'دقيق متعدد الاستعمالات', 'دقيق أبيض', 'دقيق القمح', 'دقيق أسمر', 'دقيق ذاتي التخمير', 'دقيق الخبز', 'دقيق الكيك'] },
-      swaps: [{ n: 'gluten-free 1:1 baking flour (with xanthan gum)', s: 'gluten-free flour', a: [], tip: 'Use 1:1, ideally by weight. Rest batters 10 minutes so the rice flour hydrates.',
-        ar: { n: 'دقيق خالٍ من الغلوتين للخبز 1:1 (يحتوي على صمغ الزانثان)', s: 'الدقيق الخالي من الغلوتين', tip: 'بنفس الكمية، ويفضَّل بالوزن. اترك الخليط 10 دقائق ليتشرب دقيق الأرز السائل.' } }] },
+      swaps: [{ n: 'gluten-free 1:1 baking flour (with xanthan gum)', src: [SRC.kaM4M, SRC.fareWheat, SRC.kfaWheat], s: 'gluten-free flour', a: [], tip: 'Use 1:1 (about 120 g per cup) in recipes without yeast. For yeast doughs like manakish or fatayer, use a gluten-free bread flour instead.',
+        ar: { n: 'دقيق خالٍ من الغلوتين للخبز 1:1 (يحتوي على صمغ الزانثان)', s: 'الدقيق الخالي من الغلوتين', tip: 'بنفس الكمية (نحو 120 غ للكوب) في الوصفات التي لا تحتوي على خميرة. لعجين الخميرة مثل المناقيش والفطاير، استخدم دقيق خبز خالياً من الغلوتين.' } }] },
     semolina: { n: 'semolina', s: 'semolina', a: ['wheat'], k: ['semolina', 'fine semolina'],
       ar: { n: 'سميد', s: 'السميد', k: ['سميد', 'سميد ناعم', 'سميد خشن'] },
       swaps: [{ n: 'fine cornmeal (or half cornmeal, half gluten-free flour)', s: 'fine cornmeal', a: [], tip: 'Use 1:1. Gives the same sandy, golden texture.',
@@ -749,26 +802,26 @@
     breadcrumbs: { n: 'breadcrumbs', s: 'breadcrumbs', a: ['wheat'], m: ['milk', 'egg', 'soy', 'sesame'], k: ['breadcrumbs', 'bread crumbs', 'panko'],
       ar: { n: 'بقسماط (فتات الخبز)', s: 'البقسماط', k: ['بقسماط', 'فتات الخبز', 'بانكو'] },
       swaps: [
-        { n: 'gluten-free panko or breadcrumbs', s: 'GF breadcrumbs', a: [], tip: 'Use 1:1. Check for other allergens on the label.',
+        { n: 'gluten-free panko or breadcrumbs', src: [SRC.kfaMeatballs], s: 'GF breadcrumbs', a: [], tip: 'Use 1:1. Check for other allergens on the label.',
           ar: { n: 'بقسماط أو بانكو خالٍ من الغلوتين', s: 'البقسماط الخالي من الغلوتين', tip: 'بنفس الكمية. افحص الملصق لمسببات الحساسية الأخرى.' } },
-        { n: 'crushed gluten-free cornflakes', s: 'crushed cornflakes', a: [], tip: 'Use 1:1. Extra crunchy coating.',
+        { n: 'crushed gluten-free cornflakes', src: [SRC.kfaMeatballs], s: 'crushed cornflakes', a: [], tip: 'Use 1:1. Extra crunchy coating.',
           ar: { n: 'رقائق ذرة (كورن فليكس) مطحونة خالية من الغلوتين', s: 'رقائق الذرة المطحونة', tip: 'بنفس الكمية. تغليف أكثر قرمشة.' } }
       ] },
     pasta: { n: 'pasta', s: 'pasta', a: ['wheat'], k: ['pasta', 'spaghetti', 'macaroni', 'penne', 'fettuccine', 'linguine', 'rigatoni', 'fusilli', 'lasagna noodles', 'noodles'],
       ar: { n: 'باستا (معكرونة)', s: 'الباستا', k: ['باستا', 'معكرونة', 'مكرونة', 'سباغيتي', 'اسباجيتي', 'بيني', 'فيتوتشيني', 'لازانيا', 'نودلز', 'لسان عصفور'] },
       swaps: [
-        { n: 'gluten-free pasta (brown rice or corn)', s: 'gluten-free pasta', a: [], tip: 'Cook 1–2 minutes less than the package says. It firms up as it sits.',
+        { n: 'gluten-free pasta (brown rice or corn)', src: [SRC.fareTeen], s: 'gluten-free pasta', a: [], tip: 'Cook 1–2 minutes less than the package says. It firms up as it sits.',
           ar: { n: 'باستا خالية من الغلوتين (أرز بني أو ذرة)', s: 'الباستا الخالية من الغلوتين', tip: 'اسلقها أقل من مدة العبوة بدقيقة أو اثنتين، فهي تتماسك بعد الطهي.' } },
-        { n: 'chickpea or lentil pasta', s: 'chickpea pasta', a: [], tip: 'Higher protein. Rinse after draining to remove foam.',
+        { n: 'chickpea or lentil pasta', src: [SRC.fareTeen], s: 'chickpea pasta', a: [], tip: 'Higher protein. Rinse after draining to remove foam.',
           ar: { n: 'باستا الحمص أو العدس', s: 'باستا الحمص', tip: 'أعلى بروتيناً. اشطفها بعد التصفية لإزالة الرغوة.' } }
       ] },
     bread: { n: 'bread', s: 'bread', a: ['wheat'], m: ['milk', 'egg', 'soy', 'sesame'], k: ['bread', 'sandwich bread', 'bun', 'buns', 'bagel', 'pita', 'brioche', 'sourdough'],
       ar: { n: 'خبز', s: 'الخبز', k: ['خبز', 'خبز عربي', 'خبز توست', 'توست', 'صمون', 'بيتا', 'خبز البرجر', 'باجيت', 'كرواسون'] },
-      swaps: [{ n: 'gluten-free bread (top-allergen-free brand)', s: 'gluten-free bread', a: [], tip: 'Toast or warm it first; GF bread is sturdier warm.',
+      swaps: [{ n: 'gluten-free bread (top-allergen-free brand)', src: [SRC.fareWheat], s: 'gluten-free bread', a: [], tip: 'Toast or warm it first; GF bread is sturdier warm.',
         ar: { n: 'خبز خالٍ من الغلوتين (من نوع خالٍ من مسببات الحساسية الرئيسية)', s: 'الخبز الخالي من الغلوتين', tip: 'حمّصه أو سخّنه أولاً؛ يكون أمتن وهو دافئ.' } }] },
     tortillas: { n: 'flour tortillas', s: 'tortillas', a: ['wheat'], k: ['flour tortilla', 'flour tortillas', 'tortilla', 'tortillas', 'wrap', 'wraps'],
       ar: { n: 'خبز تورتيلا من الدقيق', s: 'التورتيلا', k: ['تورتيلا', 'خبز التورتيلا', 'خبز الراب', 'راب'] },
-      swaps: [{ n: 'corn tortillas', s: 'corn tortillas', a: [], tip: 'Warm in a dry skillet so they don\'t crack. Choose 100% corn.',
+      swaps: [{ n: 'corn tortillas', src: [SRC.kfaFajitas], s: 'corn tortillas', a: [], tip: 'Warm in a dry skillet so they don\'t crack. Choose 100% corn.',
         ar: { n: 'تورتيلا الذرة', s: 'تورتيلا الذرة', tip: 'سخّنها في مقلاة جافة حتى لا تتشقق. اختر المصنوعة من الذرة 100%.' } }] },
     croutons: { n: 'croutons', s: 'croutons', a: ['wheat'], m: ['milk'], k: ['croutons'],
       ar: { n: 'مكعبات خبز محمص (كروتون)', s: 'الكروتون', k: ['كروتون'] },
@@ -777,9 +830,9 @@
     soy_sauce: { n: 'soy sauce', s: 'soy sauce', a: ['soy', 'wheat'], k: ['soy sauce', 'shoyu', 'teriyaki', 'teriyaki sauce'],
       ar: { n: 'صلصة الصويا', s: 'صلصة الصويا', k: ['صلصة الصويا', 'صوص الصويا', 'صويا صوص', 'ترياكي', 'صلصة الترياكي'] },
       swaps: [
-        { n: 'tamari (wheat-free soy sauce)', s: 'tamari', a: ['soy'], tip: 'Use 1:1. Check it says gluten-free.',
+        { n: 'tamari (wheat-free soy sauce)', src: [SRC.kfaTeriyaki], s: 'tamari', a: ['soy'], tip: 'Use 1:1. Check it says gluten-free.',
           ar: { n: 'تماري (صلصة صويا خالية من القمح)', s: 'التماري', tip: 'بنفس الكمية. تأكد أنها مكتوب عليها خالية من الغلوتين.' } },
-        { n: 'coconut aminos + a pinch of salt', s: 'coconut aminos', a: [], tip: 'Use 1:1. Sweeter and less salty than soy sauce.',
+        { n: 'coconut aminos + a pinch of salt', src: [SRC.fareTeriyaki], s: 'coconut aminos', a: [], tip: 'Use 1:1. Sweeter and less salty than soy sauce.',
           ar: { n: 'كوكونت أمينوز + رشة ملح', s: 'الكوكونت أمينوز', tip: 'بنفس الكمية. أحلى وأقل ملوحة من صلصة الصويا.' } }
       ] },
     sesame_oil: { n: 'toasted sesame oil', s: 'sesame oil', a: ['sesame'], k: ['sesame oil', 'toasted sesame oil'],
@@ -788,34 +841,34 @@
         ar: { n: 'زيت أفوكادو أو زيت زيتون', s: 'الزيت', tip: 'ستفقد الرائحة المحمصة؛ عوّضها بمزيد من الثوم أو البصل الأخضر.' } }] },
     sesame_seeds: { n: 'sesame seeds', s: 'sesame seeds', a: ['sesame'], k: ['sesame seeds', 'sesame'],
       ar: { n: 'بذور سمسم', s: 'السمسم', k: ['سمسم', 'بذور السمسم'] },
-      swaps: [{ n: 'toasted sunflower seeds or sliced green onion', s: 'sunflower seeds', a: [], tip: 'Use as a garnish 1:1.',
-        ar: { n: 'بذور دوار الشمس المحمصة أو بصل أخضر مقطع', s: 'بذور دوار الشمس', tip: 'للتزيين بنفس الكمية.' } }] },
+      swaps: [{ n: 'hemp seeds or poppy seeds (or sliced green onion)', src: [SRC.kfaSesame], s: 'hemp seeds', a: [], tip: 'Use as a garnish 1:1.',
+        ar: { n: 'بذور القنب أو بذور الخشخاش (أو بصل أخضر مقطع)', s: 'بذور القنب', tip: 'تُستخدم للتزيين بنفس الكمية.' } }] },
     tahini: { n: 'tahini', s: 'tahini', a: ['sesame'], k: ['tahini', 'tahina'],
       ar: { n: 'طحينة', s: 'الطحينة', k: ['طحينة', 'طحينية'] },
-      swaps: [{ n: 'unsweetened sunflower seed butter', s: 'sunflower seed butter', a: [], tip: 'Use 1:1 and add an extra squeeze of lemon.',
+      swaps: [{ n: 'unsweetened sunflower seed butter', src: [SRC.kfaSesame], s: 'sunflower seed butter', a: [], tip: 'Use 1:1 and add an extra squeeze of lemon.',
         ar: { n: 'زبدة بذور دوار الشمس غير المحلّاة', s: 'زبدة بذور دوار الشمس', tip: 'بنفس الكمية مع عصرة ليمون إضافية.' } }] },
     peanut_butter: { n: 'peanut butter', s: 'peanut butter', a: ['peanut'], k: ['peanut butter'],
       ar: { n: 'زبدة الفول السوداني', s: 'زبدة الفول السوداني', k: ['زبدة الفول السوداني', 'زبدة فول سوداني', 'زبدة الفستق'] },
       swaps: [
-        { n: 'sunflower seed butter', s: 'sunflower seed butter', a: [], tip: 'Use 1:1. Several brands are made in peanut-free facilities.',
-          ar: { n: 'زبدة بذور دوار الشمس', s: 'زبدة بذور دوار الشمس', tip: 'بنفس الكمية. عدة أنواع تُصنع في مصانع خالية من الفول السوداني.' } },
-        { n: 'almond butter', s: 'almond butter', a: ['treenut'], tip: 'Use 1:1.',
+        { n: 'sunflower seed butter', s: 'sunflower seed butter', a: [], tip: 'Use 1:1. Several brands are made in peanut-free facilities. Baked with baking soda, it can turn green inside; that is harmless.', src: [SRC.farePB, SRC.ccGreen],
+          ar: { n: 'زبدة بذور دوار الشمس', s: 'زبدة بذور دوار الشمس', tip: 'بنفس الكمية. عدة أنواع تُصنع في مصانع خالية من الفول السوداني. عند خبزها مع البيكربونات قد يخضرّ لونها من الداخل، وهذا غير ضار.' } },
+        { n: 'almond butter', src: [SRC.farePB], s: 'almond butter', a: ['treenut'], tip: 'Use 1:1.',
           ar: { n: 'زبدة اللوز', s: 'زبدة اللوز', tip: 'بنفس الكمية.' } },
-        { n: 'soy nut butter', s: 'soy nut butter', a: ['soy'], tip: 'Use 1:1.',
+        { n: 'soy nut butter', src: [SRC.farePB], s: 'soy nut butter', a: ['soy'], tip: 'Use 1:1.',
           ar: { n: 'زبدة فول الصويا', s: 'زبدة فول الصويا', tip: 'بنفس الكمية.' } }
       ] },
     peanuts: { n: 'roasted peanuts', s: 'peanuts', a: ['peanut'], k: ['peanuts', 'peanut'],
       ar: { n: 'فول سوداني محمص', s: 'الفول السوداني', k: ['فول سوداني', 'فستق سوداني', 'فستق عبيد'] },
-      swaps: [{ n: 'toasted pumpkin seeds (pepitas)', s: 'pumpkin seeds', a: [], tip: 'Use 1:1 for crunch.',
+      swaps: [{ n: 'toasted pumpkin seeds (pepitas)', src: [SRC.kfaNuts], s: 'pumpkin seeds', a: [], tip: 'Use 1:1 for crunch.',
         ar: { n: 'بذور اليقطين المحمصة', s: 'بذور اليقطين', tip: 'بنفس الكمية للقرمشة.' } }] },
     walnuts: { n: 'nuts (walnuts, almonds, pecans…)', s: 'nuts', a: ['treenut'], k: ['walnuts', 'walnut', 'pecans', 'pecan', 'almonds', 'almond', 'cashews', 'cashew', 'hazelnuts', 'hazelnut', 'pistachios', 'pistachio', 'macadamia', 'brazil nuts'],
       ar: { n: 'مكسرات (جوز، لوز، فستق…)', s: 'المكسرات', k: ['جوز', 'عين الجمل', 'لوز', 'كاجو', 'بندق', 'فستق', 'فستق حلبي', 'بقان', 'مكاديميا', 'مكسرات', 'جوز برازيلي'] },
-      swaps: [{ n: 'toasted sunflower or pumpkin seeds', s: 'toasted seeds', a: [], tip: 'Use 1:1, or simply leave them out.',
+      swaps: [{ n: 'toasted sunflower or pumpkin seeds', src: [SRC.kfaNuts], s: 'toasted seeds', a: [], tip: 'Use 1:1, or simply leave them out.',
         ar: { n: 'بذور دوار الشمس أو اليقطين المحمصة', s: 'البذور المحمصة', tip: 'بنفس الكمية، أو احذفها ببساطة.' } }] },
     pine_nuts: { n: 'pine nuts', s: 'pine nuts', a: ['treenut'], k: ['pine nuts', 'pine nut', 'pignoli'],
       ar: { n: 'صنوبر', s: 'الصنوبر', k: ['صنوبر', 'حب الصنوبر'] },
-      swaps: [{ n: 'toasted sunflower seeds', s: 'sunflower seeds', a: [], tip: 'Use 1:1. Toast them for the best flavor.',
-        ar: { n: 'بذور دوار الشمس المحمصة', s: 'بذور دوار الشمس', tip: 'بنفس الكمية. حمّصها لأفضل نكهة.' } }] },
+      swaps: [{ n: 'toasted pumpkin seeds (pepitas) or sunflower seeds', s: 'toasted pumpkin seeds', a: [], src: [SRC.kfaPesto, SRC.kfaNuts], tip: 'Use 1:1. Toast them for the best flavor.',
+        ar: { n: 'بذور اليقطين المحمصة أو بذور دوار الشمس', s: 'بذور اليقطين المحمصة', tip: 'بنفس الكمية. حمّصها لأفضل نكهة.' } }] },
     fish_sauce: { n: 'fish sauce', s: 'fish sauce', a: ['fish'], k: ['fish sauce', 'nam pla'],
       ar: { n: 'صلصة السمك', s: 'صلصة السمك', k: ['صلصة السمك', 'صوص السمك'] },
       swaps: [
@@ -860,7 +913,7 @@
       ar: { n: 'شوفان', s: 'الشوفان', k: ['شوفان'] }, swaps: [] },
     bulgur: { n: 'bulgur or couscous', s: 'bulgur', a: ['wheat'], k: ['bulgur', 'burghul', 'bulghur', 'couscous'],
       ar: { n: 'برغل أو كسكس', s: 'البرغل', k: ['برغل', 'كسكس'] },
-      swaps: [{ n: 'quinoa', s: 'quinoa', a: [], tip: 'Cook it first (1 cup quinoa in 2 cups water, 15 min) and let it cool. For kibbeh, knead in 2 tbsp potato starch so it holds together.',
+      swaps: [{ n: 'quinoa', src: [SRC.tmdQuinoaTabbouleh], s: 'quinoa', a: [], tip: 'Cook it first (1 cup quinoa in 2 cups water, 15 min) and let it cool. For kibbeh, knead in 2 tbsp potato starch so it holds together.',
         ar: { n: 'كينوا', s: 'الكينوا', tip: 'اطبخها أولاً (كوب كينوا في كوبي ماء 15 دقيقة) واتركها تبرد. للكبة، اعجنها مع ملعقتين كبيرتين من نشا البطاطس لتتماسك.' } }] },
     freekeh: { n: 'freekeh', s: 'freekeh', a: ['wheat'], k: ['freekeh', 'frikeh'],
       ar: { n: 'فريكة', s: 'الفريكة', k: ['فريكة'] },
@@ -921,8 +974,8 @@
           ar: { n: 'كوكونت أمينوز مع رشة سكر', s: 'كوكونت أمينوز', tip: 'بنفس الكمية. أخف وأقل حدة؛ أضف قليلاً من النشا إن احتاجت الصلصة إلى قوام.' } }] },
     almond_butter: { n: 'almond butter', s: 'almond butter', a: ['treenut'], k: ['almond butter', 'cashew butter', 'nut butter'],
       ar: { n: 'زبدة اللوز', s: 'زبدة اللوز', k: ['زبدة اللوز', 'زبدة الكاجو'] },
-      swaps: [{ n: 'sunflower seed butter', s: 'sunflower seed butter', a: [], tip: 'Use 1:1. Check that it is made in a nut-free facility.',
-        ar: { n: 'زبدة بذور دوار الشمس', s: 'زبدة دوار الشمس', tip: 'بنفس الكمية. تأكّد أنها مصنوعة في منشأة خالية من المكسرات.' } }] }
+      swaps: [{ n: 'sunflower seed butter', s: 'sunflower seed butter', a: [], tip: 'Use 1:1. Check that it is made in a nut-free facility. Baked with baking soda, it can turn green inside; that is harmless.', src: [SRC.farePB, SRC.ccGreen],
+        ar: { n: 'زبدة بذور دوار الشمس', s: 'زبدة دوار الشمس', tip: 'بنفس الكمية. تأكّد أنها مصنوعة في منشأة خالية من المكسرات. عند خبزها مع البيكربونات قد يخضرّ لونها من الداخل، وهذا غير ضار.' } }] }
   };
 
   // Recipes. Ingredients: [quantity, name, library id or null, Arabic quantity, Arabic name].
@@ -1620,6 +1673,14 @@
     }).join('');
   }
 
+  function srcLinks(list) {
+    return list.map(function (s) { return '<a href="' + esc(s.u) + '" target="_blank" rel="noopener">' + esc(s.n) + '</a>'; }).join(' · ');
+  }
+  function swapSrcHtml(o) {
+    return o.src ? '<div class="src small">' + t('swapSource') + srcLinks(o.src) + '</div>'
+      : '<div class="src small untested">' + t('swapUntested') + '</div>';
+  }
+
   function renderRecipe(id) {
     var r = RECIPES.filter(function (x) { return x.id === id; })[0];
     if (!r) { location.hash = '#recipes'; return; }
@@ -1637,7 +1698,7 @@
       if (res.kind === 'swap') {
         return '<li><div class="was">' + esc((qt ? qt + ' ' : '') + nm) + '</div>' +
           '<div>' + t('arrow') + ' <span class="now">' + esc(L(res.opt, 'n')) + '</span></div>' +
-          (res.opt.tip ? '<div class="tip">' + esc(L(res.opt, 'tip')) + '</div>' : '') + '</li>';
+          (res.opt.tip ? '<div class="tip">' + esc(L(res.opt, 'tip')) + '</div>' : '') + swapSrcHtml(res.opt) + '</li>';
       }
       return '<li>' + q + '<span class="nope">' + esc(nm) + '</span><div class="warn">' + esc(t('noSwap', names(res.bad))) + '</div></li>';
     }).join('');
@@ -1651,6 +1712,29 @@
       });
       return '<li>' + html + '</li>';
     }).join('');
+
+    // Which swaps does this recipe use for the user's allergens, and do they have a published source?
+    var usedSwaps = [], untested = [];
+    r.ing.forEach(function (i) {
+      if (!i[2]) return;
+      var res = resolve(i[2]);
+      if (res.kind === 'swap' && usedSwaps.indexOf(res.opt) === -1) {
+        usedSwaps.push(res.opt);
+        if (!res.opt.src) untested.push(L(res.opt, 's'));
+      }
+    });
+    var avoidHere = al.filter(function (a) { return sel.indexOf(a) !== -1; });
+    var testedVer = avoidHere.length && (TESTED[r.id] || []).filter(function (v) {
+      return avoidHere.every(function (a) { return v.a.indexOf(a) !== -1; });
+    })[0];
+    var topNote = '<div class="note source">' +
+      (r.src ? '<div>' + t('adaptedFrom') + srcLinks(r.src) + '</div>' : '') +
+      '<div class="small">' + t('sourceNote') + '</div>' +
+      (untested.length ? '<div class="small untested">' + esc(t('untestedHere', untested.join(isAr() ? '، ' : ', '))) + '</div>'
+        : usedSwaps.length ? '<div class="small">' + t('allSwapsSourced') + '</div>' : '') +
+      (usedSwaps.length > 1 ? '<div class="small muted">' + t('comboNote') + '</div>' : '') +
+      '</div>' +
+      (testedVer ? '<div class="note safe">' + esc(t('testedVersion', names(testedVer.a))) + srcLinks([testedVer.s]) + '</div>' : '');
 
     var notes = '';
     var rn = L(r, 'notes');
@@ -1670,14 +1754,11 @@
         '<div class="meta">' + esc(catName(r.c)) + ' · ' + esc(L(r, 'time')) + ' · ' + t('serves') + ' ' + esc(L(r, 'serves')) + '</div>' +
         (al.length ? '<div class="meta">' + t('normally') + esc(names(al)) + '</div>' : '') +
       '</div></div>' +
-      summary + notes +
+      topNote + summary + notes +
       '<div class="cols" style="margin-top:14px">' +
         '<div class="card"><h3>' + t('ingredients') + '</h3><ul class="ing">' + ingHtml + '</ul></div>' +
         '<div class="card"><h3>' + t('steps') + '</h3><ol class="steps">' + stepHtml + '</ol>' + crossContact + '</div>' +
       '</div>' +
-      (r.src ? '<div class="note source">' + t('adaptedFrom') + r.src.map(function (s) {
-        return '<a href="' + esc(s.u) + '" target="_blank" rel="noopener">' + esc(s.n) + '</a>';
-      }).join(' · ') + '<div class="small muted">' + t('sourceNote') + '</div></div>' : '') +
       '<div class="row"><button class="btn ai" id="ask-recipe">' + t('askAboutRecipe') + '</button></div>';
     document.getElementById('ask-recipe').addEventListener('click', function () {
       aiDraft = t('aboutRecipe', L(r, 't'));
@@ -1713,7 +1794,7 @@
           html += '<div class="opt' + (bad.length ? ' unsafe' : '') + (isBest ? ' best' : '') + '">' +
             '<span class="mark">' + (isBest ? '✓' : bad.length ? '✕' : '·') + '</span><div>' + esc(L(o, 'n')) +
             o.a.map(function (x) { return ' <span class="pill' + (bad.indexOf(x) !== -1 ? '' : ' soft') + '">' + t('has') + esc(shortName(x)) + '</span>'; }).join('') +
-            (o.tip ? '<div class="tip">' + esc(L(o, 'tip')) + '</div>' : '') + '</div></div>';
+            (o.tip ? '<div class="tip">' + esc(L(o, 'tip')) + '</div>' : '') + swapSrcHtml(o) + '</div></div>';
         });
         html += '</div>';
       });

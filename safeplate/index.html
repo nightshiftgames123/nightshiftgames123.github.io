@@ -568,6 +568,13 @@
     keyLabel: { en: 'Gemini API key', ar: 'مفتاح Gemini API' },
     keyPlaceholder: { en: 'Paste your key (starts with AIza…)', ar: 'الصق مفتاحك (يبدأ بـ AIza…)' },
     keyRemember: { en: 'Remember key on this device', ar: 'تذكّر المفتاح على هذا الجهاز' },
+    freeUses: { en: '🎁 Free AI: a few uses every day.', ar: '🎁 ذكاء اصطناعي مجاني: عدة استخدامات كل يوم.' },
+    freeUsesLeft: { en: function (l, m) { return '🎁 Free AI uses left today: ' + l + ' of ' + m; }, ar: function (l, m) { return '🎁 الاستخدامات المجانية المتبقية اليوم: ' + l + ' من ' + m; } },
+    keyOwn: { en: 'Unlimited: use my own key', ar: 'بلا حدود: استخدم مفتاحي' },
+    keyBack: { en: '← Back to the free daily uses', ar: '→ العودة إلى الاستخدامات المجانية اليومية' },
+    aiPoweredFree: { en: 'Powered by Google Gemini.', ar: 'يعمل بـ Google Gemini.' },
+    errDaily: { en: 'You have used today\'s free AI uses. They come back tomorrow. For unlimited use, add your own free Gemini key in the AI Chef tab.', ar: 'استخدمت كل الاستخدامات المجانية لهذا اليوم، وستعود غداً. للاستخدام بلا حدود، أضف مفتاح Gemini المجاني الخاص بك في تبويب الشيف الذكي.' },
+    errBusyToday: { en: 'The free AI has reached its limit for everyone today. Try again tomorrow, or add your own free Gemini key in the AI Chef tab.', ar: 'بلغ الذكاء الاصطناعي المجاني حدّه اليومي لجميع المستخدمين. حاول غداً، أو أضف مفتاح Gemini المجاني الخاص بك في تبويب الشيف الذكي.' },
     keySaved: { en: '🔑 Gemini key added', ar: '🔑 تمت إضافة مفتاح Gemini' },
     keyChange: { en: 'Change', ar: 'تغيير' },
     aiNoAllergens: { en: 'Tip: pick your allergens at the top so the chef knows what to avoid.', ar: 'نصيحة: اختر الحساسية من الأعلى ليعرف الشيف ما يجب تجنّبه.' },
@@ -2165,6 +2172,57 @@
   // ---------------------------------------------------------------------------
   // AI chef (Google Gemini, with the user's own free key, same setup as Nasma AI)
   // ---------------------------------------------------------------------------
+  // SafePlate's own AI server (see /safeplate-server). When this is set, the AI works without a key,
+  // with a few free uses a day; people who add their own Gemini key skip the server and the limit.
+  // Leave empty to require each user's own key.
+  var AI_SERVER = '';
+  var usesLeft = null, usesLimit = null;   // today's free uses, once the server has told us
+  function useServer() { return !!AI_SERVER && !apiKey(); }
+  function aiReady() { return !!apiKey() || !!AI_SERVER; }
+  // A random id for this browser, so the server can count free uses. Not linked to any personal detail.
+  function deviceId() {
+    var id = load('safeplate_device');
+    if (!/^[A-Za-z0-9-]{16,64}$/.test(id || '')) {
+      id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : 'd-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+      store('safeplate_device', id);
+    }
+    return id;
+  }
+  function noteUses(res) {
+    var l = res.headers.get('X-Uses-Left'), m = res.headers.get('X-Uses-Limit');
+    if (l != null && l !== '') usesLeft = parseInt(l, 10);
+    if (m != null && m !== '') usesLimit = parseInt(m, 10);
+    var el = document.getElementById('uses-left');
+    if (el) el.textContent = usesText();
+  }
+  function usesText() {
+    return usesLeft == null ? t('freeUses') : t('freeUsesLeft', usesLeft, usesLimit || usesLeft);
+  }
+  function refreshUses() {
+    if (!useServer()) return;
+    fetch(AI_SERVER + '/status', { headers: { 'X-Device': deviceId() } }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+      if (!d) return;
+      usesLeft = d.left; usesLimit = d.limit;
+      var el = document.getElementById('uses-left');
+      if (el) el.textContent = usesText();
+    }).catch(function () {});
+  }
+  // Send one AI request: straight to Gemini with the user's key, or through SafePlate's server.
+  function aiFetch(kind, direct, viaServer) {
+    if (useServer()) {
+      return fetch(AI_SERVER + '/' + kind, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Device': deviceId() },
+        body: JSON.stringify(viaServer)
+      }).then(function (res) { noteUses(res); return res; });
+    }
+    return fetch(GEMINI_BASE + '/models/' + encodeURIComponent(GEMINI_MODEL) + (kind === 'scan' ? ':generateContent' : ':streamGenerateContent?alt=sse'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey() },
+      body: JSON.stringify(direct)
+    });
+  }
+
   var GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
   var GEMINI_MODEL = 'gemini-3-flash-preview';
   var KEY_STORE = 'safeplate_gemini_key';
@@ -2230,17 +2288,21 @@
 
   function renderAi() {
     var key = apiKey();
-    var keyBlock = key && !editingKey
+    var keyBlock = useServer() && !editingKey
+      ? '<div class="row" style="margin:0;align-items:center;justify-content:space-between"><span class="small" id="uses-left">' + esc(usesText()) + '</span>' +
+        '<button class="btn ghost small" id="key-own">' + t('keyOwn') + '</button></div>'
+      : key && !editingKey
       ? '<div class="row" style="margin:0;align-items:center"><span class="small">' + t('keySaved') + '</span>' +
         '<button class="btn ghost small" id="key-change">' + t('keyChange') + '</button>' +
         '<button class="btn ghost small" id="key-help" aria-label="' + esc(t('keyHow')) + '">🔑</button></div>'
       : '<button class="btn ghost small" id="key-help" style="width:100%;margin-bottom:10px">' + t('keyHow') + '</button>' +
         '<label for="key-input">' + t('keyLabel') + '</label>' +
         '<input id="key-input" type="password" autocomplete="off" spellcheck="false" placeholder="' + esc(t('keyPlaceholder')) + '" value="' + esc(key) + '" dir="ltr" />' +
-        '<label class="check-row"><input type="checkbox" id="key-remember" checked /> ' + t('keyRemember') + '</label>';
+        '<label class="check-row"><input type="checkbox" id="key-remember" checked /> ' + t('keyRemember') + '</label>' +
+        (AI_SERVER ? '<button class="btn ghost small" id="key-back" style="margin-top:8px">' + t('keyBack') + '</button>' : '');
     view.innerHTML =
       '<h2>🤖 ' + t('aiTitle') + '</h2>' +
-      '<p class="muted" style="margin-top:0">' + t('aiIntro') + ' <span class="small">' + t('aiPowered') + '</span></p>' +
+      '<p class="muted" style="margin-top:0">' + t('aiIntro') + ' <span class="small">' + t(useServer() ? 'aiPoweredFree' : 'aiPowered') + '</span></p>' +
       '<div class="card key-card">' + keyBlock + '</div>' +
       '<div class="note ' + (sel.length ? 'safe' : '') + '">' + (sel.length ? esc(t('aiAvoiding', names(sel))) : t('aiNoAllergens')) + '</div>' +
       '<div class="chat" id="chat"></div>' +
@@ -2255,7 +2317,12 @@
       '</div>';
 
     drawChat();
-    document.getElementById('key-help').addEventListener('click', openKeyModal);
+    var kh = document.getElementById('key-help');
+    if (kh) kh.addEventListener('click', openKeyModal);
+    var ko = document.getElementById('key-own');
+    if (ko) { ko.addEventListener('click', function () { editingKey = true; renderAi(); }); if (usesLeft == null) refreshUses(); }
+    var kb = document.getElementById('key-back');
+    if (kb) kb.addEventListener('click', function () { editingKey = false; renderAi(); });
     var kc = document.getElementById('key-change');
     if (kc) kc.addEventListener('click', function () { editingKey = true; renderAi(); });
     var ki = document.getElementById('key-input');
@@ -2356,26 +2423,22 @@
 
   function scanImage(file) {
     if (!file) return;
-    if (!apiKey()) { lastScan = { needKey: true }; drawScan(); return; }
+    if (!aiReady()) { lastScan = { needKey: true }; drawScan(); return; }
     var job = lastScan = { busy: true };
     drawScan();
     shrinkImage(file).then(function (dataUrl) {
       job.img = dataUrl;
       if (job === lastScan) drawScan();
-      return fetch(GEMINI_BASE + '/models/' + encodeURIComponent(GEMINI_MODEL) + ':generateContent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey() },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [
-            { inlineData: { mimeType: 'image/jpeg', data: dataUrl.split(',')[1] } },
-            { text: scanPrompt() }
-          ] }],
-          generationConfig: { temperature: 0, responseMimeType: 'application/json', responseSchema: SCAN_SCHEMA, maxOutputTokens: 4096 }
-        })
-      });
+      return aiFetch('scan', {
+        contents: [{ role: 'user', parts: [
+          { inlineData: { mimeType: 'image/jpeg', data: dataUrl.split(',')[1] } },
+          { text: scanPrompt() }
+        ] }],
+        generationConfig: { temperature: 0, responseMimeType: 'application/json', responseSchema: SCAN_SCHEMA, maxOutputTokens: 4096 }
+      }, { image: dataUrl.split(',')[1], prompt: scanPrompt(), schema: SCAN_SCHEMA });
     }).then(function (res) {
       return res.json().catch(function () { return {}; }).then(function (d) {
-        if (!res.ok) throw new Error(explainError(res.status, d.error && d.error.message));
+        if (!res.ok) throw new Error(explainError(res.status, d.error && d.error.message, d.error && d.error.code));
         var cand = d.candidates && d.candidates[0];
         var text = ((cand && cand.content && cand.content.parts) || []).filter(function (p) { return p.text && !p.thought; }).map(function (p) { return p.text; }).join('');
         text = text.replace(/^\s*```(?:json)?\s*|\s*```\s*$/g, '');
@@ -2832,8 +2895,12 @@
     drawCard();
   }
 
-  function explainError(status, message) {
+  function explainError(status, message, code) {
     var m = message || '';
+    // Answers from SafePlate's own server carry a short code.
+    if (code === 'daily_limit') return t('errDaily');
+    if (code === 'busy_today') return t('errBusyToday');
+    if (code === 'upstream' || code === 'not_configured') return t('errServer') + ' (' + status + ')';
     if (status === 400 && /api key/i.test(m)) return t('errKey');
     if (status === 403) return t('errForbidden');
     if (status === 429) return t('errRate');
@@ -2844,7 +2911,7 @@
   function send(text) {
     text = (text || '').trim();
     if (!text || aiBusy) return;
-    if (!apiKey()) {
+    if (!aiReady()) {
       drawChat(); showAiError(t('aiNeedKey'));
       var ki = document.getElementById('key-input'); if (ki) ki.focus();
       return;
@@ -2859,16 +2926,18 @@
 
     var contents = chat.slice(0, -1).map(function (m) { return { role: m.role, parts: [{ text: m.text }] }; });
     var finish = null, blocked = null;
-    fetch(GEMINI_BASE + '/models/' + encodeURIComponent(GEMINI_MODEL) + ':streamGenerateContent?alt=sse', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey() },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: systemPrompt() }] },
-        contents: contents,
-        generationConfig: { temperature: 0.5, maxOutputTokens: 4096 }
-      })
+    // The server accepts a limited conversation; send the most recent turns, starting from a user message.
+    var recent = chat.slice(0, -1).slice(-23);
+    if (recent[0].role !== 'user') recent = recent.slice(1);
+    aiFetch('chat', {
+      systemInstruction: { parts: [{ text: systemPrompt() }] },
+      contents: contents,
+      generationConfig: { temperature: 0.5, maxOutputTokens: 4096 }
+    }, {
+      system: systemPrompt(),
+      contents: recent.map(function (m) { return { role: m.role, text: m.text.slice(0, 6000) }; })
     }).then(function (res) {
-      if (!res.ok) return res.json().catch(function () { return {}; }).then(function (d) { throw new Error(explainError(res.status, d.error && d.error.message)); });
+      if (!res.ok) return res.json().catch(function () { return {}; }).then(function (d) { throw new Error(explainError(res.status, d.error && d.error.message, d.error && d.error.code)); });
       // Stream Server-Sent Events and render as text arrives.
       var reader = res.body.getReader();
       var decoder = new TextDecoder();

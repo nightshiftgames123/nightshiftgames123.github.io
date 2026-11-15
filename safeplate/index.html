@@ -104,6 +104,21 @@
     .avoid { padding: 4px 0 12px; }
     .avoid-label { font-size: 13px; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
     .avoid-label button { background: none; border: 0; color: var(--accent); cursor: pointer; font-size: 13px; padding: 0; }
+    .avoid-actions { display: flex; gap: 12px; flex-shrink: 0; margin-inline-start: 10px; }
+    .avoid-actions button[hidden] { display: none; }
+    .people { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+    .person {
+      border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 10px;
+      padding: 5px 11px; cursor: pointer; font-size: 14px; font-weight: 600;
+    }
+    .person[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+    .person.add { border-style: dashed; color: var(--accent); font-weight: 500; }
+    .chips.locked .chip { opacity: .75; }
+    .avoid-label.flash #avoid-summary { color: var(--bad); font-weight: 600; }
+    .units { display: inline-flex; border: 1px solid var(--border); border-radius: 999px; overflow: hidden; float: inline-end; }
+    .units button { border: 0; background: none; color: var(--muted); padding: 3px 11px; font-size: 13px; cursor: pointer; }
+    .units button[aria-pressed="true"] { background: var(--accent); color: var(--accent-text); font-weight: 600; }
+    .ing .orig { color: var(--muted); font-weight: 400; font-size: .85em; }
     .chips { display: flex; flex-wrap: wrap; gap: 6px; }
     .chip {
       border: 1px solid var(--border); background: var(--card); border-radius: 999px;
@@ -305,9 +320,10 @@
         <button class="icon-btn" id="theme-btn"></button>
       </div>
       <div class="avoid">
+        <div class="people" id="people-row"></div>
         <div class="avoid-label">
           <span id="avoid-summary"></span>
-          <button id="clear-btn" hidden></button>
+          <span class="avoid-actions"><button id="rename-btn" hidden></button><button id="remove-btn" hidden></button><button id="clear-btn" hidden></button></span>
         </div>
         <div class="chips" id="allergen-chips"></div>
       </div>
@@ -378,6 +394,23 @@
     avoidPrompt: { en: 'Tap everything you need to avoid:', ar: 'اختر كل ما تحتاج إلى تجنّبه:' },
     avoiding: { en: function (n, l) { return 'Avoiding ' + n + ': ' + l; }, ar: function (n, l) { return 'تتجنّب: ' + l; } },
     clear: { en: 'Clear', ar: 'مسح' },
+    addPerson: { en: '+ Add person', ar: '+ إضافة شخص' },
+    everyone: { en: '👥 Everyone', ar: '👥 الجميع' },
+    me: { en: 'Me', ar: 'أنا' },
+    askName: { en: 'Name of the person to add:', ar: 'اسم الشخص الذي تريد إضافته:' },
+    askRename: { en: 'New name:', ar: 'الاسم الجديد:' },
+    rename: { en: 'Rename', ar: 'تغيير الاسم' },
+    removePerson: { en: 'Remove', ar: 'حذف' },
+    confirmRemove: { en: function (n) { return 'Remove ' + n + ' and their allergy list?'; }, ar: function (n) { return 'حذف ' + n + ' وقائمة الحساسية الخاصة به؟'; } },
+    avoidPromptFor: { en: function (n) { return 'Tap everything ' + n + ' needs to avoid:'; }, ar: function (n) { return 'اختر كل ما يحتاج ' + n + ' إلى تجنّبه:'; } },
+    avoidingFor: { en: function (n, c, l) { return n + ' avoids ' + c + ': ' + l; }, ar: function (n, c, l) { return n + ' يتجنّب: ' + l; } },
+    everyoneAvoids: { en: function (c, l) { return 'Cooking for everyone, avoiding ' + c + ': ' + l; }, ar: function (c, l) { return 'الطبخ للجميع، مع تجنّب: ' + l; } },
+    everyoneNone: { en: 'Cooking for everyone. No allergies added yet.', ar: 'الطبخ للجميع. لم تُضف أي حساسية بعد.' },
+    pickPerson: { en: 'Choose a person above to change their allergies.', ar: 'اختر شخصاً من الأعلى لتغيير قائمة حساسيته.' },
+    unitsUs: { en: 'Cups', ar: 'أكواب' },
+    unitsMetric: { en: 'Grams', ar: 'غرامات' },
+    unitsNote: { en: 'Grams and millilitres are converted from the recipe\'s cup amounts with King Arthur Baking\'s ingredient weight chart, then rounded. Rice, grains and chopped vegetables stay in cups.',
+      ar: 'الغرامات والمليلترات محوّلة من مقادير الأكواب في الوصفة حسب جدول أوزان المكوّنات من King Arthur Baking، ثم مقرّبة. الأرز والحبوب والخضار المفرومة تبقى بالأكواب.' },
     tabRecipes: { en: 'Recipes', ar: 'الوصفات' },
     tabSwaps: { en: 'Swaps', ar: 'البدائل' },
     tabCheck: { en: 'Scan & check', ar: 'امسح وافحص' },
@@ -1502,6 +1535,104 @@
     } catch (e) { return []; }
   }
   var sel = loadSel();
+
+  // Family profiles. With no profiles, the app keeps a single unnamed allergy list (sel), as before.
+  // With profiles, sel is the current person's list, or everyone's lists combined.
+  var people = [], curId = 'all';
+  (function () {
+    try {
+      var v = JSON.parse(load('safeplate_people') || '[]');
+      if (Array.isArray(v)) people = v.filter(function (p) { return p && p.id && typeof p.name === 'string'; }).map(function (p) {
+        return { id: String(p.id), name: p.name, a: (p.a || []).filter(function (id) { return A[id]; }) };
+      });
+    } catch (e) {}
+    curId = load('safeplate_person') || 'all';
+  })();
+  function curPerson() { return people.filter(function (p) { return p.id === curId; })[0] || null; }
+  function syncSel() {
+    if (!people.length) return;
+    var p = curPerson();
+    if (p) { sel = p.a.slice(); return; }
+    curId = 'all'; sel = [];
+    people.forEach(function (x) { x.a.forEach(function (a) { if (sel.indexOf(a) === -1) sel.push(a); }); });
+    sel.sort(function (a, b) { return ALLERGENS.indexOf(A[a]) - ALLERGENS.indexOf(A[b]); });
+  }
+  function savePeople() {
+    store('safeplate_people', people.length ? JSON.stringify(people) : null);
+    store('safeplate_person', people.length ? curId : null);
+    syncSel(); saveSel();
+  }
+  syncSel();
+
+  // Units: US cups or metric. Recipes are written in cups; metric is converted on display.
+  var units = load('safeplate_units') || (/^en-US/i.test(navigator.language || '') ? 'us' : 'metric');
+  var FRAC = { '½': 0.5, '¼': 0.25, '¾': 0.75, '⅓': 1 / 3, '⅔': 2 / 3, '⅛': 0.125 };
+  var NUM = '(?:\\d+(?:\\.\\d+)?[½¼¾⅓⅔⅛]?|[½¼¾⅓⅔⅛])';
+  function parseNum(s) {
+    var m = /^(\d+(?:\.\d+)?)?([½¼¾⅓⅔⅛])?$/.exec(s);
+    return (m[1] ? parseFloat(m[1]) : 0) + (m[2] ? FRAC[m[2]] : 0);
+  }
+  // Weight (g) or volume (ml) of one cup, by ingredient name. Weights are from King Arthur Baking's
+  // ingredient weight chart. Ingredients not listed here (rice, grains, herbs, vegetables) stay in cups.
+  var CUP = [
+    [/^each:|cooked|rice vinegar|rose water/, null],
+    [/rice flour/, 'g', 142], [/flour/, 'g', 120], [/semolina/, 'g', 163], [/cornstarch/, 'g', 112],
+    [/powdered sugar/, 'g', 113], [/brown sugar/, 'g', 213], [/sugar/, 'g', 198],
+    [/peanut butter/, 'g', 270], [/almond butter/, 'g', 270], [/tahini/, 'g', 256], [/butter|ghee/, 'g', 227],
+    [/cocoa/, 'g', 84], [/rolled oats/, 'g', 89], [/chocolate chips/, 'g', 170],
+    [/honey/, 'g', 336], [/maple syrup/, 'g', 312],
+    [/yogurt|sour cream/, 'g', 227], [/mayonnaise/, 'g', 226],
+    [/parmesan/, 'g', 100], [/cheddar|mozzarella/, 'g', 113],
+    [/panko/, 'g', 50], [/breadcrumbs/, 'g', 112],
+    [/pine nuts/, 'g', 142], [/sliced almonds/, 'g', 86], [/slivered almonds/, 'g', 114], [/almonds/, 'g', 142],
+    [/walnuts|pecans|chopped nuts/, 'g', 113], [/pistachios/, 'g', 120],
+    [/raisins/, 'g', 149], [/blueberries/, 'g', 170], [/mashed/, 'g', 227],
+    [/milk|water|broth|stock|cream|oil|juice|wine|passata|tomato sauce|crushed tomatoes|marinara|barbecue sauce/, 'ml', 240],
+    [/coconut/, 'g', 85]
+  ];
+  function cupRule(i) {
+    var n = i[1].toLowerCase();
+    for (var k = 0; k < CUP.length; k++) if (CUP[k][0].test(n)) return CUP[k][1] ? CUP[k] : null;
+    return null;
+  }
+  function fmtG(g) {
+    var ar = isAr();
+    if (g >= 1000) return (Math.round(g / 100) / 10) + (ar ? ' كغ' : ' kg');
+    var step = g < 250 ? 5 : 25;
+    return Math.max(5, Math.round(g / step) * step) + (ar ? ' غ' : ' g');
+  }
+  function fmtMl(ml) {
+    var ar = isAr();
+    if (ml >= 1000) return (Math.round(ml / 100) / 10) + (ar ? ' لتر' : ' L');
+    var step = ml < 100 ? 5 : 10;
+    return Math.round(ml / step) * step + (ar ? ' مل' : ' ml');
+  }
+  function fmtRange(a, b, per, kind) {
+    var f = kind === 'g' ? fmtG : fmtMl, x = f(parseNum(a) * per);
+    if (!b) return x;
+    var y = f(parseNum(b) * per);
+    return x === y ? x : x.replace(/ [^ ]+$/, '') + '–' + y;
+  }
+  // The quantity to show for one ingredient line, in the user's units.
+  function qtyText(i) {
+    var q = ingQ(i);
+    if (units !== 'metric' || !q) return q;
+    // "½ cup (125 g)": the recipe already gives the metric amount.
+    var m = new RegExp('^(.*?)(?:cups?|Tbsp|lb|oz|كوب|أكواب|ملعقة كبيرة|ملاعق كبيرة)\\s*\\(((?:about |نحو )?[\\d.,–]+ ?(?:g|ml|kg|غ|مل|كغ))\\)(.*)$').exec(q);
+    if (m && new RegExp('^(?:about |over |نحو )?' + NUM + '(?:–' + NUM + ')? ?$').test(m[1])) return m[2] + m[3];
+    // Ounces and pounds anywhere in the text, such as "2 cans (15 oz)".
+    q = q.replace(new RegExp('(' + NUM + ')(?:–(' + NUM + '))?([ -])(oz|lb)\\b', 'g'), function (_, a, b, sep, u) {
+      return fmtRange(a, b, u === 'oz' ? 28.35 : 453.6, 'g').replace(' ', sep);
+    });
+    // Cups, for ingredients with a known weight or liquids.
+    var rule = cupRule(i);
+    m = new RegExp('^(about |over |نحو |أكثر من )?(' + NUM + ')(?:–(' + NUM + '))? (?:cups?|كوب|أكواب)(?= |$)(.*)$').exec(q);
+    if (m && rule) return (m[1] || '') + fmtRange(m[2], m[3], rule[2], rule[1]) + m[4];
+    // Tablespoons of butter are weighed in metric kitchens.
+    m = new RegExp('^(' + NUM + ')(?:–(' + NUM + '))? (?:Tbsp|ملعقة كبيرة|ملاعق كبيرة)(?= |$)(.*)$').exec(q);
+    if (m && rule && /butter|ghee/.test(i[1]) && !/peanut|almond/.test(i[1])) return fmtRange(m[1], m[2], 14.2, 'g') + m[3];
+    return q;
+  }
   var recipeFilter = { q: '', cat: 'All', show: 'all' };
 
   function saveSel() { store('safeplate_allergens', JSON.stringify(sel)); }
@@ -1570,6 +1701,8 @@
     lb.textContent = t('langBtn'); lb.setAttribute('aria-label', t('langLabel')); lb.title = t('langLabel');
     document.getElementById('theme-btn').setAttribute('aria-label', t('darkLabel'));
     document.getElementById('clear-btn').textContent = t('clear');
+    document.getElementById('rename-btn').textContent = t('rename');
+    document.getElementById('remove-btn').textContent = t('removePerson');
     document.getElementById('support-link').textContent = t('support');
     document.getElementById('footer-text').textContent = t('footer');
     var pl = document.getElementById('privacy-link');
@@ -1590,20 +1723,82 @@
     document.getElementById('allergen-chips').innerHTML = ALLERGENS.map(function (a) {
       return '<button class="chip" data-a="' + a.id + '" aria-pressed="' + (sel.indexOf(a.id) !== -1) + '">' + a.emoji + ' ' + esc(L(a, 'name')) + '</button>';
     }).join('');
-    document.getElementById('avoid-summary').textContent = sel.length
-      ? t('avoiding', sel.length, sel.map(function (id) { return L(A[id], 'short'); }).join(isAr() ? '، ' : ', '))
-      : t('avoidPrompt');
-    document.getElementById('clear-btn').hidden = !sel.length;
+    var p = curPerson(), all = people.length && !p, sep = isAr() ? '، ' : ', ';
+    var list = sel.map(function (id) {
+      var who = all ? people.filter(function (x) { return x.a.indexOf(id) !== -1; }).map(function (x) { return x.name; }).join(sep) : '';
+      return L(A[id], 'short') + (who ? ' (' + who + ')' : '');
+    }).join(sep);
+    document.getElementById('avoid-summary').textContent =
+      all ? (sel.length ? t('everyoneAvoids', sel.length, list) : t('everyoneNone'))
+      : p ? (sel.length ? t('avoidingFor', p.name, sel.length, list) : t('avoidPromptFor', p.name))
+      : sel.length ? t('avoiding', sel.length, list) : t('avoidPrompt');
+    document.getElementById('allergen-chips').classList.toggle('locked', !!all);
+    document.getElementById('clear-btn').hidden = !sel.length || !!all;
+    document.getElementById('rename-btn').hidden = !p;
+    document.getElementById('remove-btn').hidden = !p;
+    document.getElementById('people-row').innerHTML =
+      (people.length > 1 ? '<button class="person" data-p="all" aria-pressed="' + !!all + '">' + t('everyone') + '</button>' : '') +
+      people.map(function (x) {
+        return '<button class="person" data-p="' + esc(x.id) + '" aria-pressed="' + (x.id === curId) + '">' + esc(x.name) + '</button>';
+      }).join('') +
+      '<button class="person add" data-p="+">' + t('addPerson') + '</button>';
   }
+  function askName(msg, def) {
+    var n = window.prompt(msg, def || '');
+    n = n == null ? '' : n.trim().slice(0, 24);
+    return n;
+  }
+  document.getElementById('people-row').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-p]');
+    if (!b) return;
+    var id = b.getAttribute('data-p');
+    if (id === '+') {
+      var name = askName(t('askName'));
+      if (!name) return;
+      // The first time, the existing allergy list becomes its own profile so nothing is lost.
+      if (!people.length && sel.length) people.push({ id: 'p' + Date.now(), name: t('me'), a: sel.slice() });
+      var np = { id: 'p' + (Date.now() + 1), name: name, a: [] };
+      people.push(np); curId = np.id;
+    } else curId = id;
+    savePeople(); renderChips(); route();
+  });
+  document.getElementById('rename-btn').addEventListener('click', function () {
+    var p = curPerson(); if (!p) return;
+    var name = askName(t('askRename'), p.name);
+    if (!name) return;
+    p.name = name; savePeople(); renderChips();
+  });
+  document.getElementById('remove-btn').addEventListener('click', function () {
+    var p = curPerson(); if (!p || !window.confirm(t('confirmRemove', p.name))) return;
+    people = people.filter(function (x) { return x !== p; });
+    if (!people.length) sel = [];
+    curId = people.length === 1 ? people[0].id : 'all';
+    savePeople(); if (!people.length) saveSel();
+    renderChips(); route();
+  });
   document.getElementById('allergen-chips').addEventListener('click', function (e) {
     var b = e.target.closest('[data-a]');
     if (!b) return;
     var id = b.getAttribute('data-a');
-    var i = sel.indexOf(id);
-    if (i === -1) sel.push(id); else sel.splice(i, 1);
-    saveSel(); renderChips(); route();
+    var p = curPerson();
+    if (people.length && !p) {
+      // "Everyone" shows the combined list; allergies are edited per person.
+      var lab = document.querySelector('.avoid-label'), sum = document.getElementById('avoid-summary');
+      sum.textContent = t('pickPerson'); lab.classList.add('flash');
+      setTimeout(function () { lab.classList.remove('flash'); renderChips(); }, 2500);
+      return;
+    }
+    var target = p ? p.a : sel;
+    var i = target.indexOf(id);
+    if (i === -1) target.push(id); else target.splice(i, 1);
+    if (p) savePeople(); else saveSel();
+    renderChips(); route();
   });
-  document.getElementById('clear-btn').addEventListener('click', function () { sel = []; saveSel(); renderChips(); route(); });
+  document.getElementById('clear-btn').addEventListener('click', function () {
+    var p = curPerson();
+    if (p) { p.a = []; savePeople(); } else { sel = []; saveSel(); }
+    renderChips(); route();
+  });
 
   document.getElementById('lang-btn').addEventListener('click', function () {
     lang = isAr() ? 'en' : 'ar';
@@ -1688,8 +1883,8 @@
     var al = recipeAllergens(r);
 
     var ingHtml = r.ing.map(function (i) {
-      var qt = ingQ(i), nm = ingN(i);
-      var q = qt ? '<span class="q">' + esc(qt) + '</span> ' : '';
+      var qt = qtyText(i), nm = ingN(i), orig = ingQ(i);
+      var q = qt ? '<span class="q">' + esc(qt) + (qt !== orig && /cup|Tbsp|كوب|أكواب|ملعقة|ملاعق/.test(orig) && !/\d ?(?:g|ml|kg|غ|مل|كغ)\)/.test(orig) ? ' <span class="orig">(' + esc(orig) + ')</span>' : '') + '</span> ' : '';
       if (!i[2]) return '<li>' + q + esc(nm) + '</li>';
       var res = resolve(i[2]);
       if (res.kind === 'ok') {
@@ -1756,10 +1951,20 @@
       '</div></div>' +
       topNote + summary + notes +
       '<div class="cols" style="margin-top:14px">' +
-        '<div class="card"><h3>' + t('ingredients') + '</h3><ul class="ing">' + ingHtml + '</ul></div>' +
+        '<div class="card"><div class="units" id="units">' +
+          '<button data-u="us" aria-pressed="' + (units === 'us') + '">' + t('unitsUs') + '</button>' +
+          '<button data-u="metric" aria-pressed="' + (units === 'metric') + '">' + t('unitsMetric') + '</button></div>' +
+          '<h3>' + t('ingredients') + '</h3><ul class="ing">' + ingHtml + '</ul>' +
+          (units === 'metric' ? '<div class="small muted" style="margin-top:10px">' + t('unitsNote') + '</div>' : '') + '</div>' +
         '<div class="card"><h3>' + t('steps') + '</h3><ol class="steps">' + stepHtml + '</ol>' + crossContact + '</div>' +
       '</div>' +
       '<div class="row"><button class="btn ai" id="ask-recipe">' + t('askAboutRecipe') + '</button></div>';
+    document.getElementById('units').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-u]');
+      if (!b || b.getAttribute('data-u') === units) return;
+      units = b.getAttribute('data-u'); store('safeplate_units', units);
+      var y = window.scrollY; renderRecipe(id); window.scrollTo(0, y);
+    });
     document.getElementById('ask-recipe').addEventListener('click', function () {
       aiDraft = t('aboutRecipe', L(r, 't'));
       location.hash = '#ai';
@@ -2472,7 +2677,8 @@
   function cardCfg() {
     var c = {};
     try { c = JSON.parse(load('safeplate_card') || '{}') || {}; } catch (e) {}
-    return { name: c.name || '', severe: c.severe !== false, epi: !!c.epi };
+    var p = curPerson();   // with a family profile selected, the card is that person's
+    return { name: p ? p.name : c.name || '', severe: c.severe !== false, epi: !!c.epi };
   }
   // One language block of the card as plain parts, shared by the screen, the image and the text.
   function cardParts(cfg, lg) {
@@ -2580,14 +2786,16 @@
       '<p class="muted" style="margin-top:0">' + t('cardIntro') + '</p>' +
       '<div class="card card-form">' +
         '<label for="card-name">' + t('cardName') + '</label>' +
-        '<input type="text" id="card-name" maxlength="40" autocomplete="off" value="' + esc(cfg.name) + '" />' +
+        '<input type="text" id="card-name" maxlength="40" autocomplete="off" value="' + esc(cfg.name) + '"' + (curPerson() ? ' readonly' : '') + ' />' +
         '<label class="check-row"><input type="checkbox" id="card-severe"' + (cfg.severe ? ' checked' : '') + ' /> ' + t('cardSevere') + '</label>' +
         '<label class="check-row"><input type="checkbox" id="card-epi"' + (cfg.epi ? ' checked' : '') + ' /> ' + t('cardEpi') + '</label>' +
       '</div>' +
       '<div id="card-preview"></div>';
     function save() {
       cfg = { name: document.getElementById('card-name').value.trim(), severe: document.getElementById('card-severe').checked, epi: document.getElementById('card-epi').checked };
-      store('safeplate_card', JSON.stringify(cfg));
+      var keep = cfg;
+      if (curPerson()) { try { keep = { name: (JSON.parse(load('safeplate_card') || '{}') || {}).name || '', severe: cfg.severe, epi: cfg.epi }; } catch (e) {} }
+      store('safeplate_card', JSON.stringify(keep));
       drawCard();
     }
     function drawCard() {

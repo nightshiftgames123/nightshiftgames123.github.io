@@ -575,6 +575,8 @@
     aiPoweredFree: { en: 'Powered by Google Gemini.', ar: 'يعمل بـ Google Gemini.' },
     errDaily: { en: 'You have used today\'s free AI uses. They come back tomorrow. For unlimited use, add your own free Gemini key in the AI Chef tab.', ar: 'استخدمت كل الاستخدامات المجانية لهذا اليوم، وستعود غداً. للاستخدام بلا حدود، أضف مفتاح Gemini المجاني الخاص بك في تبويب الشيف الذكي.' },
     errBusyToday: { en: 'The free AI has reached its limit for everyone today. Try again tomorrow, or add your own free Gemini key in the AI Chef tab.', ar: 'بلغ الذكاء الاصطناعي المجاني حدّه اليومي لجميع المستخدمين. حاول غداً، أو أضف مفتاح Gemini المجاني الخاص بك في تبويب الشيف الذكي.' },
+    keySavedOwn: { en: '🔑 Using your own Gemini key (no daily limit)', ar: '🔑 تستخدم مفتاح Gemini الخاص بك (بلا حد يومي)' },
+    keyUseFree: { en: 'Use free AI', ar: 'استخدم المجاني' },
     keySaved: { en: '🔑 Gemini key added', ar: '🔑 تمت إضافة مفتاح Gemini' },
     keyChange: { en: 'Change', ar: 'تغيير' },
     aiNoAllergens: { en: 'Tip: pick your allergens at the top so the chef knows what to avoid.', ar: 'نصيحة: اختر الحساسية من الأعلى ليعرف الشيف ما يجب تجنّبه.' },
@@ -2234,7 +2236,12 @@
   var sessionKey = '';    // a key typed this visit without "remember"
 
   // Reuse a key already saved by Nasma AI on this site, so people with both apps don't paste it twice.
-  function apiKey() { return sessionKey || load(KEY_STORE) || load('peds_gemini_key') || ''; }
+  // With the free server on, a key saved by Nasma AI is not picked up silently, and the user can
+  // choose the free daily uses even when they have a key saved.
+  function apiKey() {
+    if (AI_SERVER && load('safeplate_ai_free') === '1') return '';
+    return sessionKey || load(KEY_STORE) || (AI_SERVER ? '' : load('peds_gemini_key')) || '';
+  }
 
   function openKeyModal() { document.getElementById('key-modal').classList.add('open'); }
   function closeKeyModal() { document.getElementById('key-modal').classList.remove('open'); }
@@ -2292,8 +2299,9 @@
       ? '<div class="row" style="margin:0;align-items:center;justify-content:space-between"><span class="small" id="uses-left">' + esc(usesText()) + '</span>' +
         '<button class="btn ghost small" id="key-own">' + t('keyOwn') + '</button></div>'
       : key && !editingKey
-      ? '<div class="row" style="margin:0;align-items:center"><span class="small">' + t('keySaved') + '</span>' +
+      ? '<div class="row" style="margin:0;align-items:center"><span class="small">' + t(AI_SERVER ? 'keySavedOwn' : 'keySaved') + '</span>' +
         '<button class="btn ghost small" id="key-change">' + t('keyChange') + '</button>' +
+        (AI_SERVER ? '<button class="btn ghost small" id="key-free">' + t('keyUseFree') + '</button>' : '') +
         '<button class="btn ghost small" id="key-help" aria-label="' + esc(t('keyHow')) + '">🔑</button></div>'
       : '<button class="btn ghost small" id="key-help" style="width:100%;margin-bottom:10px">' + t('keyHow') + '</button>' +
         '<label for="key-input">' + t('keyLabel') + '</label>' +
@@ -2320,9 +2328,11 @@
     var kh = document.getElementById('key-help');
     if (kh) kh.addEventListener('click', openKeyModal);
     var ko = document.getElementById('key-own');
-    if (ko) { ko.addEventListener('click', function () { editingKey = true; renderAi(); }); if (usesLeft == null) refreshUses(); }
+    if (ko) { ko.addEventListener('click', function () { store('safeplate_ai_free', null); editingKey = !apiKey(); renderAi(); }); if (usesLeft == null) refreshUses(); }
+    var kf = document.getElementById('key-free');
+    if (kf) kf.addEventListener('click', function () { store('safeplate_ai_free', '1'); editingKey = false; renderAi(); });
     var kb = document.getElementById('key-back');
-    if (kb) kb.addEventListener('click', function () { editingKey = false; renderAi(); });
+    if (kb) kb.addEventListener('click', function () { editingKey = false; if (apiKey()) store('safeplate_ai_free', '1'); renderAi(); });
     var kc = document.getElementById('key-change');
     if (kc) kc.addEventListener('click', function () { editingKey = true; renderAi(); });
     var ki = document.getElementById('key-input');

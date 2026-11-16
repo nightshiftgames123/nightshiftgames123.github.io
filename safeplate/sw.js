@@ -1,6 +1,6 @@
 // Offline cache for SafePlate. Bump VERSION whenever any cached file changes.
-const VERSION = 'safeplate-v14';
-const ASSETS = ['./', './index.html', './recipes-more.js', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
+const VERSION = 'safeplate-v15';
+const ASSETS = ['./', './index.html', './recipes-more.js', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png', './studio-logo.jpg', './studio-logo.mp4'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
@@ -21,8 +21,11 @@ self.addEventListener('fetch', (e) => {
   e.respondWith(
     fetch(req)
       .then((res) => {
-        const copy = res.clone();
-        caches.open(VERSION).then((c) => c.put(req, copy));
+        // Only whole, successful answers can be cached (video is fetched in parts, which cannot).
+        if (res.status === 200) {
+          const copy = res.clone();
+          caches.open(VERSION).then((c) => c.put(req, copy));
+        }
         return res;
       })
       .catch(() => caches.match(req).then((hit) => hit || caches.match('./index.html')))

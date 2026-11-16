@@ -565,6 +565,10 @@
     offTag: { en: 'product data', ar: 'بيانات المنتج' },
     fromName: { en: 'from the product name', ar: 'من اسم المنتج' },
     fromCategory: { en: 'from the product category', ar: 'من فئة المنتج' },
+    offLabelled: { en: function (l) { return '✅ Labelled ' + l + '.'; }, ar: function (l) { return '✅ مكتوب على المنتج: ' + l + '.'; } },
+    offLabelledNote: { en: 'This comes from the label recorded in the database. Check that the pack in your hand shows the same label.', ar: 'هذه المعلومة من الملصق المسجّل في قاعدة البيانات. تأكّد أن العبوة التي بيدك تحمل الملصق نفسه.' },
+    offGlutenNote: { en: 'With a wheat allergy (not coeliac disease), also read the ingredients: some gluten-free foods contain wheat starch.', ar: 'في حساسية القمح (وليس الداء البطني/السيلياك)، اقرأ المكوّنات أيضاً: بعض المنتجات الخالية من الغلوتين تحتوي على نشا القمح.' },
+    offLabels: { en: function (l) { return 'Labels on the pack: ' + l; }, ar: function (l) { return 'ملصقات العبوة: ' + l; } },
     offUnverified: {
       en: function (l) { return '⚠️ No ' + l + ' is recorded for this product in the database, but database entries are often incomplete or out of date. Read the ingredient list on the package before eating it, or check it with a photo:'; },
       ar: function (l) { return '⚠️ لا يوجد ' + l + ' مسجّل لهذا المنتج في قاعدة البيانات، لكن بياناتها كثيراً ما تكون ناقصة أو قديمة. اقرأ قائمة المكوّنات على العبوة قبل تناوله، أو افحصها بصورة:'; }
@@ -1721,6 +1725,13 @@
   function shortName(a) { return isAr() ? A[a].ar.short : A[a].short.toLowerCase(); }
   function names(list) { return list.map(shortName).join(isAr() ? '، ' : ', '); }
   function emojis(list) { return list.map(function (a) { return '<span title="' + esc(L(A[a], 'name')) + '">' + A[a].emoji + '</span>'; }).join(' '); }
+  // "gluten-free, milk-free": a wheat claim on a pack is worded as gluten-free.
+  function freeNames(list) {
+    return list.map(function (a) {
+      var n = a === 'wheat' ? (isAr() ? 'الغلوتين' : 'gluten') : shortName(a);
+      return isAr() ? 'خالٍ من ' + n : n + '-free';
+    }).join(isAr() ? '، ' : ', ');
+  }
   function ingQ(i) { return isAr() ? i[3] : i[0]; }
   function ingN(i) { return isAr() ? i[4] : i[1]; }
 
@@ -2672,8 +2683,21 @@
       : sure.length ? '<div class="note danger verdict">' + esc(t('scanBad', names(badC))) + '</div>'
       : badC.length ? '<div class="note danger verdict">' + esc(t('scanLikely', names(badC))) + '</div>'
       : badM.length ? '<div class="note verdict">' + esc(t('scanMay', names(badM))) + '</div>'
-      : s.source === 'off' ? '<div class="note verdict">' + esc(t('offUnverified', names(sel))) + photoBtns + '</div>'
+      : s.source === 'off' ? offVerdict(d, photoBtns)
       : '<div class="note safe verdict">' + esc(t('scanOk', names(sel))) + '<div class="small" style="font-weight:400">' + t('scanOkNote') + '</div></div>';
+    // A database result with nothing found. What the pack is labelled "free from" is stated plainly;
+    // anything else selected still gets the "data may be incomplete" caution.
+    function offVerdict(d, photoBtns) {
+      var free = hits(d.free || []), rest = sel.filter(function (a) { return free.indexOf(a) === -1; });
+      var out = '';
+      if (free.length) {
+        out += '<div class="note safe verdict">' + esc(t('offLabelled', freeNames(free))) +
+          '<div class="small" style="font-weight:400">' + t('offLabelledNote') +
+          (free.indexOf('wheat') !== -1 ? ' ' + t('offGlutenNote') : '') + '</div></div>';
+      }
+      if (rest.length) out += '<div class="note verdict">' + esc(t('offUnverified', names(rest))) + photoBtns + '</div>';
+      return out;
+    }
     function items(arr) {
       if (!arr.length) return '<ul class="scan-list"><li class="muted">' + t('scanNoneFound') + '</li></ul>';
       return '<ul class="scan-list">' + arr.map(function (x) {
@@ -2687,6 +2711,7 @@
       '<div style="margin-top:8px"><b>' + t('scanContains') + '</b>' + items(d.contains) + '</div>' +
       '<div style="margin-top:8px"><b>' + t('scanMayLabel') + '</b>' + items(d.may) + '</div>' +
       (d.notes ? '<div class="tip" style="margin-top:8px">ℹ️ ' + esc(d.notes) + '</div>' : '') +
+      (d.free && d.free.length ? '<div class="tip" style="margin-top:8px">🏷️ ' + esc(t('offLabels', freeNames(d.free))) + '</div>' : '') +
       (s.source === 'off' ? '<div class="tip" style="margin-top:8px">ℹ️ ' + t('offSource') + ' <a href="https://world.openfoodfacts.org/product/' + esc(s.code) + '" target="_blank" rel="noopener">' + t('offView') + ' ↗</a></div>' : '') +
       '<details class="scan-text"><summary>' + t(s.source === 'off' ? 'offIngredients' : 'scanIngredients') + '</summary><p dir="auto">' + esc(d.ingredients + (d.warnings ? '\n\n' + d.warnings : '')) + '</p></details>' +
       '<div class="row">' +
@@ -2715,13 +2740,19 @@
   var OFF_MAP = { 'en:milk': 'milk', 'en:eggs': 'egg', 'en:peanuts': 'peanut', 'en:nuts': 'treenut', 'en:soybeans': 'soy', 'en:gluten': 'wheat',
     'en:fish': 'fish', 'en:crustaceans': 'shellfish', 'en:molluscs': 'shellfish', 'en:sesame-seeds': 'sesame' };
   var OFF_FIELDS = 'code,product_name,product_name_en,product_name_ar,product_name_fr,generic_name,generic_name_en,generic_name_ar,brands,categories_tags,' +
-    'allergens_tags,traces_tags,ingredients_text,ingredients_text_en,ingredients_text_ar,ingredients_text_fr,image_front_small_url';
+    'allergens_tags,traces_tags,labels_tags,ingredients_text,ingredients_text_en,ingredients_text_ar,ingredients_text_fr,image_front_small_url';
   // Categories that almost always mean an allergen, as a safety net when the database lacks allergen data.
   var OFF_CATEGORY = { 'en:breads': 'wheat', 'en:sliced-breads': 'wheat', 'en:sandwich-breads': 'wheat', 'en:flatbreads': 'wheat', 'en:biscuits': 'wheat',
     'en:biscuits-and-cakes': 'wheat', 'en:cakes': 'wheat', 'en:pastries': 'wheat', 'en:viennoiseries': 'wheat', 'en:croissants': 'wheat', 'en:crackers': 'wheat',
     'en:pastas': 'wheat', 'en:dairies': 'milk', 'en:cheeses': 'milk', 'en:yogurts': 'milk', 'en:butters': 'milk', 'en:milk-chocolates': 'milk',
     'en:peanut-butters': 'peanut', 'en:peanuts': 'peanut', 'en:tahini': 'sesame', 'en:hummus': 'sesame', 'en:halva': 'sesame',
     'en:fishes': 'fish', 'en:canned-fishes': 'fish', 'en:tunas': 'fish', 'en:shrimps': 'shellfish' };
+  // "Free-from" claims printed on the pack, as the database records them. Lactose-free is not milk-free
+  // and vegan is not an allergen claim, so neither is listed.
+  var OFF_FREE = { 'en:no-gluten': 'wheat', 'en:gluten-free': 'wheat', 'en:no-milk': 'milk', 'en:milk-free': 'milk', 'en:dairy-free': 'milk',
+    'en:no-eggs': 'egg', 'en:no-egg': 'egg', 'en:egg-free': 'egg', 'en:no-soy': 'soy', 'en:no-soya': 'soy', 'en:soy-free': 'soy',
+    'en:no-peanuts': 'peanut', 'en:peanut-free': 'peanut', 'en:no-nuts': 'treenut', 'en:no-tree-nuts': 'treenut', 'en:nut-free': 'treenut',
+    'en:no-fish': 'fish', 'en:no-sesame': 'sesame', 'en:sesame-free': 'sesame', 'en:no-crustaceans': 'shellfish', 'en:no-shellfish': 'shellfish' };
   var bc = { stream: null, timer: null, reader: null, done: true };
   var detectorPromise = null;
 
@@ -2865,7 +2896,13 @@
           var freeCat = /gluten-free|dairy-free|milk-free|nut-free|egg-free/.test(tg);
           if (id && !freeCat && freedByName.indexOf(id) === -1) clue(id, tg.replace(/^[a-z]{2}:/, '').replace(/-/g, ' ') + ' · ' + t('fromCategory'));
         });
-        if (data.contains.length || data.may.length) data.readable = true;
+        // Free-from labels, from the database's label list or the product's own name.
+        data.free = freedByName.slice();
+        (p.labels_tags || []).forEach(function (tg) {
+          var id = OFF_FREE[tg];
+          if (id && data.free.indexOf(id) === -1) data.free.push(id);
+        });
+        if (data.contains.length || data.may.length || data.free.length) data.readable = true;
         job.data = data;
         drawScan();
       })

@@ -2175,7 +2175,7 @@
   // SafePlate's own AI server (see /safeplate-server). When this is set, the AI works without a key,
   // with a few free uses a day; people who add their own Gemini key skip the server and the limit.
   // Leave empty to require each user's own key.
-  var AI_SERVER = '';
+  var AI_SERVER = 'https://safeplate-ai.dr-mohjallad.workers.dev';
   var usesLeft = null, usesLimit = null;   // today's free uses, once the server has told us
   function useServer() { return !!AI_SERVER && !apiKey(); }
   function aiReady() { return !!apiKey() || !!AI_SERVER; }

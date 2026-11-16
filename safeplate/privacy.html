@@ -31,17 +31,18 @@
 
   <section id="en">
     <h1>SafePlate privacy policy</h1>
-    <div class="updated">Nightshift Games · Last updated: 15 November 2026</div>
+    <div class="updated">Nightshift Games · Last updated: 16 November 2026</div>
 
     <h2>In short</h2>
-    <p>SafePlate has no accounts, no ads, no analytics and no servers of our own. What you choose in the app stays on your phone.
+    <p>SafePlate has no accounts, no ads and no analytics. What you choose in the app stays on your phone.
        Information leaves your phone only when you use a feature that needs the internet, and only to the service named below.</p>
 
     <h2>What stays on your device</h2>
     <ul>
       <li>The allergens you select, the names of any family profiles you add, your units, language and theme.</li>
       <li>Ingredient lists you type into the checker, and your allergy card name and options.</li>
-      <li>Your Gemini API key, if you save it.</li>
+      <li>Your Gemini API key, if you add one and save it.</li>
+      <li>A random ID the app creates for this browser, used only to count free AI uses.</li>
     </ul>
     <p>These are kept in your browser's storage. We never see them. Clearing your browser data deletes them.</p>
 
@@ -52,11 +53,17 @@
       <li><b>AI label scanner:</b> when you scan a photo, the photo (made smaller on your phone first) is sent to Google Gemini to read the ingredients.</li>
       <li><b>AI chef:</b> when you send a message, your conversation and the allergens you selected are sent to Google Gemini.</li>
     </ul>
-    <p>The AI features use your own Gemini key, so Google processes these requests under
-      <a href="https://ai.google.dev/gemini-api/terms" target="_blank" rel="noopener">Google's Gemini API terms</a> and
-      <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">privacy policy</a>.
-      On Google's free tier, Google may use what you send to improve its products, and people may review it.
-      Don't include anything in photos or messages that you wouldn't want seen.</p>
+    <p><b>Free AI uses.</b> Without a key of your own, AI requests go through a small SafePlate server hosted on
+      <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">Cloudflare</a>, which passes them to Google Gemini
+      and sends the answer back. The server does not keep your photos or messages. To give everyone a fair number of free uses a day,
+      it counts uses against the app's random ID and against a scrambled (one-way hashed) form of your IP address. These counters are deleted every day.
+      Google processes these requests under
+      <a href="https://ai.google.dev/gemini-api/terms" target="_blank" rel="noopener">Google's Gemini API terms</a> for paid services,
+      which say Google does not use them to improve its products.</p>
+    <p><b>Your own key.</b> If you add your own Gemini key, AI requests go straight from your phone to Google and skip our server.
+      On Google's free tier, Google may use what you send to improve its products, and people may review it
+      (<a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google's privacy policy</a>).</p>
+    <p>Either way, don't include anything in photos or messages that you wouldn't want seen.</p>
 
     <h2>Hosting and links</h2>
     <p>SafePlate is hosted on GitHub Pages. Like any website, GitHub may log basic technical data such as your IP address
@@ -76,17 +83,18 @@
 
   <section id="ar" lang="ar" dir="rtl">
     <h1>سياسة الخصوصية لتطبيق SafePlate</h1>
-    <div class="updated">Nightshift Games · آخر تحديث: 15 نوفمبر 2026</div>
+    <div class="updated">Nightshift Games · آخر تحديث: 16 نوفمبر 2026</div>
 
     <h2>باختصار</h2>
-    <p>لا يحتوي SafePlate على حسابات أو إعلانات أو أدوات تحليل، وليس لدينا خوادم خاصة بنا. ما تختاره في التطبيق يبقى على هاتفك.
+    <p>لا يحتوي SafePlate على حسابات أو إعلانات أو أدوات تحليل. ما تختاره في التطبيق يبقى على هاتفك.
        لا تخرج أي معلومات من هاتفك إلا عند استخدام ميزة تحتاج إلى الإنترنت، وإلى الخدمة المذكورة أدناه فقط.</p>
 
     <h2>ما يبقى على جهازك</h2>
     <ul>
       <li>أنواع الحساسية التي تختارها، وأسماء أفراد العائلة الذين تضيفهم، ووحدات القياس، واللغة، والمظهر.</li>
       <li>قوائم المكوّنات التي تكتبها في الفاحص، واسم بطاقة الحساسية وخياراتها.</li>
-      <li>مفتاح Gemini الخاص بك، إذا اخترت حفظه.</li>
+      <li>مفتاح Gemini الخاص بك، إذا أضفته واخترت حفظه.</li>
+      <li>معرّف عشوائي ينشئه التطبيق لهذا المتصفح، ويُستخدم فقط لعدّ الاستخدامات المجانية للذكاء الاصطناعي.</li>
     </ul>
     <p>تُحفظ هذه البيانات في تخزين المتصفح. لا نطّلع عليها أبداً، وتُحذف عند مسح بيانات المتصفح.</p>
 
@@ -97,11 +105,16 @@
       <li><b>ماسح الملصقات الذكي:</b> عند مسح صورة، تُرسل الصورة (بعد تصغيرها على هاتفك) إلى Google Gemini لقراءة المكوّنات.</li>
       <li><b>الشيف الذكي:</b> عند إرسال رسالة، تُرسل المحادثة وأنواع الحساسية التي اخترتها إلى Google Gemini.</li>
     </ul>
-    <p>تستخدم ميزات الذكاء الاصطناعي مفتاحك الخاص، لذا تعالج Google هذه الطلبات وفق
-      <a href="https://ai.google.dev/gemini-api/terms" target="_blank" rel="noopener">شروط Gemini API</a> و
-      <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">سياسة خصوصية Google</a>.
-      في الخطة المجانية، قد تستخدم Google ما ترسله لتحسين منتجاتها وقد يراجعه أشخاص،
-      فلا تضع في الصور أو الرسائل ما لا تريد أن يطّلع عليه أحد.</p>
+    <p><b>الاستخدامات المجانية.</b> إذا لم تضف مفتاحاً خاصاً بك، تمر طلبات الذكاء الاصطناعي عبر خادم صغير تابع لـ SafePlate مستضاف على
+      <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">Cloudflare</a>، يرسلها إلى Google Gemini ويعيد الإجابة.
+      لا يحتفظ الخادم بصورك أو رسائلك. ولمنح الجميع عدداً عادلاً من الاستخدامات المجانية يومياً، يعدّ الخادم الاستخدامات حسب المعرّف العشوائي
+      للتطبيق وحسب صيغة مشفّرة باتجاه واحد من عنوان IP. تُحذف هذه العدّادات كل يوم. تعالج Google هذه الطلبات وفق
+      <a href="https://ai.google.dev/gemini-api/terms" target="_blank" rel="noopener">شروط Gemini API</a> للخدمات المدفوعة،
+      التي تنص على أن Google لا تستخدمها لتحسين منتجاتها.</p>
+    <p><b>مفتاحك الخاص.</b> إذا أضفت مفتاح Gemini الخاص بك، تذهب الطلبات مباشرة من هاتفك إلى Google دون المرور بخادمنا.
+      في خطة Google المجانية، قد تستخدم Google ما ترسله لتحسين منتجاتها وقد يراجعه أشخاص
+      (<a href="https://policies.google.com/privacy" target="_blank" rel="noopener">سياسة خصوصية Google</a>).</p>
+    <p>في كل الأحوال، لا تضع في الصور أو الرسائل ما لا تريد أن يطّلع عليه أحد.</p>
 
     <h2>الاستضافة والروابط</h2>
     <p>يُستضاف SafePlate على GitHub Pages. ومثل أي موقع، قد تسجّل GitHub بيانات تقنية أساسية مثل عنوان IP

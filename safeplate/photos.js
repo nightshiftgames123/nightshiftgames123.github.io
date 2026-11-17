@@ -1,6 +1,6 @@
 // SafePlate. Copyright (c) 2026 Nightshift Games (Night Shift Studio). All rights reserved. See LICENSE.txt.
 // Recipe photos (photos/<id>.jpg and photos/<id>-s.jpg) and their sources. The photos belong to their
-// photographers and are used under the Unsplash License or the Pexels License; they are not covered by LICENSE.txt.
+// photographers and are used under the Unsplash, Pexels or Pixabay licence; they are not covered by LICENSE.txt.
 window.PHOTO_CREDITS = {
  "stirfry": {
   "s": "Unsplash",
@@ -701,5 +701,12 @@ window.PHOTO_CREDITS = {
   "lic": "Pexels License",
   "licUrl": "https://www.pexels.com/license/",
   "url": "https://www.pexels.com/photo/8745316/"
+ },
+ "balaleet": {
+  "s": "Pixabay",
+  "by": "Nawal Abbas",
+  "lic": "Pixabay Content License",
+  "licUrl": "https://pixabay.com/service/license-summary/",
+  "url": "https://pixabay.com/photos/pasta-balaleet-sago-sweet-flowers-1879462/"
  }
 };

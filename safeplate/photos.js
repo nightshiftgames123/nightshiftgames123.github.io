@@ -673,5 +673,33 @@ window.PHOTO_CREDITS = {
   "lic": "Pexels License",
   "licUrl": "https://www.pexels.com/license/",
   "url": "https://www.pexels.com/photo/36879175/"
+ },
+ "foul-medames": {
+  "s": "Pexels",
+  "by": "",
+  "lic": "Pexels License",
+  "licUrl": "https://www.pexels.com/license/",
+  "url": "https://www.pexels.com/photo/5191842/"
+ },
+ "riz-sharia": {
+  "s": "Pexels",
+  "by": "",
+  "lic": "Pexels License",
+  "licUrl": "https://www.pexels.com/license/",
+  "url": "https://www.pexels.com/photo/35552985/"
+ },
+ "freekeh-chicken": {
+  "s": "Pexels",
+  "by": "",
+  "lic": "Pexels License",
+  "licUrl": "https://www.pexels.com/license/",
+  "url": "https://www.pexels.com/photo/37287545/"
+ },
+ "umm-ali": {
+  "s": "Pexels",
+  "by": "",
+  "lic": "Pexels License",
+  "licUrl": "https://www.pexels.com/license/",
+  "url": "https://www.pexels.com/photo/8745316/"
  }
 };

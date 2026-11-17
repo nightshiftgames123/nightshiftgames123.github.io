@@ -1,6 +1,6 @@
 // SafePlate. Copyright (c) 2026 Nightshift Games (Night Shift Studio). All rights reserved. See LICENSE.txt.
 // Offline cache for SafePlate. Bump VERSION whenever any cached file changes.
-const VERSION = 'safeplate-v17';
+const VERSION = 'safeplate-v18';
 const ASSETS = ['./', './index.html', './recipes-more.js', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png', './studio-logo.jpg', './studio-logo.mp4'];
 
 self.addEventListener('install', (e) => {

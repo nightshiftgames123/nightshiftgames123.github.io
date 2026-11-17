@@ -1,0 +1,27 @@
+SafePlate
+Copyright (c) 2026 Nightshift Games (Night Shift Studio). All rights reserved.
+
+This notice covers the SafePlate app in this folder and its server in the
+safeplate-server folder: the source code, design, text, translations, recipe
+wording, swap library, icons and the Night Shift Studio logo and animation.
+
+No licence is granted. You may use the app as offered at its official address
+for your own personal, non-commercial use. You may not copy, modify, republish,
+redistribute, sell or host this software or any substantial part of it, or use
+the SafePlate or Night Shift Studio names and logos, without written permission
+from the copyright holder.
+
+The source being publicly readable does not make it open source.
+
+Not covered by this notice:
+- vendor/zxing.min.js, which is licensed under the Apache License 2.0
+  (see vendor/zxing-LICENSE.txt).
+- The original recipes that SafePlate's recipes are adapted from. Each recipe
+  links to its source, and those sources belong to their own authors.
+- Product data from Open Food Facts, which is provided under the Open Database
+  License.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND. SafePlate
+offers general cooking ideas, not medical advice.
+
+Permission requests and copyright questions: dr.mohjallad@gmail.com

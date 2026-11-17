@@ -1,3 +1,4 @@
+// SafePlate. Copyright (c) 2026 Nightshift Games (Night Shift Studio). All rights reserved. See LICENSE.txt.
 // More SafePlate recipes, loaded before the app script and appended to RECIPES.
 // Same format as the recipes in index.html: ingredients are [quantity, name, library id or null,
 // Arabic quantity, Arabic name]; {id} in steps is replaced with the ingredient or its safe swap.

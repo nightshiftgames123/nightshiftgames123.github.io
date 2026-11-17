@@ -374,6 +374,12 @@
     .remoji.c-1 { background: var(--t1); } .remoji.c-2 { background: var(--t2); } .remoji.c-3 { background: var(--t3); }
     .remoji.c-4 { background: var(--t4); } .remoji.c-5 { background: var(--t5); } .remoji.c-6 { background: var(--t6); }
     .badge { padding: 3px 10px; }
+    .remoji.photo { padding: 0; overflow: hidden; }
+    .remoji.photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .hero .remoji.photo { height: 230px; }
+    .photo-credit { font-size: 11.5px; color: var(--muted); margin: -6px 0 12px; overflow-wrap: anywhere; }
+    .photo-credit a { color: var(--muted); }
+    @media (min-width: 760px) { .hero .remoji.photo { width: 220px; height: 165px; } }
     .back { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 999px; background: var(--card); border: 1px solid var(--border); color: var(--text); }
     .hero { flex-direction: column; align-items: stretch; gap: 14px; }
     .hero .remoji { width: 100%; height: 170px; font-size: 92px; border-radius: 26px; border: 0; }
@@ -503,6 +509,7 @@
     <div class="card" id="key-modal-body"></div>
   </div>
 
+  <script src="photos.js"></script>
   <script src="recipes-more.js"></script>
   <script>
   // ---------------------------------------------------------------------------
@@ -2122,6 +2129,25 @@
 
   var TILE_CATS = ['Breakfast', 'Baking & Desserts', 'Mains', 'Sides & Snacks', 'Lunch', 'Salads & Soups'];
   function catTile(c) { var i = TILE_CATS.indexOf(c); return 'c-' + (i === -1 ? 1 : i + 1); }
+  // Recipe photo (or the emoji if there is none, or if the photo cannot load, e.g. offline before it was cached).
+  function dishTile(r, big) {
+    var pc = (window.PHOTO_CREDITS || {})[r.id];
+    if (!pc) return '<div class="remoji ' + catTile(r.c) + '" aria-hidden="true">' + r.e + '</div>';
+    return '<div class="remoji photo ' + catTile(r.c) + '"><img src="photos/' + r.id + (big ? '.jpg' : '-s.jpg') + '" alt="' + (big ? esc(L(r, 't')) : '') + '"' +
+      (big ? '' : ' loading="lazy" width="60" height="60"') + ' data-e="' + esc(r.e) +
+      '" onerror="spPhotoFail(this)"></div>';
+  }
+  window.spPhotoFail = function (img) {
+    var d = img.parentNode; if (!d) return;
+    d.classList.remove('photo'); d.textContent = img.getAttribute('data-e');
+  };
+  function photoCredit(r) {
+    var pc = (window.PHOTO_CREDITS || {})[r.id];
+    if (!pc) return '';
+    var lic = pc.licUrl ? '<a href="' + esc(pc.licUrl) + '" target="_blank" rel="noopener">' + esc(pc.lic) + '</a>' : esc(pc.lic);
+    return '<div class="photo-credit">' + (isAr() ? 'الصورة: ' : 'Photo: ') +
+      (pc.by ? esc(pc.by) + ', ' : '') + '<a href="' + esc(pc.url) + '" target="_blank" rel="noopener">' + esc(pc.s) + '</a> · ' + lic + '</div>';
+  }
 
   function drawGrid() {
     var q = norm(recipeFilter.q.trim());
@@ -2140,7 +2166,7 @@
     grid.innerHTML = list.map(function (x) {
       var r = x.r, al = recipeAllergens(r);
       return '<a class="card rcard" href="#r/' + r.id + '">' +
-        '<div class="remoji ' + catTile(r.c) + '">' + r.e + '</div>' +
+        dishTile(r, false) +
         '<div><h3>' + esc(L(r, 't')) + '</h3>' +
         '<div class="meta">' + esc(catName(r.c)) + ' · ' + esc(L(r, 'time')) + '</div>' +
         (al.length ? '<div class="contains" aria-label="' + esc(t('containsAria') + names(al)) + '">' + emojis(al) + '</div>' : '') +
@@ -2224,11 +2250,11 @@
 
     view.innerHTML =
       '<a class="back" href="#recipes">' + t('allRecipes') + '</a>' +
-      '<div class="hero"><div class="remoji ' + catTile(r.c) + '" aria-hidden="true">' + r.e + '</div><div>' +
+      '<div class="hero">' + dishTile(r, true) + '<div>' +
         '<h2>' + esc(L(r, 't')) + '</h2>' +
         '<div class="meta">' + esc(catName(r.c)) + ' · ' + esc(L(r, 'time')) + ' · ' + t('serves') + ' ' + esc(L(r, 'serves')) + '</div>' +
         (al.length ? '<div class="meta">' + t('normally') + esc(names(al)) + '</div>' : '') +
-      '</div></div>' +
+      '</div></div>' + photoCredit(r) +
       topNote + summary + notes +
       '<div class="cols" style="margin-top:14px">' +
         '<div class="card"><div class="units" id="units">' +

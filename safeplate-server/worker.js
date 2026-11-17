@@ -1,3 +1,4 @@
+// Copyright (c) 2026 Nightshift Games (Night Shift Studio). All rights reserved. See ../safeplate/LICENSE.txt.
 // SafePlate AI server (Cloudflare Worker).
 //
 // What it does:

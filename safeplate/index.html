@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- SafePlate. Copyright (c) 2026 Nightshift Games (Night Shift Studio). All rights reserved. See LICENSE.txt. -->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -385,7 +386,8 @@
     <footer>
       <a class="support-btn" id="support-link" href="https://ko-fi.com/nightshiftapps" target="_blank" rel="noopener"></a><br>
       <span id="footer-text"></span><br>
-      <a id="privacy-link" href="privacy.html"></a>
+      <a id="privacy-link" href="privacy.html"></a><br>
+      <span id="copyright"></span>
     </footer>
   </div>
 
@@ -461,6 +463,7 @@
     wAllergyQ: { en: function (n) { return 'What does ' + n + ' need to avoid?'; }, ar: function (n) { return 'ما الذي يحتاج ' + n + ' إلى تجنّبه؟'; } },
     wAllergyHelp: { en: 'Tap everything that applies. You can change this any time.', ar: 'اختر كل ما ينطبق. يمكنك التغيير في أي وقت.' },
     wStart: { en: 'Start cooking', ar: 'ابدأ الطبخ' },
+    copyright: { en: '© 2026 Nightshift Games (Night Shift Studio). All rights reserved.', ar: '© 2026 Nightshift Games (Night Shift Studio). جميع الحقوق محفوظة.' },
     addPerson: { en: '+ Add person', ar: '+ إضافة شخص' },
     everyone: { en: '👥 Everyone', ar: '👥 الجميع' },
     me: { en: 'Me', ar: 'أنا' },
@@ -1792,6 +1795,7 @@
     document.getElementById('remove-btn').textContent = t('removePerson');
     document.getElementById('support-link').textContent = t('support');
     document.getElementById('footer-text').textContent = t('footer');
+    document.getElementById('copyright').textContent = t('copyright');
     var pl = document.getElementById('privacy-link');
     pl.textContent = t('privacyLink'); pl.href = isAr() ? 'privacy.html#ar' : 'privacy.html';
     document.getElementById('bc-title').textContent = t('bcCamTitle');

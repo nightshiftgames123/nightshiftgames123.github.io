@@ -1,0 +1,22 @@
+name: SafePlate data check
+
+on:
+  push:
+    paths: ['safeplate/**', 'safeplate-server/**', 'tools/check-safeplate.js', '.github/workflows/safeplate-check.yml']
+  pull_request:
+    paths: ['safeplate/**', 'safeplate-server/**', 'tools/check-safeplate.js', '.github/workflows/safeplate-check.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node tools/check-safeplate.js
+      - name: Check the AI server code parses
+        run: node --check --input-type=module < safeplate-server/worker.js

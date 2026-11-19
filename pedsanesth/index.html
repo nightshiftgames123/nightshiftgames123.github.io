@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#0d1012" />
+  <meta name="theme-color" content="#e6f4f1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Nasma AI" />
@@ -258,6 +258,127 @@
     @keyframes sp-b { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
     @keyframes sp-out { to { opacity: 0; visibility: hidden; } }
     @media (prefers-reduced-motion: reduce) { #splash { animation: sp-out .2s linear 2s forwards; } #splash .st1 { display: none; } #splash .st2 { animation: none; opacity: 1; } }
+    /* ================= Mixed style (soft medical layout + soft 3D controls) ================= */
+    :root[data-theme="light"] { --bg:#eaf5f2; --surface:rgba(255,255,255,.82); --surface2:#edf3f1; --solid:#f8fbfa; --line:rgba(23,36,43,.07); --text:#17242b; --muted:#5a6870; --faint:#8b979d;
+      --accent:#13958b; --accentInk:#ffffff; --accentSoft:rgba(19,149,139,.10); --warn:#8a6a0a; --stat:#e0503f; --statSoft:#f9d3cd;
+      --mint:#a5e6d3; --mintInk:#0d4f42; --yel:#f7e4a0; --yelInk:#5a4607; --red:#f5b2aa; --redInk:#761a14;
+      --glow:rgba(56,200,170,.45); --btn:#f6f9f8; --segOn:#ffffff;
+      --press:inset 3px 3px 8px rgba(110,135,135,.22), inset -3px -3px 8px rgba(255,255,255,.95);
+      --raiseS:3px 3px 8px rgba(110,135,135,.22), -3px -3px 8px rgba(255,255,255,.9);
+      --cardSh:0 8px 24px rgba(23,36,43,.06), inset 0 0 0 1px rgba(255,255,255,.95);
+      --hdrBg:rgba(234,245,242,.78); --shadow:0 12px 28px rgba(19,149,139,.32);
+      --page:radial-gradient(120% 70% at 0% 0%, #c6ece4 0%, #e9f6f2 42%, #f8f0ea 75%, #f6dfd3 100%);
+      --statPage:linear-gradient(180deg, #fff1ee 0%, #f9f4f1 100%); }
+    :root[data-theme="dark"] { --bg:#0e1719; --surface:rgba(26,38,41,.86); --surface2:#111c1f; --solid:#162225; --line:rgba(255,255,255,.06); --text:#e8f1ef; --muted:#97a7aa; --faint:#64767a;
+      --accent:#4cccb9; --accentInk:#04201c; --accentSoft:rgba(76,204,185,.12); --warn:#f0c860; --stat:#ef5b49; --statSoft:rgba(239,91,73,.18);
+      --mint:rgba(76,204,185,.20); --mintInk:#a8f0e3; --yel:rgba(240,200,96,.18); --yelInk:#f5d684; --red:rgba(239,110,95,.22); --redInk:#ffb8ae;
+      --glow:rgba(76,204,185,.45); --btn:#1c2a2d; --segOn:#2a3b3f;
+      --press:inset 3px 3px 8px rgba(0,0,0,.45), inset -2px -2px 6px rgba(255,255,255,.035);
+      --raiseS:0 4px 12px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05);
+      --cardSh:0 10px 26px rgba(0,0,0,.30), inset 0 0 0 1px rgba(255,255,255,.05);
+      --hdrBg:rgba(14,23,25,.78); --shadow:0 12px 28px rgba(0,0,0,.5);
+      --page:radial-gradient(120% 70% at 0% 0%, #133430 0%, #0f1c1e 45%, #141618 78%, #201816 100%);
+      --statPage:linear-gradient(180deg, #2a1514 0%, #121719 100%); }
+    html { background: var(--bg); }
+    body { background: var(--page); background-attachment: fixed; font-size: 15px; }
+    /* headings: clean sans instead of serif */
+    .card-h h2, .sc-h h3, .sheet-h .t, .ov-h .serif, .bub.a h3, .bub.a h4, .ref h4 { font-family: 'Geist', sans-serif !important; font-weight: 600 !important; letter-spacing: -0.01em; }
+    .card-h h2 { font-size: 18px; } .sc-h h3 { font-size: 20px; } .sheet-h .t, .ov-h .serif { font-size: 19px !important; } .bub.a h3, .bub.a h4 { font-size: 15px; } .ref h4 { font-size: 16px; }
+    .word b { font: 600 19px/1 'Geist', sans-serif; letter-spacing: -0.01em; }
+    .word .beta-tag { font: 600 10px 'Geist Mono', monospace; font-style: normal; letter-spacing: .08em; color: var(--yelInk); background: var(--yel); border-radius: 6px; padding: 3px 6px; align-self: center; }
+    .logo-img { width: 34px; height: 34px; border-radius: 10px; flex: none; box-shadow: var(--raiseS); }
+    /* header + tabs: frosted glass */
+    header, nav.tabs { background: var(--hdrBg); -webkit-backdrop-filter: blur(16px) saturate(1.3); backdrop-filter: blur(16px) saturate(1.3); border-bottom: 0; }
+    .pt-row .chip { background: var(--surface2); border: 0; box-shadow: var(--press); }
+    /* cards: glass */
+    .card, .sec, .sc { background: var(--surface); border: 0; border-radius: 22px; box-shadow: var(--cardSh); }
+    .hint { border: 0; background: var(--surface); box-shadow: var(--cardSh); border-radius: 18px; }
+    /* inputs: pressed in, glowing focus */
+    .field, textarea, .inf-edit input, .inf-edit select { border: 0; background: var(--surface2); box-shadow: var(--press); border-radius: 14px; transition: box-shadow .15s; }
+    .field:focus, textarea:focus, .inf-edit input:focus, .inf-edit select:focus { box-shadow: var(--press), 0 0 0 2.5px var(--glow), 0 0 18px var(--glow); }
+    .stat-w input:focus { box-shadow: var(--press), 0 0 0 2.5px rgba(239,91,73,.45), 0 0 18px rgba(239,91,73,.35); }
+    .seg { border: 0; background: var(--surface2); box-shadow: var(--press); border-radius: 14px; }
+    .seg button.on { background: var(--segOn); color: var(--text); font-weight: 600; box-shadow: var(--raiseS); }
+    /* buttons: softly raised */
+    .icon-btn { border: 0; background: var(--btn); box-shadow: var(--raiseS); }
+    .stat-btn { letter-spacing: .02em; padding: 0 14px; background: var(--stat); box-shadow: 0 8px 18px rgba(224,80,63,.32); }
+    .btn-accent { background: linear-gradient(180deg, #22b3a6, #11928a); color: #fff; box-shadow: 0 8px 18px rgba(19,149,139,.30), inset 0 1px 0 rgba(255,255,255,.3); border-radius: 14px; }
+    .btn-ghost { border: 0; background: var(--btn); box-shadow: var(--raiseS); }
+    .chip-btn, .sugg button { border: 0; background: var(--btn); box-shadow: var(--raiseS); }
+    .chip-btn.on { background: var(--accent); color: var(--accentInk); border: 0; box-shadow: 0 0 14px var(--glow), var(--raiseS); }
+    #stat-chips .chip-btn.on { background: var(--stat); color: #fff; box-shadow: 0 0 14px rgba(239,91,73,.4); }
+    .star { color: var(--faint); }
+    /* alert colors: mint = preferred, yellow = caution, red = avoid */
+    .note { background: var(--mint); color: var(--mintInk); border-radius: 11px; font-weight: 500; }
+    .note.caution { background: var(--yel); color: var(--yelInk); }
+    .note.avoid { background: var(--red); color: var(--redInk); }
+    .note b, .note.avoid b, .note.caution b { color: inherit; }
+    .note svg { fill: currentColor; }
+    .soft.cond-card { background: var(--yel); color: var(--yelInk); border-radius: 14px; }
+    .soft.cond-card .n, .soft.cond-card ul, .soft.cond-card .x { color: var(--yelInk); opacity: .9; }
+    .soft.cond-card .more { color: var(--yelInk); text-decoration: underline; }
+    .soft { background: var(--mint); color: var(--mintInk); border-radius: 14px; }
+    .draft-badge { border: 0; background: var(--yel); color: var(--yelInk); font-weight: 600; }
+    .warn-line { color: var(--warn); }
+    /* airway: pressed wells */
+    .air-grid { gap: 8px; background: transparent; border: 0; overflow: visible; }
+    .air-grid > div { background: var(--surface2); box-shadow: var(--press); border-radius: 14px; }
+    /* drug list */
+    .row, .inf-row { border-top-color: var(--line); }
+    .val .n { font-weight: 600; }
+    .vol .n { color: var(--accent); }
+    .fl-row { border-bottom-color: var(--line); }
+    .hct { border-bottom-color: var(--line); }
+    /* fluids: maintenance ring */
+    .fl-hero { display: flex; align-items: center; gap: 16px; background: var(--surface); box-shadow: var(--cardSh); border-radius: 22px; padding: 16px 18px; margin-bottom: 14px; }
+    .fl-hero svg { width: 108px; height: 108px; flex: none; }
+    .fl-hero .trk { fill: none; stroke: var(--surface2); stroke-width: 12; }
+    .fl-hero .arc { fill: none; stroke: var(--accent); stroke-width: 12; stroke-linecap: round; filter: drop-shadow(0 0 4px var(--glow)); }
+    .fl-hero text { font: 500 24px 'Geist Mono', monospace; fill: var(--text); }
+    .fl-hero text.u { font: 400 10px 'Geist', sans-serif; fill: var(--muted); }
+    .fl-hero .l { font-size: 12px; color: var(--muted); }
+    .fl-hero .v { font-size: 22px; font-weight: 500; margin: 2px 0 4px; }
+    .fl-hero .s { font-size: 12px; color: var(--accent); margin-top: 2px; }
+    #content > .fl-hero { break-inside: avoid; }
+    /* STAT */
+    .overlay { background: var(--statPage); }
+    .ov-h { background: transparent; border-bottom: 0; }
+    .stat-tag { font-size: 15px; letter-spacing: .02em; padding: 8px 12px; border-radius: 10px; box-shadow: 0 8px 18px rgba(224,80,63,.32); }
+    .stat-w input { background: var(--surface2); }
+    .sl { border-top: 0; background: var(--surface2); box-shadow: var(--press); border-radius: 14px; padding: 11px 14px; margin-top: 8px; }
+    .sl .v .n { font-weight: 600; }
+    .sc-note { border-top: 0; margin-top: 10px; background: var(--red); color: var(--redInk); border-radius: 12px; padding: 10px 12px; }
+    /* Ask Nasma sheet */
+    .sheet { background: var(--solid); border: 0; box-shadow: 0 -10px 40px rgba(0,0,0,.15); }
+    .sheet-h { border-bottom-color: var(--line); }
+    .bub.u { background: var(--mint); color: var(--mintInk); }
+    .bub.a { background: var(--surface); box-shadow: 0 6px 16px rgba(23,36,43,.07); }
+    .composer { border-top: 0; }
+    .ref td { border-bottom-color: var(--line); }
+    /* desktop Ask button: teal with glow */
+    .ask { background: linear-gradient(180deg, #22b3a6, #11928a); color: #fff; box-shadow: 0 10px 22px rgba(19,149,139,.35), 0 0 18px var(--glow); }
+    .ask svg { fill: #fff; }
+    /* bottom navigation (phones and tablets) */
+    .bnav { position: fixed; z-index: 12; left: 50%; transform: translateX(-50%); bottom: calc(10px + env(safe-area-inset-bottom)); width: min(440px, calc(100vw - 20px)); height: 64px; border-radius: 24px;
+      background: var(--hdrBg); -webkit-backdrop-filter: blur(18px) saturate(1.3); backdrop-filter: blur(18px) saturate(1.3); box-shadow: 0 10px 30px rgba(23,36,43,.14), inset 0 0 0 1px rgba(255,255,255,.35);
+      display: flex; align-items: center; justify-content: space-around; padding: 0 6px; }
+    .bnav button { flex: 1; height: 56px; border: 0; background: transparent; color: var(--muted); font: 500 10.5px 'Geist', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: pointer; padding: 0; }
+    .bnav button svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+    .bnav button.on { color: var(--accent); font-weight: 600; }
+    .bnav .plus { flex: none; width: 58px; height: 58px; margin: -30px 4px 0; border-radius: 50%; background: linear-gradient(180deg, #22b3a6, #11928a); color: #fff; box-shadow: 0 10px 22px rgba(19,149,139,.38), 0 0 20px var(--glow); }
+    .bnav .plus svg { width: 22px; height: 22px; fill: #fff; stroke: none; }
+    .word { overflow: hidden; }
+    @media (max-width: 389px) { .word span { display: none; } }
+    @media (max-width: 999px) {
+      .ask { display: none; }
+      nav.tabs { display: none; }
+      .chips#filters { padding-top: 18px; }
+      .wrap { padding-bottom: 120px; }
+    }
+    @media (min-width: 1000px) {
+      .bnav { display: none; }
+      .sheet { border-radius: 0; }
+    }
   </style>
 </head>
 <body>
@@ -279,10 +400,10 @@
 <div class="wrap">
   <header id="hdr">
     <div class="hdr">
-      <img src="nasma-mask-192.png" alt="" width="34" height="34" style="width:34px;height:34px;border-radius:10px;flex:none" />
+      <img class="logo-img" src="nasma-mask-192.png" alt="" width="34" height="34" />
       <div class="word"><b>Nasma</b><span>نسمة</span></div>
       <button class="icon-btn" id="theme-btn" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle theme"></button>
-      <button class="stat-btn" onclick="openStat()"><i></i>STAT</button>
+      <button class="stat-btn" onclick="openStat()"><i></i>Emergency</button>
     </div>
     <div class="pt-row hidden" id="pt-row"><span class="chip" id="pt-chip"></span><span class="conds" id="pt-conds"></span></div>
   </header>
@@ -345,7 +466,7 @@
   <div class="list">
     <p class="foot">
       Draft condition content, not yet department-reviewed. Verify every dose against your institution's protocols.<br />
-      <button onclick="openSheet('sources')">Dose sources</button> · <button onclick="openSheet('info')">Formulas &amp; info</button> · <a href="classic.html">Classic version</a>
+      <button onclick="openSheet('sources')">Dose sources</button> · <button onclick="openSheet('info')">Formulas &amp; info</button> · <a href="previous.html">Previous version</a> · <a href="classic.html">Classic version</a>
       <span class="support" id="support"> · <a href="#" target="_blank" rel="noopener" id="support-link">☕ Support on Ko-fi</a></span>
     </p>
   </div>
@@ -355,12 +476,20 @@
 
 <button class="ask" onclick="openSheet('chat')"><svg width="16" height="16" viewBox="0 0 14 14" fill="var(--accent)"><path d="M7 0l1.6 5.4L14 7l-5.4 1.6L7 14l-1.6-5.4L0 7l5.4-1.6z"/></svg>Ask Nasma</button>
 
+<nav class="bnav" id="bnav" aria-label="Sections">
+  <button data-go="top"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c.8-3.8 3.6-5.6 7-5.6s6.2 1.8 7 5.6"/></svg><span>Patient</span></button>
+  <button data-go="drugs"><svg viewBox="0 0 24 24"><path d="M15 3l6 6M18 6l-9.5 9.5M13 5l6 6M11.5 9.5l3 3M8.5 12.5l3 3M8 13l-4.5 4.5 3 3L11 16"/></svg><span>Drugs</span></button>
+  <button data-go="ask" class="plus" aria-label="Ask Nasma"><svg viewBox="0 0 14 14"><path d="M7 0l1.6 5.4L14 7l-5.4 1.6L7 14l-1.6-5.4L0 7l5.4-1.6z"/></svg></button>
+  <button data-go="inf"><svg viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.5 2M9.5 2.5h5M12 2.5V6"/></svg><span>Infusions</span></button>
+  <button data-go="fluids"><svg viewBox="0 0 24 24"><path d="M12 3s6.5 7 6.5 11.5a6.5 6.5 0 0 1-13 0C5.5 10 12 3 12 3z"/></svg><span>Fluids</span></button>
+</nav>
+
 <!-- STAT -->
 <div class="overlay hidden" id="stat" role="dialog" aria-modal="true" aria-label="Emergencies">
   <div class="in">
     <div class="ov-h">
-      <span class="stat-tag">STAT</span>
-      <span class="serif" style="font-size:22px;line-height:1;flex:1">Emergencies</span>
+      <span class="stat-tag">Emergency</span>
+      <span style="flex:1"></span>
       <button class="btn-ghost" style="height:44px;border-radius:12px" onclick="closeStat()">Close</button>
     </div>
     <div class="stat-w"><input class="field" id="stat-weight" type="number" inputmode="decimal" placeholder="Weight" /><span class="unit">kg</span></div>
@@ -637,7 +766,10 @@
       ['Fresh frozen plasma', '10–15 mL/kg', R(10, 15), 'mL'],
       ['Platelets', '5–10 mL/kg', R(5, 10), 'mL']
     ];
-    return `<div class="sec"><div class="hct">
+    const ring = maint ? (() => { const pct = Math.min(1, maint / 100), C = 2 * Math.PI * 46;
+      return `<div class="fl-hero"><svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="46" class="trk"/><circle cx="60" cy="60" r="46" class="arc" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - pct)).toFixed(1)}" transform="rotate(-90 60 60)"/><text x="60" y="62" text-anchor="middle">${Math.round(maint)}</text><text x="60" y="80" text-anchor="middle" class="u">mL/h</text></svg>
+        <div><div class="l">Maintenance</div><div class="v mono">${Math.round(maint)} mL/h</div><div class="s">● 4-2-1 rule${ebv ? ` · EBV <span class="mono">${Math.round(ebv)}</span> mL` : ''}</div>${def ? `<div class="s">Hour 1 <span class="mono">${Math.round(def / 2 + maint)}</span> · then <span class="mono">${Math.round(def / 4 + maint)}</span> mL/h</div>` : ''}</div></div>`; })() : '';
+    return ring + `<div class="sec"><div class="hct">
         <label class="lbl" style="font-size:12px">Starting Hct (%)<input class="field" type="number" inputmode="decimal" id="hct0" value="${S.hct0 ?? ''}" placeholder="e.g. 36" /></label>
         <label class="lbl" style="font-size:12px">Lowest acceptable Hct (%)<input class="field" type="number" inputmode="decimal" id="hctT" value="${S.hctT ?? ''}" /></label></div>` +
       rows.map(([t, s, v, u]) => `<div class="fl-row"><div><div class="t">${t}</div><div class="s">${s}</div></div><div class="v">${v}<small>${u}</small></div></div>`).join('') + '</div>';
@@ -690,7 +822,7 @@
   function applyTheme() {
     const dark = document.documentElement.getAttribute('data-theme') === 'dark';
     $('theme-btn').innerHTML = dark ? SUN : MOON;
-    document.querySelector('meta[name="theme-color"]').setAttribute('content', dark ? '#0d1012' : '#f4f2ed');
+    document.querySelector('meta[name="theme-color"]').setAttribute('content', dark ? '#0e1719' : '#e6f4f1');
   }
   function toggleTheme() { const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'; document.documentElement.setAttribute('data-theme', t); store.set('peds_theme', t); applyTheme(); }
 
@@ -918,6 +1050,26 @@
   const SUPPORT_URL = 'https://ko-fi.com/nightshiftapps';
   if (SUPPORT_URL) { $('support').classList.add('ready'); $('support-link').href = SUPPORT_URL; }
   window.addEventListener('resize', () => document.documentElement.style.setProperty('--hdr', $('hdr').offsetHeight + 'px'));
+
+  // ───── Bottom navigation (phones) ─────
+  (function () {
+    const nav = $('bnav'), anchor = () => $('filters').classList.contains('hidden') ? $('content') : $('filters');
+    const jump = () => { const t = anchor().getBoundingClientRect().top + scrollY - ($('hdr').offsetHeight || 0) - 6; scrollTo({ top: Math.max(0, t), behavior: 'smooth' }); };
+    function sync() {
+      const atTop = anchor().getBoundingClientRect().top > innerHeight * 0.55;
+      nav.querySelectorAll('button[data-go]').forEach((b) => b.classList.toggle('on', atTop ? b.dataset.go === 'top' : b.dataset.go === S.tab));
+    }
+    nav.addEventListener('click', (e) => {
+      const b = e.target.closest('button'); if (!b) return;
+      const g = b.dataset.go;
+      if (g === 'ask') return openSheet('chat');
+      if (g === 'top') { scrollTo({ top: 0, behavior: 'smooth' }); return; }
+      S.tab = g; renderAll(); jump(); setTimeout(sync, 450);
+    });
+    $('tabs').addEventListener('click', () => setTimeout(sync, 0));
+    addEventListener('scroll', sync, { passive: true });
+    sync();
+  })();
   if ('serviceWorker' in navigator && location.protocol !== 'file:') window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
   applyTheme();
   renderAll();

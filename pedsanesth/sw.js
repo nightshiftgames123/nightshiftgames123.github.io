@@ -1,9 +1,9 @@
 // Offline cache for Nasma AI. Bump VERSION whenever any cached file changes.
 // Strategy: open instantly from the cache, then refresh the cache in the background
 // (stale-while-revalidate). A new version therefore appears on the next launch.
-const VERSION = 'pedsanesth-v30';
+const VERSION = 'pedsanesth-v31';
 const ASSETS = [
-  './', './index.html', './nasma-core.js', './classic.html', './beta.html',
+  './', './index.html', './nasma-core.js', './classic.html', './beta.html', './previous.html',
   './manifest.webmanifest', './manifest-public.webmanifest',
   './nasma-mask-180.png', './nasma-mask-192.png', './nasma-mask-512.png', './nasma-mask-maskable-512.png', './studio-logo.jpg',
   './fonts/geist-latin-400-normal.woff2', './fonts/geist-latin-500-normal.woff2', './fonts/geist-latin-600-normal.woff2',

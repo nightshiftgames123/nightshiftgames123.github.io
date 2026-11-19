@@ -367,6 +367,14 @@
     .bnav button.on { color: var(--accent); font-weight: 600; }
     .bnav .plus { flex: none; width: 58px; height: 58px; margin: -30px 4px 0; border-radius: 50%; background: linear-gradient(180deg, #22b3a6, #11928a); color: #fff; box-shadow: 0 10px 22px rgba(19,149,139,.38), 0 0 20px var(--glow); }
     .bnav .plus svg { width: 22px; height: 22px; fill: #fff; stroke: none; }
+    /* install banner */
+    .inst { display: flex; align-items: center; gap: 12px; background: var(--surface); box-shadow: var(--cardSh); border-radius: 20px; padding: 12px 12px 12px 14px; }
+    .inst img { width: 44px; height: 44px; border-radius: 11px; flex: none; box-shadow: var(--raiseS); }
+    .inst .t { font-weight: 600; font-size: 14px; }
+    .inst .s { font-size: 12.5px; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+    .inst .s b { color: var(--text); font-weight: 600; }
+    .inst .btn-accent { height: 40px; padding: 0 14px; }
+    .inst .x { width: 32px; height: 32px; border: 0; background: transparent; color: var(--muted); font-size: 15px; cursor: pointer; flex: none; border-radius: 8px; }
     .word { overflow: hidden; }
     @media (max-width: 389px) { .word span { display: none; } }
     @media (max-width: 999px) {
@@ -411,6 +419,7 @@
   <div class="layout">
   <aside class="side">
   <div class="stack">
+    <div class="inst hidden" id="inst"><img src="nasma-mask-192.png" alt="" /><div style="flex:1;min-width:0"><div class="t">Install Nasma AI</div><div class="s" id="inst-s">Opens instantly and works offline.</div></div><button class="btn-accent hidden" id="inst-btn" onclick="doInstall()">Install</button><button class="x" onclick="hideInstall(true)" aria-label="Dismiss">✕</button></div>
     <section class="card" aria-label="Patient">
       <div class="card-h"><h2>Patient</h2><button class="link-btn" onclick="newPatient()">New patient</button></div>
       <div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:end">
@@ -466,7 +475,7 @@
   <div class="list">
     <p class="foot">
       Draft condition content, not yet department-reviewed. Verify every dose against your institution's protocols.<br />
-      <button onclick="openSheet('sources')">Dose sources</button> · <button onclick="openSheet('info')">Formulas &amp; info</button> · <a href="previous.html">Previous version</a> · <a href="classic.html">Classic version</a>
+      <button onclick="openSheet('sources')">Dose sources</button> · <button onclick="openSheet('info')">Formulas &amp; info</button> · <button id="inst-link" class="hidden" onclick="showInstall(true)">Install app</button><span id="inst-sep" class="hidden"> · </span><a href="previous.html">Previous version</a> · <a href="classic.html">Classic version</a>
       <span class="support" id="support"> · <a href="#" target="_blank" rel="noopener" id="support-link">☕ Support on Ko-fi</a></span>
     </p>
   </div>
@@ -1070,6 +1079,31 @@
     addEventListener('scroll', sync, { passive: true });
     sync();
   })();
+
+  // ───── Install (Android / desktop: native prompt; iPhone: Add to Home Screen steps) ─────
+  let deferredInstall = null;
+  const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const SHARE = '<svg width="13" height="15" viewBox="0 0 13 15" fill="none" stroke="currentColor" stroke-width="1.5" style="vertical-align:-2px"><path d="M6.5 1v9M3.5 4l3-3 3 3M2 7H1v7h11V7h-1"/></svg>';
+  function showInstall(force) {
+    if (standalone()) return;
+    if (!force && store.get('nasma_install_hide')) return;
+    if (deferredInstall) { $('inst-s').textContent = 'Opens instantly and works offline.'; $('inst-btn').classList.remove('hidden'); }
+    else if (isIOS) { $('inst-s').innerHTML = `In Safari, tap <b>Share</b> ${SHARE} then <b>Add to Home Screen</b>.`; $('inst-btn').classList.add('hidden'); }
+    else if (force) { $('inst-s').innerHTML = 'Use your browser menu (<b>⋮</b>) → <b>Install app</b> or <b>Add to Home screen</b>.'; $('inst-btn').classList.add('hidden'); }
+    else return;
+    $('inst').classList.remove('hidden');
+    if (force) scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  function hideInstall(remember) { $('inst').classList.add('hidden'); if (remember) store.set('nasma_install_hide', '1'); }
+  async function doInstall() {
+    if (!deferredInstall) return showInstall(true);
+    deferredInstall.prompt(); const r = await deferredInstall.userChoice; deferredInstall = null;
+    if (r && r.outcome === 'accepted') hideInstall(false);
+  }
+  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredInstall = e; showInstall(false); });
+  window.addEventListener('appinstalled', () => { hideInstall(false); $('inst-link').classList.add('hidden'); $('inst-sep').classList.add('hidden'); });
+  if (!standalone()) { $('inst-link').classList.remove('hidden'); $('inst-sep').classList.remove('hidden'); if (isIOS) showInstall(false); }
   if ('serviceWorker' in navigator && location.protocol !== 'file:') window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
   applyTheme();
   renderAll();

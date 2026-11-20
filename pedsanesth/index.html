@@ -1106,6 +1106,28 @@
   window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredInstall = e; showInstall(false); });
   window.addEventListener('appinstalled', () => { hideInstall(false); $('inst-link').classList.add('hidden'); $('inst-sep').classList.add('hidden'); });
   if (!standalone()) { $('inst-link').classList.remove('hidden'); $('inst-sep').classList.remove('hidden'); if (isIOS) showInstall(false); }
+
+  // ───── Anonymous event counts (Cloudflare Web Analytics: each event shows as a visit to t/<event>.html) ─────
+  const SRCS = ['whatsapp', 'telegram', 'x', 'linkedin', 'instagram', 'tiktok', 'reddit', 'qr', 'email', 'site'];
+  function track(ev) {
+    if (!navigator.onLine || location.protocol === 'file:' || /^(localhost|127\.)/.test(location.hostname)) return;
+    const f = document.createElement('iframe');
+    f.src = 't/' + ev + '.html'; f.tabIndex = -1; f.setAttribute('aria-hidden', 'true'); f.title = '';
+    f.style.cssText = 'position:absolute;width:0;height:0;border:0;visibility:hidden';
+    document.body.appendChild(f); setTimeout(() => f.remove(), 20000);
+  }
+  function trackOnce(ev) { let k = 'nasma_t_' + ev; try { if (sessionStorage.getItem(k)) return; sessionStorage.setItem(k, '1'); } catch {} track(ev); }
+  function countInstall() { if (store.get('nasma_install_counted')) return; store.set('nasma_install_counted', '1'); track('install'); }
+  addEventListener('load', () => setTimeout(() => {
+    trackOnce(document.documentElement.getAttribute('data-public') === '1' ? 'public' : 'team');
+    if (standalone()) { trackOnce('app-open'); countInstall(); }
+    const m = location.search.match(/[?&]src=([a-z]+)/i), src = m && m[1].toLowerCase();
+    if (src && SRCS.includes(src)) trackOnce('src-' + src);
+  }, 1500));
+  window.addEventListener('appinstalled', countInstall);
+  { const _stat = openStat; openStat = function () { trackOnce('emergency'); return _stat.apply(this, arguments); }; }
+  { const _sheet = openSheet; openSheet = function (mode) { if (mode === 'chat') trackOnce('ask'); return _sheet.apply(this, arguments); }; }
+  { const _det = detect; detect = function () { trackOnce('detect'); return _det.apply(this, arguments); }; }
   if ('serviceWorker' in navigator && location.protocol !== 'file:') window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
   applyTheme();
   renderAll();

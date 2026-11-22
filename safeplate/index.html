@@ -279,6 +279,17 @@
     .composer { display: flex; gap: 8px; align-items: flex-end; }
     .composer textarea { min-height: 52px; height: 52px; flex: 1; }
 
+    /* Ko-fi support card on the recipes page, like Nasma AI's: hidden for 14 days after ✕. */
+    .kofi-wrap { padding-top: 0; padding-bottom: 0; }
+    .kofi { display: none; align-items: center; gap: 12px; border-radius: 18px; padding: 10px 10px 10px 12px; margin-top: 12px; background: var(--kofi-bg); border: 1px solid var(--kofi-line); }
+    .kofi.ready { display: flex; }
+    .kofi .cup { width: 40px; height: 40px; border-radius: 12px; flex: none; display: flex; align-items: center; justify-content: center; font-size: 20px; background: var(--kofi-tile); }
+    .kofi .t { font-weight: 700; font-size: 14px; }
+    .kofi .s { font-size: 12.5px; color: var(--muted); margin-top: 1px; }
+    .kofi a.go { flex: none; padding: 9px 14px; border-radius: 12px; text-decoration: none; font-weight: 700; font-size: 14px; color: #fff; background: linear-gradient(180deg, #f4845f, #e0643d); box-shadow: 0 4px 12px rgba(224, 100, 61, .3); white-space: nowrap; }
+    .kofi .x { width: 28px; height: 28px; border: 0; background: transparent; color: var(--muted); font-size: 13px; cursor: pointer; flex: none; border-radius: 8px; padding: 0; }
+    :root { --kofi-bg: linear-gradient(100deg, #fff4ea, #fdebe1); --kofi-tile: #fff; --kofi-line: #f6d9c8; }
+    [data-theme="dark"] { --kofi-bg: linear-gradient(100deg, rgba(244, 132, 95, .16), rgba(244, 132, 95, .08)); --kofi-tile: rgba(255, 255, 255, .06); --kofi-line: rgba(244, 132, 95, .25); }
     #splash { position: fixed; inset: 0; z-index: 100; background: #130f30; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: opacity .45s ease; }
     #splash.out { opacity: 0; pointer-events: none; }
     #splash video { width: min(72vw, 340px); height: auto; aspect-ratio: 480 / 476; border-radius: 13%; box-shadow: 0 20px 60px rgba(0, 0, 0, .5); display: block; background: #130f30; }
@@ -478,6 +489,12 @@
     </div>
   </header>
 
+  <div class="wrap kofi-wrap"><div class="kofi" id="kofi">
+    <div class="cup">☕</div>
+    <div style="flex:1;min-width:0"><div class="t" id="kofi-t"></div><div class="s" id="kofi-s"></div></div>
+    <a class="go" id="kofi-go" href="https://ko-fi.com/nightshiftapps" target="_blank" rel="noopener"></a>
+    <button class="x" id="kofi-x" type="button">✕</button>
+  </div></div>
   <main class="wrap" id="view"></main>
 
   <div class="wrap">
@@ -563,6 +580,10 @@
     wAllergyHelp: { en: 'Tap everything that applies. You can change this any time.', ar: 'اختر كل ما ينطبق. يمكنك التغيير في أي وقت.' },
     wStart: { en: 'Start cooking', ar: 'ابدأ الطبخ' },
     copyright: { en: '© 2026 Nightshift Games (Night Shift Studio). All rights reserved.', ar: '© 2026 Nightshift Games (Night Shift Studio). جميع الحقوق محفوظة.' },
+    kofiTitle: { en: 'Free & ad-free', ar: 'مجاني وبلا إعلانات' },
+    kofiSub: { en: 'Made between night shifts. Enjoying it?', ar: 'صُنع بين المناوبات الليلية. هل أعجبك؟' },
+    kofiGo: { en: '♥ Support', ar: '♥ ادعمنا' },
+    kofiHide: { en: 'Hide for now', ar: 'إخفاء الآن' },
     addPerson: { en: '+ Add person', ar: '+ إضافة شخص' },
     everyone: { en: '👥 Everyone', ar: '👥 الجميع' },
     me: { en: 'Me', ar: 'أنا' },
@@ -1893,6 +1914,10 @@
     document.getElementById('rename-btn').textContent = t('rename');
     document.getElementById('remove-btn').textContent = t('removePerson');
     document.getElementById('support-link').textContent = t('support');
+    document.getElementById('kofi-t').textContent = t('kofiTitle');
+    document.getElementById('kofi-s').textContent = t('kofiSub');
+    document.getElementById('kofi-go').textContent = t('kofiGo');
+    document.getElementById('kofi-x').setAttribute('aria-label', t('kofiHide'));
     document.getElementById('footer-text').textContent = t('footer');
     document.getElementById('copyright').textContent = t('copyright');
     var pl = document.getElementById('privacy-link');
@@ -3349,8 +3374,18 @@
   // ---------------------------------------------------------------------------
   // Routing, theme, offline
   // ---------------------------------------------------------------------------
+  // Shown at the top of the recipes list only, and not for 14 days after ✕.
+  function syncKofi(h) {
+    var until = +(load('safeplate_kofi_hide') || 0);
+    document.getElementById('kofi').classList.toggle('ready', h === 'recipes' && Date.now() > until);
+  }
+  document.getElementById('kofi-x').addEventListener('click', function () {
+    store('safeplate_kofi_hide', String(Date.now() + 14 * 864e5));
+    document.getElementById('kofi').classList.remove('ready');
+  });
   function route() {
     var h = location.hash.replace(/^#/, '') || 'recipes';
+    syncKofi(h);
     var tab = h.indexOf('r/') === 0 ? 'recipes' : h;
     document.querySelectorAll('nav.tabs a').forEach(function (a) { a.classList.toggle('active', a.getAttribute('data-tab') === tab); });
     if (h.indexOf('r/') === 0) renderRecipe(h.slice(2));

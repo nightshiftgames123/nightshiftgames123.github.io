@@ -367,6 +367,16 @@
     .bnav button.on { color: var(--accent); font-weight: 600; }
     .bnav .plus { flex: none; width: 58px; height: 58px; margin: -30px 4px 0; border-radius: 50%; background: linear-gradient(180deg, #22b3a6, #11928a); color: #fff; box-shadow: 0 10px 22px rgba(19,149,139,.38), 0 0 20px var(--glow); }
     .bnav .plus svg { width: 22px; height: 22px; fill: #fff; stroke: none; }
+    /* Ko-fi support card (public edition only) */
+    .kofi { display: none; align-items: center; gap: 12px; border-radius: 20px; padding: 10px 10px 10px 12px; background: var(--kofiBg); box-shadow: var(--cardSh); }
+    :root[data-public="1"] .kofi.ready { display: flex; }
+    .kofi .cup { width: 40px; height: 40px; border-radius: 12px; flex: none; display: flex; align-items: center; justify-content: center; font-size: 20px; background: var(--kofiTile); box-shadow: var(--raiseS); }
+    .kofi .t { font-weight: 600; font-size: 13.5px; }
+    .kofi .s { font-size: 12px; color: var(--muted); margin-top: 1px; }
+    .kofi a.go { flex: none; height: 38px; padding: 0 14px; border-radius: 12px; display: flex; align-items: center; gap: 6px; text-decoration: none; font: 600 13.5px 'Geist', sans-serif; color: #fff; background: linear-gradient(180deg, #f4845f, #e0643d); box-shadow: 0 6px 14px rgba(224,100,61,.30), inset 0 1px 0 rgba(255,255,255,.3); white-space: nowrap; }
+    .kofi .x { width: 28px; height: 28px; border: 0; background: transparent; color: var(--faint); font-size: 13px; cursor: pointer; flex: none; border-radius: 8px; padding: 0; }
+    :root[data-theme="light"] { --kofiBg: linear-gradient(100deg, #fff4ea, #fdebe1); --kofiTile: #fff; }
+    :root[data-theme="dark"] { --kofiBg: linear-gradient(100deg, rgba(244,132,95,.16), rgba(244,132,95,.08)); --kofiTile: rgba(255,255,255,.06); }
     /* install banner */
     .inst { display: flex; align-items: center; gap: 12px; background: var(--surface); box-shadow: var(--cardSh); border-radius: 20px; padding: 12px 12px 12px 14px; }
     .inst img { width: 44px; height: 44px; border-radius: 11px; flex: none; box-shadow: var(--raiseS); }
@@ -422,6 +432,7 @@
   <aside class="side">
   <div class="stack">
     <div class="inst hidden" id="inst"><img src="nasma-mask-192.png" alt="" /><div style="flex:1;min-width:0"><div class="t">Install Nasma AI</div><div class="s" id="inst-s">Opens instantly and works offline.</div></div><button class="btn-accent hidden" id="inst-btn" onclick="doInstall()">Install</button><button class="x" onclick="hideInstall(true)" aria-label="Dismiss">✕</button></div>
+    <div class="kofi" id="kofi"><div class="cup">☕</div><div style="flex:1;min-width:0"><div class="t">Free &amp; ad-free</div><div class="s">Made between night shifts. Enjoying it?</div></div><a class="go" id="kofi-go" href="#" target="_blank" rel="noopener">♥ Support</a><button class="x" onclick="hideKofi()" aria-label="Hide for now">✕</button></div>
     <section class="card" aria-label="Patient">
       <div class="card-h"><h2>Patient</h2><button class="link-btn" onclick="newPatient()">New patient</button></div>
       <div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:end">
@@ -478,7 +489,7 @@
     <p class="foot">
       Draft condition content, not yet department-reviewed. Verify every dose against your institution's protocols.<br />
       <button onclick="openSheet('sources')">Dose sources</button> · <button onclick="openSheet('info')">Formulas &amp; info</button> · <button id="inst-link" class="hidden" onclick="showInstall(true)">Install app</button><span id="inst-sep" class="hidden"> · </span><a href="previous.html">Previous version</a> · <a href="classic.html">Classic version</a>
-      <span class="support" id="support"> · <a href="#" target="_blank" rel="noopener" id="support-link">☕ Support on Ko-fi</a></span>
+      <span class="support" id="support"> · <a href="#" target="_blank" rel="noopener" id="support-link" style="font-weight:600">☕ Support Nasma on Ko-fi</a></span>
     </p>
   </div>
   </main>
@@ -1059,7 +1070,13 @@
 
   // ───── Init ─────
   const SUPPORT_URL = 'https://ko-fi.com/nightshiftapps';
-  if (SUPPORT_URL) { $('support').classList.add('ready'); $('support-link').href = SUPPORT_URL; }
+  if (SUPPORT_URL) {
+    $('support').classList.add('ready'); $('support-link').href = SUPPORT_URL; $('kofi-go').href = SUPPORT_URL;
+    // Top card: hidden for 14 days after ✕, and not shown together with the install card.
+    const until = +(store.get('nasma_kofi_hide') || 0);
+    if (Date.now() > until) $('kofi').classList.add('ready');
+  }
+  function hideKofi() { $('kofi').classList.remove('ready'); store.set('nasma_kofi_hide', String(Date.now() + 14 * 864e5)); }
   window.addEventListener('resize', () => document.documentElement.style.setProperty('--hdr', $('hdr').offsetHeight + 'px'));
 
   // ───── Bottom navigation (phones) ─────
@@ -1094,7 +1111,7 @@
     else if (isIOS) { $('inst-s').innerHTML = `In Safari, tap <b>Share</b> ${SHARE} then <b>Add to Home Screen</b>.`; $('inst-btn').classList.add('hidden'); }
     else if (force) { $('inst-s').innerHTML = 'Use your browser menu (<b>⋮</b>) → <b>Install app</b> or <b>Add to Home screen</b>.'; $('inst-btn').classList.add('hidden'); }
     else return;
-    $('inst').classList.remove('hidden');
+    $('inst').classList.remove('hidden'); $('kofi').classList.remove('ready');
     if (force) scrollTo({ top: 0, behavior: 'smooth' });
   }
   function hideInstall(remember) { $('inst').classList.add('hidden'); if (remember) store.set('nasma_install_hide', '1'); }
@@ -1125,6 +1142,7 @@
     if (src && SRCS.includes(src)) trackOnce('src-' + src);
   }, 1500));
   window.addEventListener('appinstalled', countInstall);
+  ['kofi-go', 'support-link'].forEach((id) => $(id).addEventListener('click', () => track('kofi-click')));
   { const _stat = openStat; openStat = function () { trackOnce('emergency'); return _stat.apply(this, arguments); }; }
   { const _sheet = openSheet; openSheet = function (mode) { if (mode === 'chat') trackOnce('ask'); return _sheet.apply(this, arguments); }; }
   { const _det = detect; detect = function () { trackOnce('detect'); return _det.apply(this, arguments); }; }

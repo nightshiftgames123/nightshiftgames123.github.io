@@ -10,9 +10,9 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="SafePlate" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icon-180.png" />
-  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
-  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
+  <link rel="apple-touch-icon" href="sp-icon-180.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="sp-favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="sp-icon-192.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;700&display=swap" />
@@ -468,7 +468,7 @@
   <header class="top">
     <div class="wrap">
       <div class="brand">
-        <img src="icon-192.png" alt="" />
+        <img src="sp-icon-192.png" alt="" />
         <div>
           <h1>SafePlate</h1>
           <div class="tag" id="tagline"></div>
@@ -2076,7 +2076,7 @@
         }).join('') + '</div>' +
         '<button class="btn" id="w-start">' + t('wStart') + '</button><button class="link" id="w-back">' + t('wBack') + '</button>';
     }
-    welcomeEl.innerHTML = '<div class="welcome-in"><div class="welcome-top"><img src="icon-192.png" alt="" /><b>SafePlate</b>' +
+    welcomeEl.innerHTML = '<div class="welcome-in"><div class="welcome-top"><img src="sp-icon-192.png" alt="" /><b>SafePlate</b>' +
       '<button class="icon-btn lang-btn" id="w-lang" aria-label="' + esc(t('langLabel')) + '">' + t('langBtn') + '</button></div>' + body + '</div>';
     document.getElementById('w-lang').addEventListener('click', function () {
       var n = document.getElementById('w-name'); if (n) w.name = n.value;

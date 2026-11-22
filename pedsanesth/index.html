@@ -1072,11 +1072,11 @@
   const SUPPORT_URL = 'https://ko-fi.com/nightshiftapps';
   if (SUPPORT_URL) {
     $('support').classList.add('ready'); $('support-link').href = SUPPORT_URL; $('kofi-go').href = SUPPORT_URL;
-    // Top card: hidden for 14 days after ✕, and not shown together with the install card.
+    // Top card: hidden for 5 days after ✕, and not shown together with the install card.
     const until = +(store.get('nasma_kofi_hide') || 0);
     if (Date.now() > until) $('kofi').classList.add('ready');
   }
-  function hideKofi() { $('kofi').classList.remove('ready'); store.set('nasma_kofi_hide', String(Date.now() + 14 * 864e5)); }
+  function hideKofi() { $('kofi').classList.remove('ready'); store.set('nasma_kofi_hide', String(Date.now() + 5 * 864e5)); }
   window.addEventListener('resize', () => document.documentElement.style.setProperty('--hdr', $('hdr').offsetHeight + 'px'));
 
   // ───── Bottom navigation (phones) ─────

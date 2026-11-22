@@ -279,7 +279,7 @@
     .composer { display: flex; gap: 8px; align-items: flex-end; }
     .composer textarea { min-height: 52px; height: 52px; flex: 1; }
 
-    /* Ko-fi support card on the recipes page, like Nasma AI's: hidden for 14 days after ✕. */
+    /* Ko-fi support card on the recipes page, like Nasma AI's: hidden for 5 days after ✕. */
     .kofi-wrap { padding-top: 0; padding-bottom: 0; }
     .kofi { display: none; align-items: center; gap: 12px; border-radius: 18px; padding: 10px 10px 10px 12px; margin-top: 12px; background: var(--kofi-bg); border: 1px solid var(--kofi-line); }
     .kofi.ready { display: flex; }
@@ -3374,13 +3374,15 @@
   // ---------------------------------------------------------------------------
   // Routing, theme, offline
   // ---------------------------------------------------------------------------
-  // Shown at the top of the recipes list only, and not for 14 days after ✕.
+  // Shown at the top of the recipes list only, and not for 5 days after ✕.
   function syncKofi(h) {
     var until = +(load('safeplate_kofi_hide') || 0);
+    // Cards hidden under the earlier 14-day rule come back within 5 days too.
+    if (until > Date.now() + 5 * 864e5) { until = Date.now() + 5 * 864e5; store('safeplate_kofi_hide', String(until)); }
     document.getElementById('kofi').classList.toggle('ready', h === 'recipes' && Date.now() > until);
   }
   document.getElementById('kofi-x').addEventListener('click', function () {
-    store('safeplate_kofi_hide', String(Date.now() + 14 * 864e5));
+    store('safeplate_kofi_hide', String(Date.now() + 5 * 864e5));
     document.getElementById('kofi').classList.remove('ready');
   });
   function route() {

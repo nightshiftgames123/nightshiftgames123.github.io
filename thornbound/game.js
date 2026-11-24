@@ -6,14 +6,16 @@
 
 // ===================================================================== constants
 const TILE = 32, COLS = 9, WALL = 32, HUD = 40;
-// Rooms are 11 tiles tall, or taller on a phone held upright, so the dungeon fills the screen top
-// to bottom. Picked once at start-up from the screen's shape (inside the notch/home-bar insets).
+// Rooms are 11 tiles tall, or taller on a phone held upright, so the dungeon fills the screen down
+// to the thumb panel (at least PAD_H css px kept below the room, so fingers don't cover the play
+// area). Picked once at start-up from the screen's shape (inside the notch/home-bar insets).
+const PAD_H = 180;
 const ROWS = (() => {
   const st = document.getElementById('stage'), cs = getComputedStyle(st);
   const w = innerWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
-  const h = innerHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+  const h = innerHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - PAD_H;
   const touch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
-  if (!touch || h < w * 1.05) return 11;
+  if (!touch || h + PAD_H < w * 1.05) return 11;
   const fit = Math.floor((h * (COLS * TILE + WALL * 2) / w - HUD - WALL * 2) / TILE);
   return Math.max(11, Math.min(21, fit));
 })();
@@ -163,13 +165,15 @@ const charUnlocked = (id) => !CHARS[id].lock || SAVE.feats[CHARS[id].lock];
 const cv = $('game'), ctx = cv.getContext('2d');
 const stage = $('stage');
 const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
-let K = 1, hintDone = false; // the drag hint hides once you've used the sticks
+let K = 1;
 function resize() {
   const vw = window.innerWidth, vh = window.innerHeight;
   const portrait = vh > vw * 1.05;
-  const cs = getComputedStyle(stage), full = portrait && isTouch; // phones: fill the screen edge to edge
+  const cs = getComputedStyle(stage), full = portrait && isTouch; // phones: room on top, thumb panel below
+  stage.classList.toggle('phone', full);
   const availW = full ? vw - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) : vw - 8;
-  const availH = full ? vh - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) : vh - 8;
+  const fullH = vh - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+  const availH = full ? fullH - PAD_H : vh - 8;
   const s = Math.min(availW / VW, availH / VH);
   const cssW = Math.floor(VW * s), cssH = Math.floor(VH * s);
   cv.style.width = cssW + 'px'; cv.style.height = cssH + 'px';
@@ -177,7 +181,7 @@ function resize() {
   cv.width = Math.round(cssW * dpr); cv.height = Math.round(cssH * dpr);
   K = cv.width / VW;
   ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
-  $('touchHint').style.display = isTouch && portrait && !hintDone ? 'flex' : 'none';
+  const pads = $('pads'); pads.style.width = cssW + 'px'; pads.style.height = full ? Math.floor(fullH - cssH) + 'px' : '';
 }
 window.addEventListener('resize', resize);
 resize();
@@ -1107,7 +1111,6 @@ window.addEventListener('touchstart', (ev) => {
     const which = t.clientX < window.innerWidth / 2 ? 'move' : 'aim';
     if (sticks[which]) continue;
     sticks[which] = { id: t.identifier, ox: t.clientX, oy: t.clientY, dx: 0, dy: 0 };
-    if (!hintDone) { hintDone = true; $('touchHint').style.display = 'none'; }
     const el = stickEl(which); el.style.display = 'block'; el.style.left = t.clientX + 'px'; el.style.top = t.clientY + 'px'; el.firstElementChild.style.transform = '';
   }
   ev.preventDefault();
@@ -1708,7 +1711,7 @@ function drawToast(t) {
 
 // ===================================================================== screens
 const OVERLAYS = ['title', 'dead', 'pause', 'levelup', 'shrine', 'feats'];
-function show(id) { for (const o of OVERLAYS) $(o).classList.toggle('hidden', o !== id); $('touchHint').style.visibility = id ? 'hidden' : ''; }
+function show(id) { for (const o of OVERLAYS) $(o).classList.toggle('hidden', o !== id); }
 function startGame() {
   if (!charUnlocked(SAVE.char)) return;
   SFX.init(); newRun(SAVE.char); mode = 'play'; clearSticks();

@@ -54,9 +54,16 @@
                  border-radius: 50%; background: rgba(232,182,90,.45); box-shadow: 0 0 12px rgba(232,182,90,.4); }
   .stick.aim { border-color: rgba(79,195,255,.4); }
   .stick.aim .knob { background: rgba(79,195,255,.5); box-shadow: 0 0 12px rgba(79,195,255,.5); }
-  #touchHint { position: fixed; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom) + 18px); display: none;
-               justify-content: space-around; color: var(--dim); font-size: 14px; pointer-events: none; z-index: 4; }
-  #touchHint span { opacity: .7; }
+  /* Thumb panel under the room on phones, so fingers don't cover the play area */
+  #stage.phone { flex-direction: column; justify-content: flex-start; }
+  #pads { display: none; justify-content: space-around; align-items: center; flex: none; pointer-events: none;
+          background: linear-gradient(#15161d, #0b0c11); border-top: 2px solid #3a3122;
+          box-shadow: 0 0 0 2px #191c24, inset 0 8px 18px rgba(0,0,0,.6); }
+  #stage.phone #pads { display: flex; }
+  .pad { width: 112px; height: 112px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+         border: 2px solid rgba(232,182,90,.28); background: radial-gradient(rgba(232,182,90,.10), rgba(10,12,20,.2) 70%);
+         font-family: var(--display); font-size: 13px; letter-spacing: .14em; color: rgba(232,182,90,.6); }
+  .pad.aim { border-color: rgba(79,195,255,.3); background: radial-gradient(rgba(79,195,255,.10), rgba(10,12,20,.2) 70%); color: rgba(79,195,255,.65); }
 
   /* Overlays */
   .overlay { position: fixed; inset: 0; z-index: 10; display: flex; align-items: flex-start; justify-content: center;
@@ -171,11 +178,10 @@
 </style>
 </head>
 <body>
-<div id="stage"><canvas id="game"></canvas></div>
+<div id="stage"><canvas id="game"></canvas><div id="pads"><div class="pad">MOVE</div><div class="pad aim">SHOOT</div></div></div>
 
 <div class="stick" id="stickMove"><div class="knob"></div></div>
 <div class="stick aim" id="stickAim"><div class="knob"></div></div>
-<div id="touchHint"><span>◄ drag to move</span><span>drag to shoot ►</span></div>
 
 <div class="overlay" id="title">
   <div class="card">

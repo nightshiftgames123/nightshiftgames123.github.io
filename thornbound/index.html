@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#07080c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Thornbound">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Alegreya+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<title>Thornbound</title>
+<style>
+  :root {
+    --bg: #07080c;
+    --panel: #12131a;
+    --panel-2: #1a1b24;
+    --line: #2c2e3a;
+    --gold: #e8b65a;
+    --gold-dim: #a8803c;
+    --ink: #2a1c10;
+    --rune: #4fc3ff;
+    --text: #e9e4d8;
+    --dim: #8d8a99;
+    --bad: #ff8a7a;
+    --ok: #8fdc7a;
+    --font: "Alegreya Sans", "Segoe UI", system-ui, sans-serif;
+    --display: "Cinzel", Georgia, serif;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font-family: var(--font); overflow: hidden;
+    touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+  }
+  #stage {
+    position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  #game { display: block; background: #000;
+          box-shadow: 0 0 0 2px #191c24, 0 12px 40px rgba(0,0,0,.6); }
+
+  /* Touch sticks */
+  .stick { position: fixed; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%;
+           border: 2px solid rgba(232,182,90,.35); background: rgba(10,12,20,.25); pointer-events: none;
+           display: none; z-index: 5; }
+  .stick .knob { position: absolute; left: 50%; top: 50%; width: 50px; height: 50px; margin: -25px 0 0 -25px;
+                 border-radius: 50%; background: rgba(232,182,90,.45); box-shadow: 0 0 12px rgba(232,182,90,.4); }
+  .stick.aim { border-color: rgba(79,195,255,.4); }
+  .stick.aim .knob { background: rgba(79,195,255,.5); box-shadow: 0 0 12px rgba(79,195,255,.5); }
+  /* Thumb panel under the room on phones, so fingers don't cover the play area */
+  #stage.phone { flex-direction: column; justify-content: flex-start; }
+  #pads { display: none; justify-content: space-around; align-items: center; flex: none; pointer-events: none;
+          background: linear-gradient(#15161d, #0b0c11); border-top: 2px solid #3a3122;
+          box-shadow: 0 0 0 2px #191c24, inset 0 8px 18px rgba(0,0,0,.6); }
+  #stage.phone #pads { display: flex; }
+  .pad { width: 112px; height: 112px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+         border: 2px solid rgba(232,182,90,.28); background: radial-gradient(rgba(232,182,90,.10), rgba(10,12,20,.2) 70%);
+         font-family: var(--display); font-size: 13px; letter-spacing: .14em; color: rgba(232,182,90,.6); }
+  .pad.aim { border-color: rgba(79,195,255,.3); background: radial-gradient(rgba(79,195,255,.10), rgba(10,12,20,.2) 70%); color: rgba(79,195,255,.65); }
+
+  /* Overlays */
+  .overlay { position: fixed; inset: 0; z-index: 10; display: flex; align-items: flex-start; justify-content: center;
+             background: rgba(4,5,9,.78); overflow-y: auto; padding: calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 16px);
+             touch-action: pan-y; }
+  .overlay.hidden { display: none; }
+  .card { text-align: center; max-width: 420px; width: 100%; margin: auto; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .card h1 { font-family: var(--display); font-size: clamp(34px, 10vw, 54px); margin: 0; letter-spacing: .04em; color: var(--gold); line-height: 1;
+             text-shadow: 0 3px 0 #5a3a12, 0 0 24px rgba(232,182,90,.35); }
+  .card h2 { font-family: var(--display); font-size: 28px; margin: 0; color: var(--gold); text-wrap: balance; }
+  .card .tag { color: var(--rune); letter-spacing: .3em; font-size: 13px; margin: 0 0 6px; }
+  .card p { color: var(--dim); line-height: 1.5; margin: 0; }
+  .btn { font-family: var(--display); font-size: 19px; font-weight: 700; color: #f6dfae; cursor: pointer;
+         background: linear-gradient(#3a2f2a, #221a17); border: 2px solid var(--gold-dim); border-radius: 6px;
+         padding: 12px 34px; box-shadow: 0 0 0 2px #120d0b, 0 0 18px rgba(232,182,90,.2); }
+  .btn:hover, .btn:focus-visible { border-color: var(--gold); outline: none; box-shadow: 0 0 0 2px #120d0b, 0 0 22px rgba(232,182,90,.45); }
+  .btn:disabled { opacity: .45; cursor: default; box-shadow: none; }
+  .btn.small { font-size: 15px; padding: 8px 16px; }
+  .btn img { width: 15px; height: 15px; vertical-align: -2px; }
+  .btnrow { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .controls { font-size: 14px; color: var(--dim); line-height: 1.7; }
+  .controls b { color: var(--text); font-weight: 600; }
+  .title-crystal { width: 88px; height: 88px; animation: bob 2.4s ease-in-out infinite;
+                   filter: drop-shadow(0 0 18px rgba(79,195,255,.6)); }
+  @keyframes bob { 50% { transform: translateY(-8px); } }
+  @media (prefers-reduced-motion: reduce) { .title-crystal { animation: none; } }
+
+  /* Character select */
+  .charsel { display: grid; grid-template-columns: 40px 1fr 40px; align-items: center; gap: 8px; width: 100%; }
+  .arrow { font-family: var(--font); font-size: 20px; color: var(--gold); background: var(--panel); border: 2px solid var(--line);
+           border-radius: 6px; height: 64px; cursor: pointer; }
+  .arrow:hover, .arrow:focus-visible { border-color: var(--gold-dim); outline: none; }
+  .charcard { display: flex; gap: 12px; align-items: center; text-align: left; background: var(--panel); border: 2px solid var(--line);
+              border-radius: 8px; padding: 8px 12px; min-width: 0; min-height: 84px; }
+  .charcard canvas { width: 72px; height: 72px; flex: none; background: #0c0d13; border-radius: 4px; }
+  .charcard .cname { font-family: var(--display); font-size: 18px; font-weight: 700; color: var(--gold); }
+  .charcard .cdesc { font-size: 13px; color: var(--dim); line-height: 1.35; }
+  .charcard.locked canvas { filter: brightness(0); }
+  .charcard.locked .cname { color: var(--dim); }
+  .ascsel { display: flex; align-items: center; gap: 10px; font-size: 15px; color: #ff9a7a; }
+  .ascsel button { font-family: var(--font); background: var(--panel); color: var(--gold); border: 2px solid var(--line); border-radius: 5px;
+                   width: 32px; height: 30px; cursor: pointer; }
+  .ascsel[hidden] { display: none; }
+  .ascsel b { min-width: 1.5em; display: inline-block; font-variant-numeric: tabular-nums; }
+
+  /* Shrine / feats / summaries */
+  .bank { font-size: 18px; color: var(--text); display: flex; align-items: center; gap: 6px; }
+  .bank img { width: 22px; height: 22px; }
+  .list { width: 100%; display: flex; flex-direction: column; gap: 8px; text-align: left; }
+  .item { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; background: var(--panel);
+          border: 2px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+  .item .nm { font-size: 16px; font-weight: 700; color: var(--text); display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+  .item .ds { font-size: 13px; color: var(--dim); line-height: 1.35; margin-top: 2px; }
+  .item .pips { color: var(--gold); letter-spacing: 2px; font-size: 12px; }
+  .item .rw { font-size: 12px; color: var(--rune); margin-top: 3px; }
+  .item.done { border-color: #4a3d22; }
+  .item.done .nm { color: var(--gold); }
+  .item.locked { opacity: .65; }
+  .buy { font-family: var(--font); font-size: 15px; font-weight: 700; color: #bff2ff; background: #142030; border: 2px solid #2b5a7a;
+         border-radius: 6px; padding: 6px 10px; cursor: pointer; display: flex; align-items: center; gap: 5px; white-space: nowrap;
+         font-variant-numeric: tabular-nums; }
+  .buy img { width: 14px; height: 14px; }
+  .buy:disabled { color: var(--dim); border-color: var(--line); background: var(--panel); cursor: default; }
+  .buy.max { color: var(--gold); border-color: #4a3d22; background: var(--panel); }
+  .badge { font-size: 18px; width: 30px; text-align: center; }
+  .summary { width: 100%; display: grid; grid-template-columns: 1fr auto; gap: 4px 16px; text-align: left; font-size: 15px;
+             background: var(--panel); border: 2px solid var(--line); border-radius: 8px; padding: 12px 14px; font-variant-numeric: tabular-nums; }
+  .summary span:nth-child(odd) { color: var(--dim); }
+  .summary span:nth-child(even) { text-align: right; }
+  .summary .total { color: var(--rune); font-weight: 700; border-top: 1px solid var(--line); padding-top: 6px; margin-top: 2px; }
+  .newfeats { width: 100%; display: flex; flex-direction: column; gap: 6px; }
+  .newfeats div { background: #221a10; border: 2px solid #4a3d22; border-radius: 6px; padding: 8px 10px; color: var(--gold); font-size: 14px; text-align: left; }
+  .newfeats small { display: block; color: var(--rune); font-size: 12px; }
+  .lifetime { font-size: 13px; color: var(--dim); }
+
+  /* Level-up panel built over the provided frame art */
+  #levelup { padding: 8px; align-items: center; }
+  .lvl { position: relative; height: min(96vh, 960px); aspect-ratio: 768 / 1376; container-type: inline-size; flex: none; max-width: 100%; }
+  @media (max-height: 560px) { .lvl { height: auto; width: min(92vw, 380px); margin: auto; } #levelup { align-items: flex-start; } }
+  .lvl > img { width: 100%; height: 100%; display: block; }
+  .lvl .slot { position: absolute; }
+  .lv-num { left: 30%; width: 40%; top: 17.4%; text-align: center; font-family: var(--display); font-size: 3.6cqw; color: var(--rune);
+            letter-spacing: .18em; text-shadow: 0 0 6px rgba(79,195,255,.6); }
+  .lv-portrait { left: 23.4%; top: 22.2%; width: 22%; height: 17%; }
+  .lv-stats { left: 54.2%; top: 25%; width: 22.4%; height: 14.6%; color: var(--ink); font-size: 3.3cqw;
+              display: grid; grid-template-columns: 1fr auto; align-content: center; column-gap: 2cqw; row-gap: .1cqw; }
+  .lv-stats span:nth-child(odd) { font-weight: 500; opacity: .8; }
+  .lv-stats span:nth-child(even) { text-align: right; font-weight: 700; }
+  .lv-stats .up { color: #2f7a2a; }
+  .lv-choices { left: 24.4%; top: 45.8%; width: 51.2%; height: 7.4%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.4cqw; }
+  .choice { font-family: var(--font); background: #1a1720; border: .5cqw solid #3d3a48; border-radius: 1cqw; color: var(--text);
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .4cqw; padding: .8cqw;
+            cursor: pointer; text-align: center; line-height: 1.05; }
+  .choice .ic { font-size: 6cqw; line-height: 1; color: var(--rune); text-shadow: 0 0 8px rgba(79,195,255,.6); }
+  .choice .nm { font-size: 2.7cqw; font-weight: 700; }
+  .choice .lv { font-size: 2.3cqw; color: var(--dim); }
+  .choice.sel { border-color: var(--gold); background: #2a2116; box-shadow: 0 0 2.4cqw rgba(232,182,90,.45) inset; }
+  .choice.sel .ic { color: var(--gold); text-shadow: 0 0 8px rgba(232,182,90,.7); }
+  .lv-preview { left: 23.8%; top: 58.8%; width: 52.4%; height: 9.6%; color: var(--ink); font-size: 3cqw; display: flex;
+                flex-direction: column; justify-content: center; align-items: center; text-align: center; line-height: 1.25; }
+  .lv-preview b { font-family: var(--display); font-size: 3.4cqw; }
+  .lv-preview .diff { color: #2f6e28; font-weight: 700; }
+  .lv-xp { left: 35.6%; top: 73.9%; width: 12.6%; height: 2.2%; font-size: 2.9cqw; display: flex; align-items: center;
+           justify-content: center; color: var(--rune); font-weight: 700; }
+  .lv-reroll { left: 61.5%; top: 73.9%; width: 11.5%; height: 2.2%; font-family: var(--font); font-size: 3cqw; font-weight: 700;
+               background: none; border: 0; color: var(--text); cursor: pointer; display: flex; align-items: center;
+               justify-content: center; padding: 0; }
+  .lv-reroll:disabled { color: #6c6878; cursor: default; }
+  .lv-reroll-label { left: 50%; top: 76.4%; width: 26%; text-align: center; font-size: 2.2cqw; color: var(--dim); }
+  .lv-confirm { left: 30.8%; top: 79.4%; width: 39.6%; height: 7%; background: none; border: 0; cursor: pointer; border-radius: 3cqw; }
+  .lv-confirm:hover, .lv-confirm:focus-visible { box-shadow: 0 0 3cqw rgba(255,190,90,.5); outline: none; }
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="game"></canvas><div id="pads"><div class="pad">MOVE</div><div class="pad aim">SHOOT</div></div></div>
+
+<div class="stick" id="stickMove"><div class="knob"></div></div>
+<div class="stick aim" id="stickAim"><div class="knob"></div></div>
+
+<div class="overlay" id="title">
+  <div class="card">
+    <img class="title-crystal" src="assets/crystal160.webp" alt="">
+    <h1>THORNBOUND</h1>
+    <div class="tag">A ROGUELITE CRAWL</div>
+    <div class="charsel">
+      <button class="arrow" id="charPrev" aria-label="Previous character">◄</button>
+      <div class="charcard" id="charCard">
+        <canvas id="charPortrait" width="144" height="144"></canvas>
+        <div><div class="cname" id="charName"></div><div class="cdesc" id="charDesc"></div></div>
+      </div>
+      <button class="arrow" id="charNext" aria-label="Next character">►</button>
+    </div>
+    <div class="ascsel" id="ascRow" hidden>
+      <span>Ascension</span><button id="ascPrev" aria-label="Lower ascension">◄</button><b id="ascVal">0</b><button id="ascNext" aria-label="Raise ascension">►</button>
+    </div>
+    <button class="btn" id="btnStart">BEGIN</button>
+    <div class="btnrow">
+      <button class="btn small" id="btnShrine">SHRINE · <img src="assets/crystal32.webp" alt=""> <span id="bankTitle">0</span></button>
+      <button class="btn small" id="btnFeats">FEATS <span id="featCount"></span></button>
+    </div>
+    <p id="bestLine"></p>
+    <div class="controls" id="controlsHelp">
+      <b>WASD</b> move · <b>Arrows</b> or <b>hold mouse</b> shoot<br>
+      <b>P / Esc</b> pause · <b>M</b> mute
+    </div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="shrine">
+  <div class="card">
+    <h2>THE SHRINE</h2>
+    <p>Crystals you carry out of a run are kept here. Spend them on lasting power.</p>
+    <div class="bank"><img src="assets/crystal64.webp" alt=""><b id="bankShrine">0</b></div>
+    <div class="list" id="shrineList"></div>
+    <button class="btn small" id="btnShrineBack">BACK</button>
+  </div>
+</div>
+
+<div class="overlay hidden" id="feats">
+  <div class="card">
+    <h2>FEATS</h2>
+    <div class="lifetime" id="lifetime"></div>
+    <div class="list" id="featList"></div>
+    <button class="btn small" id="btnFeatsBack">BACK</button>
+  </div>
+</div>
+
+<div class="overlay hidden" id="pause">
+  <div class="card">
+    <h2>PAUSED</h2>
+    <div class="summary" id="pauseStats"></div>
+    <p id="pauseSkills" style="color:var(--rune)"></p>
+    <button class="btn" id="btnResume">RESUME</button>
+    <div class="btnrow">
+      <button class="btn small" id="btnSound">SOUND: ON</button>
+      <button class="btn small" id="btnQuit">END RUN</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="dead">
+  <div class="card">
+    <h2 id="endTitle">YOU HAVE FALLEN</h2>
+    <p id="endSub"></p>
+    <div class="summary" id="endStats"></div>
+    <div class="summary" id="endBank"></div>
+    <div class="newfeats" id="endFeats"></div>
+    <button class="btn" id="btnRetry">TRY AGAIN</button>
+    <div class="btnrow">
+      <button class="btn small" id="btnEndShrine">SHRINE</button>
+      <button class="btn small" id="btnEndTitle">TITLE</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="levelup">
+  <div class="lvl">
+    <img src="assets/levelup.webp" alt="">
+    <div class="slot lv-num" id="lvNum"></div>
+    <canvas class="slot lv-portrait" id="lvPortrait" width="172" height="236"></canvas>
+    <div class="slot lv-stats" id="lvStats"></div>
+    <div class="slot lv-choices" id="lvChoices"></div>
+    <div class="slot lv-preview" id="lvPreview"></div>
+    <div class="slot lv-xp" id="lvXp"></div>
+    <button class="slot lv-reroll" id="lvReroll" title="Reroll choices"></button>
+    <div class="slot lv-reroll-label" id="lvRerollLabel"></div>
+    <button class="slot lv-confirm" id="lvConfirm" aria-label="Confirm"></button>
+  </div>
+</div>
+
+<script src="game.js"></script>
+<script>
+  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+</script>
+</body>
+</html>

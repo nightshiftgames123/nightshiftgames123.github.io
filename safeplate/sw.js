@@ -1,7 +1,7 @@
 // SafePlate. Copyright (c) 2026 Nightshift Games (Night Shift Studio). All rights reserved. See LICENSE.txt.
 // Offline cache for SafePlate. Bump VERSION whenever any cached file changes.
-const VERSION = 'safeplate-v26';
-const ASSETS = ['./', './index.html', './photos.js', './recipes-more.js', './manifest.webmanifest', './sp-icon-180.png', './sp-icon-192.png', './sp-icon-512.png', './sp-icon-maskable-512.png', './sp-favicon-32.png', './studio-logo.jpg', './studio-logo.mp4'];
+const VERSION = 'safeplate-v27';
+const ASSETS = ['./', './index.html', './photos.js', './recipes-more.js', './manifest.webmanifest', './sp-icon-180.png', './sp-icon-192.png', './sp-icon-512.png', './sp-icon-maskable-512.png', './sp-favicon-32.png', './studio-logo.jpg', './studio-logo.mp4', './tour/dish-1.jpg', './tour/dish-2.jpg', './tour/dish-3.jpg', './tour/dish-4.jpg'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));

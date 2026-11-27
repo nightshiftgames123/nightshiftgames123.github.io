@@ -314,6 +314,64 @@
     .who button.add { border-style: dashed; color: var(--accent); font-weight: 600; }
     .welcome .chips { gap: 8px; }
     .welcome .chip { font-size: 16px; padding: 9px 14px; }
+    /* Welcome tour: four slides explaining the app, before the name step. */
+    .tour { max-width: 440px; margin: 0 auto; min-height: 100%; display: flex; flex-direction: column; }
+    .tour-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 44px; }
+    .tour-top .brand { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 17px; }
+    .tour-top .brand img { width: 30px; height: 30px; border-radius: 9px; }
+    .tour-top .acts { display: flex; align-items: center; gap: 4px; }
+    .tour-top .skip { background: none; border: 0; color: var(--muted); font-size: 15px; font-weight: 600; padding: 10px 8px; cursor: pointer; }
+    .tour-art { flex: 1; min-height: 250px; display: flex; align-items: center; justify-content: center; position: relative; margin: 8px 0 4px; }
+    .tour-art::before { content: ""; position: absolute; width: min(78vw, 320px); aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle at 40% 35%, var(--accent-soft), transparent 70%); }
+    .tour-copy { text-align: center; padding: 0 6px; }
+    .tour-copy h2 { font-size: 27px; line-height: 1.2; margin: 6px 0 10px; letter-spacing: -0.01em; }
+    .tour-copy p { color: var(--muted); font-size: 16px; line-height: 1.55; margin: 0 auto; max-width: 360px; }
+    .tour-copy .fine { font-size: 13px; margin-top: 12px; }
+    .tour-dots { display: flex; justify-content: center; gap: 7px; margin: 22px 0 6px; }
+    .tour-dots button { width: 8px; height: 8px; border-radius: 99px; border: 0; padding: 0; background: var(--border); cursor: pointer; transition: width .25s, background .25s; }
+    .tour-dots button[aria-current="true"] { width: 24px; background: var(--accent); }
+    .tour .btn { width: 100%; margin-top: 12px; font-size: 17px; padding: 14px 18px; border-radius: 14px; }
+    .tour .back { background: none; border: 0; color: var(--muted); cursor: pointer; font-size: 14px; padding: 12px; display: block; margin: 0 auto; visibility: hidden; }
+    .tour .back.on { visibility: visible; }
+    .tour-anim { animation: tour-in .38s ease both; }
+    .tour-anim.rev { animation-name: tour-in-rev; }
+    @keyframes tour-in { from { opacity: 0; transform: translateX(22px); } to { opacity: 1; transform: none; } }
+    @keyframes tour-in-rev { from { opacity: 0; transform: translateX(-22px); } to { opacity: 1; transform: none; } }
+    [dir="rtl"] .tour-anim { animation-name: tour-in-rev; }
+    [dir="rtl"] .tour-anim.rev { animation-name: tour-in; }
+    @media (prefers-reduced-motion: reduce) { .tour-anim, .tour-anim.rev { animation: none; } }
+    /* Slide 1: dishes */
+    .t-dishes { position: relative; width: 270px; height: 250px; }
+    .t-dishes img { position: absolute; width: 132px; height: 132px; border-radius: 26px; object-fit: cover; box-shadow: 0 14px 30px rgba(60, 30, 10, .22); border: 4px solid var(--card); }
+    .t-dishes img:nth-child(1) { left: 6px; top: 4px; transform: rotate(-7deg); }
+    .t-dishes img:nth-child(2) { right: 4px; top: 16px; transform: rotate(6deg); }
+    .t-dishes img:nth-child(3) { left: 22px; bottom: 0; transform: rotate(5deg); }
+    .t-dishes img:nth-child(4) { right: 18px; bottom: 6px; transform: rotate(-5deg); }
+    .t-badge { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); background: var(--ok); color: #fff; border-radius: 99px; padding: 8px 14px; font-weight: 800; font-size: 14px; box-shadow: 0 8px 20px rgba(0, 0, 0, .2); white-space: nowrap; z-index: 2; }
+    [data-theme="dark"] .t-badge { color: #10200f; }
+    /* Mock cards used on slides 2-4 */
+    .t-stack { position: relative; width: min(84vw, 330px); display: flex; flex-direction: column; gap: 12px; }
+    .t-card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 14px; box-shadow: 0 12px 28px rgba(60, 30, 10, .12); text-align: start; }
+    .t-card .lbl { font-size: 12px; color: var(--muted); margin-bottom: 8px; font-weight: 600; }
+    .t-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .t-chips span { border: 1px solid var(--border); border-radius: 99px; padding: 5px 10px; font-size: 13.5px; }
+    .t-chips span.on { background: var(--bad-soft); border-color: var(--bad); color: var(--bad); font-weight: 700; }
+    .t-swap .was { text-decoration: line-through; color: var(--muted); font-size: 14px; }
+    .t-swap .now { font-weight: 800; color: var(--accent); font-size: 15px; margin-top: 2px; }
+    .t-swap mark { background: var(--accent-soft); color: inherit; border-radius: 5px; padding: 0 4px; }
+    .t-swap .step { font-size: 14px; margin-top: 10px; }
+    .t-label { font-size: 13px; line-height: 1.5; }
+    .t-label b { letter-spacing: .04em; }
+    .t-label .hl { background: var(--bad-soft); color: var(--bad); font-weight: 700; border-radius: 4px; padding: 0 3px; }
+    .t-barcode { height: 34px; margin-top: 10px; background: repeating-linear-gradient(90deg, var(--text) 0 2px, transparent 2px 4px, var(--text) 4px 5px, transparent 5px 8px, var(--text) 8px 11px, transparent 11px 13px); opacity: .85; border-radius: 3px; }
+    .t-verdict { background: var(--bad-soft); border: 1px solid var(--bad); color: var(--bad); font-weight: 800; border-radius: 14px; padding: 10px 12px; font-size: 14px; }
+    .t-bubble { border-radius: 16px; padding: 9px 12px; font-size: 14px; max-width: 86%; }
+    .t-bubble.me { background: var(--accent); color: var(--accent-text); margin-inline-start: auto; border-end-end-radius: 5px; }
+    .t-bubble.ai { background: var(--ai-soft); border-end-start-radius: 5px; }
+    .t-idcard { background: linear-gradient(135deg, #c2410c, #e0643d); color: #fff; border: 0; }
+    .t-idcard .lbl { color: rgba(255, 255, 255, .85); }
+    .t-idcard .big { font-weight: 800; font-size: 16px; }
+    .t-idcard .ar { font-size: 14px; margin-top: 4px; opacity: .95; }
     .modal { position: fixed; inset: 0; z-index: 50; background: rgba(0, 0, 0, .5); display: none; align-items: flex-end; justify-content: center; padding: 16px; }
     .modal.open { display: flex; }
     @media (min-width: 600px) { .modal { align-items: center; } }
@@ -501,7 +559,7 @@
     <footer>
       <a class="support-btn" id="support-link" href="https://ko-fi.com/nightshiftapps" target="_blank" rel="noopener"></a><br>
       <span id="footer-text"></span><br>
-      <a id="privacy-link" href="privacy.html"></a><br>
+      <a id="howto-link" href="#" role="button"></a> · <a id="privacy-link" href="privacy.html"></a><br>
       <span id="copyright"></span>
     </footer>
   </div>
@@ -563,6 +621,34 @@
     avoidPrompt: { en: 'Tap everything you need to avoid:', ar: 'اختر كل ما تحتاج إلى تجنّبه:' },
     avoiding: { en: function (n, l) { return 'Avoiding ' + n + ': ' + l; }, ar: function (n, l) { return 'تتجنّب: ' + l; } },
     clear: { en: 'Clear', ar: 'مسح' },
+    tourSkip: { en: 'Skip', ar: 'تخطٍّ' },
+    tourNext: { en: 'Next', ar: 'التالي' },
+    tourBack: { en: '← Back', ar: '→ رجوع' },
+    tourGo: { en: 'Get started', ar: 'لنبدأ' },
+    tourDone: { en: 'Done', ar: 'تم' },
+    tourDot: { en: function (n) { return 'Page ' + n; }, ar: function (n) { return 'الصفحة ' + n; } },
+    howTo: { en: 'How to use SafePlate', ar: 'طريقة استخدام SafePlate' },
+    t1Title: { en: 'Everyday recipes, made safe for your family', ar: 'وصفات يومية، آمنة لعائلتك' },
+    t1Text: { en: '101 tested recipes, from pancakes to kabsa, rewritten for your food allergies in one tap. In English and Arabic.', ar: '101 وصفة مجرّبة، من البان كيك إلى الكبسة، تتحوّل إلى نسخة آمنة لحساسيتك بلمسة واحدة. بالعربية والإنجليزية.' },
+    t1Badge: { en: '✓ Safe for you', ar: '✓ آمنة لك' },
+    t2Title: { en: 'Pick your allergies once', ar: 'اختر حساسيتك مرة واحدة' },
+    t2Text: { en: 'Every recipe swaps the problem ingredients for safe ones, and highlights each swap in the steps.', ar: 'كل وصفة تستبدل المكوّنات المسببة للحساسية ببدائل آمنة، وتُبرز كل بديل في الخطوات.' },
+    t2Pick: { en: 'You avoid', ar: 'تتجنّب' },
+    t2Was: { en: '½ cup butter', ar: '½ كوب زبدة' },
+    t2Now: { en: '→ dairy-free butter sticks', ar: '← زبدة نباتية خالية من الألبان' },
+    t2Step: { en: 'Melt the <mark>dairy-free butter</mark> and stir in the sugar.', ar: 'ذوّب <mark>الزبدة النباتية</mark> وأضف السكر.' },
+    t3Title: { en: 'Check food before you buy', ar: 'افحص الطعام قبل الشراء' },
+    t3Text: { en: 'Scan a barcode, photograph the ingredient list, or paste it in. SafePlate points out hidden allergens.', ar: 'امسح الباركود، أو صوّر قائمة المكوّنات، أو الصقها. يكشف SafePlate مسببات الحساسية المخفية.' },
+    t3Label: { en: '<b>INGREDIENTS:</b> wheat flour, sugar, <span class="hl">whey powder</span>, palm oil, salt, yeast.', ar: '<b>المكوّنات:</b> دقيق القمح، سكر، <span class="hl">مصل الحليب</span>، زيت النخيل، ملح، خميرة.' },
+    t3Verdict: { en: '⛔ Not safe for you: contains dairy (whey)', ar: '⛔ غير آمن لك: يحتوي على الألبان (مصل الحليب)' },
+    t4Title: { en: 'Ask the AI chef, and carry your allergy card', ar: 'اسأل الشيف الذكي، واحمل بطاقة حساسيتك' },
+    t4Text: { en: 'Ask for any dish made safe for you, and show a bilingual allergy card when you eat out.', ar: 'اطلب أي طبق بنسخة آمنة لك، واعرض بطاقة حساسية بلغتين عندما تأكل خارج المنزل.' },
+    t4Fine: { en: 'SafePlate gives cooking ideas, not medical advice. Always read the label.', ar: 'يقدّم SafePlate أفكاراً للطبخ وليس نصيحة طبية. اقرأ الملصق دائماً.' },
+    t4Me: { en: 'Can I make kabsa without dairy?', ar: 'هل يمكنني طبخ الكبسة بدون ألبان؟' },
+    t4Ai: { en: 'Yes! Swap the butter for olive oil and skip the yogurt sauce. Here is the full recipe…', ar: 'نعم! استبدل الزبدة بزيت الزيتون واترك صلصة اللبن. إليك الوصفة كاملة…' },
+    t4Card: { en: 'My allergy card', ar: 'بطاقة حساسيتي' },
+    t4CardEn: { en: 'I am allergic to: egg, dairy', ar: 'I am allergic to: egg, dairy' },
+    t4CardAr: { en: 'عندي حساسية من: البيض، الألبان', ar: 'عندي حساسية من: البيض، الألبان' },
     wHello: { en: 'Welcome to SafePlate', ar: 'أهلاً بك في SafePlate' },
     wNameQ: { en: 'What is your name?', ar: 'ما اسمك؟' },
     wNameHelp: { en: 'Recipes will be made safe for you. You can add family members later.', ar: 'سنجعل الوصفات آمنة لك. يمكنك إضافة أفراد العائلة لاحقاً.' },
@@ -1920,6 +2006,7 @@
     document.getElementById('kofi-x').setAttribute('aria-label', t('kofiHide'));
     document.getElementById('footer-text').textContent = t('footer');
     document.getElementById('copyright').textContent = t('copyright');
+    document.getElementById('howto-link').textContent = t('howTo');
     var pl = document.getElementById('privacy-link');
     pl.textContent = t('privacyLink'); pl.href = isAr() ? 'privacy.html#ar' : 'privacy.html';
     document.getElementById('bc-title').textContent = t('bcCamTitle');
@@ -2033,6 +2120,7 @@
     if (!welcomeEl.hidden) renderWelcome();
   }
   document.getElementById('lang-btn').addEventListener('click', switchLang);
+  document.getElementById('howto-link').addEventListener('click', function (e) { e.preventDefault(); openTour(); });
 
   // ---------------------------------------------------------------------------
   // Welcome screens: name, then allergies, on first use; on later visits, pick who you are cooking for.
@@ -2050,12 +2138,94 @@
     var seen = false;
     try { seen = sessionStorage.getItem('safeplate_welcomed') === '1'; } catch (e) {}
     if (seen || (!people.length && load('safeplate_welcome_skip') === '1')) return;
-    welcome = { step: people.length ? 'who' : 'name', name: '', a: [] };
+    // First open: the short tour, then the name step.
+    var tour = !people.length && load('safeplate_tour_done') !== '1';
+    welcome = { step: tour ? 'tour' : people.length ? 'who' : 'name', name: '', a: [], i: 0 };
     welcomeEl.hidden = false; document.body.style.overflow = 'hidden';
     renderWelcome();
   }
+  // The tour on its own, from the "How to use" link.
+  function openTour() {
+    welcome = { step: 'tour', name: '', a: [], i: 0, replay: true };
+    welcomeEl.hidden = false; document.body.style.overflow = 'hidden';
+    renderWelcome();
+  }
+  var TOUR = 4;
+  function tourArt(i) {
+    if (i === 0) {
+      return '<div class="t-dishes"><img src="tour/dish-1.jpg" alt="" /><img src="tour/dish-2.jpg" alt="" /><img src="tour/dish-3.jpg" alt="" /><img src="tour/dish-4.jpg" alt="" />' +
+        '<div class="t-badge">' + t('t1Badge') + '</div></div>';
+    }
+    if (i === 1) {
+      return '<div class="t-stack"><div class="t-card"><div class="lbl">' + t('t2Pick') + '</div><div class="t-chips">' +
+        ['milk', 'egg', 'peanut', 'wheat'].map(function (a) {
+          return '<span class="' + (a === 'milk' || a === 'egg' ? 'on' : '') + '">' + (a === 'milk' || a === 'egg' ? '✕ ' : '') + A[a].emoji + ' ' + esc(L(A[a], 'short')) + '</span>';
+        }).join('') + '</div></div>' +
+        '<div class="t-card t-swap"><div class="was">' + t('t2Was') + '</div><div class="now">' + t('t2Now') + '</div><div class="step">' + t('t2Step') + '</div></div></div>';
+    }
+    if (i === 2) {
+      return '<div class="t-stack"><div class="t-card t-label">' + t('t3Label') + '<div class="t-barcode"></div></div>' +
+        '<div class="t-verdict">' + t('t3Verdict') + '</div></div>';
+    }
+    return '<div class="t-stack"><div class="t-card" style="display:flex;flex-direction:column;gap:8px">' +
+      '<div class="t-bubble me">' + t('t4Me') + '</div><div class="t-bubble ai">🤖 ' + t('t4Ai') + '</div></div>' +
+      '<div class="t-card t-idcard"><div class="lbl">🪪 ' + t('t4Card') + '</div><div class="big" dir="ltr">' + t('t4CardEn') + '</div><div class="ar" dir="rtl">' + t('t4CardAr') + '</div></div></div>';
+  }
+  function renderTour(dir) {
+    var w = welcome, i = w.i, last = i === TOUR - 1, n = i + 1;
+    welcomeEl.innerHTML = '<div class="tour">' +
+      '<div class="tour-top"><div class="brand"><img src="sp-icon-192.png" alt="" />SafePlate</div><div class="acts">' +
+        '<button class="icon-btn lang-btn" id="w-lang" aria-label="' + esc(t('langLabel')) + '">' + t('langBtn') + '</button>' +
+        (last ? '' : '<button class="skip" id="t-skip">' + t('tourSkip') + '</button>') + '</div></div>' +
+      '<div class="tour-anim' + (dir < 0 ? ' rev' : '') + '" style="display:flex;flex-direction:column;flex:1">' +
+        '<div class="tour-art" aria-hidden="true">' + tourArt(i) + '</div>' +
+        '<div class="tour-copy"><h2 id="welcome-title">' + t('t' + n + 'Title') + '</h2><p>' + t('t' + n + 'Text') + '</p>' +
+          (last ? '<p class="fine">' + t('t4Fine') + '</p>' : '') + '</div>' +
+      '</div>' +
+      '<div class="tour-dots">' + [0, 1, 2, 3].map(function (k) {
+        return '<button data-dot="' + k + '" aria-label="' + esc(t('tourDot', k + 1)) + '" aria-current="' + (k === i) + '"></button>';
+      }).join('') + '</div>' +
+      '<button class="btn" id="t-next">' + t(last ? (w.replay ? 'tourDone' : 'tourGo') : 'tourNext') + '</button>' +
+      '<button class="back' + (i ? ' on' : '') + '" id="t-back">' + t('tourBack') + '</button>' +
+      '</div>';
+    function go(k) {
+      if (k < 0) return;
+      if (k >= TOUR) return finishTour();
+      var d = k > w.i ? 1 : -1; w.i = k; renderTour(d);
+    }
+    document.getElementById('w-lang').addEventListener('click', switchLang);
+    document.getElementById('t-next').addEventListener('click', function () { go(w.i + 1); });
+    document.getElementById('t-back').addEventListener('click', function () { go(w.i - 1); });
+    var sk = document.getElementById('t-skip');
+    if (sk) sk.addEventListener('click', finishTour);
+    welcomeEl.querySelector('.tour-dots').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-dot]'); if (b) go(+b.getAttribute('data-dot'));
+    });
+  }
+  function finishTour() {
+    store('safeplate_tour_done', '1');
+    if (welcome.replay) { welcomeEl.hidden = true; welcomeEl.innerHTML = ''; document.body.style.overflow = ''; return; }
+    welcome.step = people.length ? 'who' : 'name';
+    renderWelcome();
+  }
+  // Swipe between tour pages.
+  (function () {
+    var x0 = null, y0 = 0;
+    welcomeEl.addEventListener('touchstart', function (e) { if (welcome.step === 'tour') { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; } }, { passive: true });
+    welcomeEl.addEventListener('touchend', function (e) {
+      if (x0 == null || welcome.step !== 'tour') return;
+      var dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0; x0 = null;
+      if (Math.abs(dx) < 50 || Math.abs(dy) > Math.abs(dx)) return;
+      var fwd = isAr() ? dx > 0 : dx < 0, k = welcome.i + (fwd ? 1 : -1);
+      if (k < 0) return;
+      if (k >= TOUR) { finishTour(); return; }
+      var d = k > welcome.i ? 1 : -1; welcome.i = k; renderTour(d);
+    }, { passive: true });
+  })();
+
   function renderWelcome() {
     var w = welcome, first = !people.length, body;
+    if (w.step === 'tour') { renderTour(0); return; }
     if (w.step === 'who') {
       body = '<h2 id="welcome-title">' + t('wWhoQ') + '</h2><p>' + t('wWhoHelp') + '</p><div class="who">' +
         people.map(function (p) {
